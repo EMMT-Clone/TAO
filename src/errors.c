@@ -11,6 +11,9 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
+#ifndef _TAO_ERRORS_C_
+#define _TAO_ERRORS_C_ 1
+
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -133,10 +136,31 @@ tao_discard_errors(tao_error_t** errs)
     }
 }
 
+#define GET_ERR_FUNC 1
+#include __FILE__
+
+#define GET_ERR_FUNC 2
+#include __FILE__
+
+#else /* _TAO_ERRORS_C_ defined */
+
+#ifdef GET_ERR_FUNC
+
+#   undef FUNC
+#   undef CASE
+#   if GET_ERR_FUNC == 1
+#       define FUNC       tao_get_error_text
+#       define CASE(id, str) case id: return str
+#   elif GET_ERR_FUNC == 2
+#       define FUNC       tao_get_error_id
+#       define CASE(id, str) case id: return #id
+#   else
+#       error Invalid value for GET_ERR_FUNC
+#   endif
+
 const char*
-tao_get_error_text(int code)
+FUNC(int code)
 {
-#define CASE(c, s) case c: return s
     switch (code) {
         CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory for tracking error");
         CASE(TAO_SYSTEM_ERROR,     "Unknown system error");
@@ -578,7 +602,8 @@ tao_get_error_text(int code)
         CASE(EXFULL, "Message tables full");
 #endif
     default:
-#if defined(USE_STRERROR) && (USE_STRERROR != 0)
+#if GET_ERR_FUNC == 1
+#    if defined(USE_STRERROR) && (USE_STRERROR != 0)
     {
         static int init = 0;
         if (! init) {
@@ -587,458 +612,19 @@ tao_get_error_text(int code)
         }
 	return strerror(code);
     }
-#else
+#    else
         return "Unknown system error";
+#    endif
+#else
+        return "UNKNOWN_ERROR";
 #endif
     }
-#undef CASE
 }
 
-const char*
-tao_get_error_id(int code)
-{
-#define CASE(ID) case ID: return #ID
-    switch (code) {
-        CASE(TAO_SUCCESS);
-        CASE(TAO_BAD_MAGIC);
-        CASE(TAO_BAD_SERIAL);
-        CASE(TAO_BAD_SIZE);
-        CASE(TAO_BAD_TYPE);
-        CASE(TAO_BAD_RANK);
-        CASE(TAO_DESTROYED);
-        CASE(TAO_SYSTEM_ERROR);
-        CASE(TAO_CANT_TRACK_ERROR);
-#if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
-        CASE(E2BIG);
-#endif
-#ifdef EACCES
-        CASE(EACCES);
-#endif
-#ifdef EADDRINUSE
-        CASE(EADDRINUSE);
-#endif
-#ifdef EADDRNOTAVAIL
-        CASE(EADDRNOTAVAIL);
-#endif
-#ifdef EADV
-        CASE(EADV);
-#endif
-#ifdef EAFNOSUPPORT
-        CASE(EAFNOSUPPORT);
-#endif
-#ifdef EAGAIN
-        CASE(EAGAIN);
-#endif
-#ifdef EALIGN
-        CASE(EALIGN);
-#endif
-#if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY))
-        CASE(EALREADY);
-#endif
-#ifdef EBADE
-        CASE(EBADE);
-#endif
-#ifdef EBADF
-        CASE(EBADF);
-#endif
-#ifdef EBADFD
-        CASE(EBADFD);
-#endif
-#ifdef EBADMSG
-        CASE(EBADMSG);
-#endif
-#ifdef ECANCELED
-        CASE(ECANCELED);
-#endif
-#ifdef EBADR
-        CASE(EBADR);
-#endif
-#ifdef EBADRPC
-        CASE(EBADRPC);
-#endif
-#ifdef EBADRQC
-        CASE(EBADRQC);
-#endif
-#ifdef EBADSLT
-        CASE(EBADSLT);
-#endif
-#ifdef EBFONT
-        CASE(EBFONT);
-#endif
-#ifdef EBUSY
-        CASE(EBUSY);
-#endif
-#ifdef ECHILD
-        CASE(ECHILD);
-#endif
-#ifdef ECHRNG
-        CASE(ECHRNG);
-#endif
-#ifdef ECOMM
-        CASE(ECOMM);
-#endif
-#ifdef ECONNABORTED
-        CASE(ECONNABORTED);
-#endif
-#ifdef ECONNREFUSED
-        CASE(ECONNREFUSED);
-#endif
-#ifdef ECONNRESET
-        CASE(ECONNRESET);
-#endif
-#if defined(EDEADLK) && (!defined(EWOULDBLOCK) || (EDEADLK != EWOULDBLOCK))
-        CASE(EDEADLK);
-#endif
-#if defined(EDEADLOCK) && (!defined(EDEADLK) || (EDEADLOCK != EDEADLK))
-        CASE(EDEADLOCK);
-#endif
-#ifdef EDESTADDRREQ
-        CASE(EDESTADDRREQ);
-#endif
-#ifdef EDIRTY
-        CASE(EDIRTY);
-#endif
-#ifdef EDOM
-        CASE(EDOM);
-#endif
-#ifdef EDOTDOT
-        CASE(EDOTDOT);
-#endif
-#ifdef EDQUOT
-        CASE(EDQUOT);
-#endif
-#ifdef EDUPPKG
-        CASE(EDUPPKG);
-#endif
-#ifdef EEXIST
-        CASE(EEXIST);
-#endif
-#ifdef EFAULT
-        CASE(EFAULT);
-#endif
-#ifdef EFBIG
-        CASE(EFBIG);
-#endif
-#ifdef EHOSTDOWN
-        CASE(EHOSTDOWN);
-#endif
-#ifdef EHOSTUNREACH
-        CASE(EHOSTUNREACH);
-#endif
-#if defined(EIDRM) && (!defined(EINPROGRESS) || (EIDRM != EINPROGRESS))
-        CASE(EIDRM);
-#endif
-#ifdef EINIT
-        CASE(EINIT);
-#endif
-#ifdef EINPROGRESS
-        CASE(EINPROGRESS);
-#endif
-#ifdef EINTR
-        CASE(EINTR);
-#endif
-#ifdef EINVAL
-        CASE(EINVAL);
-#endif
-#ifdef EIO
-        CASE(EIO);
-#endif
-#ifdef EISCONN
-        CASE(EISCONN);
-#endif
-#ifdef EISDIR
-        CASE(EISDIR);
-#endif
-#ifdef EISNAME
-        CASE(EISNAM);
-#endif
-#ifdef ELBIN
-        CASE(ELBIN);
-#endif
-#ifdef EL2HLT
-        CASE(EL2HLT);
-#endif
-#ifdef EL2NSYNC
-        CASE(EL2NSYNC);
-#endif
-#ifdef EL3HLT
-        CASE(EL3HLT);
-#endif
-#ifdef EL3RST
-        CASE(EL3RST);
-#endif
-#ifdef ELIBACC
-        CASE(ELIBACC);
-#endif
-#ifdef ELIBBAD
-        CASE(ELIBBAD);
-#endif
-#ifdef ELIBEXEC
-        CASE(ELIBEXEC);
-#endif
-#if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
-        CASE(ELIBMAX);
-#endif
-#ifdef ELIBSCN
-        CASE(ELIBSCN);
-#endif
-#ifdef ELNRNG
-        CASE(ELNRNG);
-#endif
-#if defined(ELOOP) && (!defined(ENOENT) || (ELOOP != ENOENT))
-        CASE(ELOOP);
-#endif
-#ifdef EMFILE
-        CASE(EMFILE);
-#endif
-#ifdef EMLINK
-        CASE(EMLINK);
-#endif
-#ifdef EMSGSIZE
-        CASE(EMSGSIZE);
-#endif
-#ifdef EMULTIHOP
-        CASE(EMULTIHOP);
-#endif
-#ifdef ENAMETOOLONG
-        CASE(ENAMETOOLONG);
-#endif
-#ifdef ENAVAIL
-        CASE(ENAVAIL);
-#endif
-#ifdef ENET
-        CASE(ENET);
-#endif
-#ifdef ENETDOWN
-        CASE(ENETDOWN);
-#endif
-#ifdef ENETRESET
-        CASE(ENETRESET);
-#endif
-#ifdef ENETUNREACH
-        CASE(ENETUNREACH);
-#endif
-#ifdef ENFILE
-        CASE(ENFILE);
-#endif
-#ifdef ENOANO
-        CASE(ENOANO);
-#endif
-#if defined(ENOBUFS) && (!defined(ENOSR) || (ENOBUFS != ENOSR))
-        CASE(ENOBUFS);
-#endif
-#ifdef ENOCSI
-        CASE(ENOCSI);
-#endif
-#if defined(ENODATA) && (!defined(ECONNREFUSED) || (ENODATA != ECONNREFUSED))
-        CASE(ENODATA);
-#endif
-#ifdef ENODEV
-        CASE(ENODEV);
-#endif
-#ifdef ENOENT
-        CASE(ENOENT);
-#endif
-#ifdef ENOEXEC
-        CASE(ENOEXEC);
-#endif
-#ifdef ENOLCK
-        CASE(ENOLCK);
-#endif
-#ifdef ENOLINK
-        CASE(ENOLINK);
-#endif
-#ifdef ENOMEM
-        CASE(ENOMEM);
-#endif
-#ifdef ENOMSG
-        CASE(ENOMSG);
-#endif
-#ifdef ENONET
-        CASE(ENONET);
-#endif
-#ifdef ENOPKG
-        CASE(ENOPKG);
-#endif
-#ifdef ENOPROTOOPT
-        CASE(ENOPROTOOPT);
-#endif
-#ifdef ENOSPC
-        CASE(ENOSPC);
-#endif
-#if defined(ENOSR) && (!defined(ENAMETOOLONG) || (ENAMETOOLONG != ENOSR))
-        CASE(ENOSR);
-#endif
-#if defined(ENOSTR) && (!defined(ENOTTY) || (ENOTTY != ENOSTR))
-        CASE(ENOSTR);
-#endif
-#ifdef ENOSYM
-        CASE(ENOSYM);
-#endif
-#ifdef ENOSYS
-        CASE(ENOSYS);
-#endif
-#ifdef ENOTBLK
-        CASE(ENOTBLK);
-#endif
-#ifdef ENOTCONN
-        CASE(ENOTCONN);
-#endif
-#ifdef ENOTRECOVERABLE
-        CASE(ENOTRECOVERABLE);
-#endif
-#ifdef ENOTDIR
-        CASE(ENOTDIR);
-#endif
-#if defined(ENOTEMPTY) && (!defined(EEXIST) || (ENOTEMPTY != EEXIST))
-        CASE(ENOTEMPTY);
-#endif
-#ifdef ENOTNAM
-        CASE(ENOTNAM);
-#endif
-#ifdef ENOTSOCK
-        CASE(ENOTSOCK);
-#endif
-#ifdef ENOTSUP
-        CASE(ENOTSUP);
-#endif
-#ifdef ENOTTY
-        CASE(ENOTTY);
-#endif
-#ifdef ENOTUNIQ
-        CASE(ENOTUNIQ);
-#endif
-#ifdef ENXIO
-        CASE(ENXIO);
-#endif
-#if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
-        CASE(EOPNOTSUPP);
-#endif
-#ifdef EOTHER
-        CASE(EOTHER);
-#endif
-#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
-        CASE(EOVERFLOW);
-#endif
-#ifdef EOWNERDEAD
-        CASE(EOWNERDEAD);
-#endif
-#ifdef EPERM
-        CASE(EPERM);
-#endif
-#if defined(EPFNOSUPPORT) && (!defined(ENOLCK) || (ENOLCK != EPFNOSUPPORT))
-        CASE(EPFNOSUPPORT);
-#endif
-#ifdef EPIPE
-        CASE(EPIPE);
-#endif
-#ifdef EPROCLIM
-        CASE(EPROCLIM);
-#endif
-#ifdef EPROCUNAVAIL
-        CASE(EPROCUNAVAIL);
-#endif
-#ifdef EPROGMISMATCH
-        CASE(EPROGMISMATCH);
-#endif
-#ifdef EPROGUNAVAIL
-        CASE(EPROGUNAVAIL);
-#endif
-#ifdef EPROTO
-        CASE(EPROTO);
-#endif
-#ifdef EPROTONOSUPPORT
-        CASE(EPROTONOSUPPORT);
-#endif
-#ifdef EPROTOTYPE
-        CASE(EPROTOTYPE);
-#endif
-#ifdef ERANGE
-        CASE(ERANGE);
-#endif
-#if defined(EREFUSED) && (!defined(ECONNREFUSED) || (EREFUSED != ECONNREFUSED))
-        CASE(EREFUSED);
-#endif
-#ifdef EREMCHG
-        CASE(EREMCHG);
-#endif
-#ifdef EREMDEV
-        CASE(EREMDEV);
-#endif
-#ifdef EREMOTE
-        CASE(EREMOTE);
-#endif
-#ifdef EREMOTEIO
-        CASE(EREMOTEIO);
-#endif
-#ifdef EREMOTERELEASE
-        CASE(EREMOTERELEASE);
-#endif
-#ifdef EROFS
-        CASE(EROFS);
-#endif
-#ifdef ERPCMISMATCH
-        CASE(ERPCMISMATCH);
-#endif
-#ifdef ERREMOTE
-        CASE(ERREMOTE);
-#endif
-#ifdef ESHUTDOWN
-        CASE(ESHUTDOWN);
-#endif
-#ifdef ESOCKTNOSUPPORT
-        CASE(ESOCKTNOSUPPORT);
-#endif
-#ifdef ESPIPE
-        CASE(ESPIPE);
-#endif
-#ifdef ESRCH
-        CASE(ESRCH);
-#endif
-#ifdef ESRMNT
-        CASE(ESRMNT);
-#endif
-#ifdef ESTALE
-        CASE(ESTALE);
-#endif
-#ifdef ESUCCESS
-        CASE(ESUCCESS);
-#endif
-#if defined(ETIME) && (!defined(ELOOP) || (ETIME != ELOOP))
-        CASE(ETIME);
-#endif
-#if defined(ETIMEDOUT) && (!defined(ENOSTR) || (ETIMEDOUT != ENOSTR))
-        CASE(ETIMEDOUT);
-#endif
-#ifdef ETOOMANYREFS
-        CASE(ETOOMANYREFS);
-#endif
-#ifdef ETXTBSY
-        CASE(ETXTBSY);
-#endif
-#ifdef EUCLEAN
-        CASE(EUCLEAN);
-#endif
-#ifdef EUNATCH
-        CASE(EUNATCH);
-#endif
-#ifdef EUSERS
-        CASE(EUSERS);
-#endif
-#ifdef EVERSION
-        CASE(EVERSION);
-#endif
-#if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
-        CASE(EWOULDBLOCK);
-#endif
-#ifdef EXDEV
-        CASE(EXDEV);
-#endif
-#ifdef EXFULL
-        CASE(EXFULL);
-#endif
-    default:
-        return "UNKNOWN_ERROR";
-    }
 #undef CASE
-}
+#undef FUNC
+#undef GET_ERR_FUNC
+
+#endif /* GET_ERR_FUNC defined */
+
+#endif /* _TAO_ERRORS_C_ not defined */
