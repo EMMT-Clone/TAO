@@ -185,7 +185,8 @@ typedef enum tao_error_code {
  * @param func   Name of the function where the error occured.
  * @param code   Error identifier.
  */
-extern void tao_push_error(tao_error_t** errs, const char* func, int code);
+extern void
+tao_push_error(tao_error_t** errs, const char* func, int code);
 
 /**
  * Register an error due to a system function call.
@@ -202,7 +203,44 @@ extern void tao_push_error(tao_error_t** errs, const char* func, int code);
  *
  * @see tao_push_error.
  */
-extern void tao_push_system_error(tao_error_t** errs, const char* func);
+extern void
+tao_push_system_error(tao_error_t** errs, const char* func);
+
+/**
+ * Pop last tracked error.
+ *
+ * This function pops information about the last error remaining in the list of
+ * errors tracked by the variable at address @p errs.  The errors are popped in
+ * reverse temporal order.  That is, the last occuring error is retrieved
+ * first.  Ressources associated with the popped error are freed.
+ *
+ * The following example demonstrates how to use tao_pop_error() to report
+ * all errors that occured:
+ *
+ * ```.c
+ * void report_errors(tao_error_t** errs)
+ * {
+ *     int code;
+ *     const char* func;
+ *     while (tao_pop_error(errs, &func, &code)) {
+ *         fprintf(stderr, "error %d in %s\n", code, func);
+ *     }
+ * }
+ * ```
+ *
+ * @param errs      Address of a variable to track errors.
+ * @param funcptr   Address of a variable to store the name of the function
+ *                  where the last remaining error occured.  Can be `NULL` to
+ *                  not retrieve this information.
+ * @param codeptr   Address of a variable to store the code of the last
+ *                  remaining error.  Can be `NULL` to not retrieve this
+ *                  information.
+ *
+ * @return A boolean value (that is, `0` or `1`) indicating whether there was
+ * some error information to retrieve.
+ */
+extern int
+tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr);
 
 /**
  * Report all tracked errors.
@@ -212,7 +250,8 @@ extern void tao_push_system_error(tao_error_t** errs, const char* func);
  *
  * @param errs   Address of a variable to track errors.
  */
-extern void tao_report_errors(tao_error_t** errs);
+extern void
+tao_report_errors(tao_error_t** errs);
 
 /**
  * Clear all tracked errors.
@@ -221,7 +260,8 @@ extern void tao_report_errors(tao_error_t** errs);
  *
  * @param errs   Address of a variable to track errors.
  */
-extern void tao_discard_errors(tao_error_t** errs);
+extern void
+tao_discard_errors(tao_error_t** errs);
 
 /**
  * Get error message.
@@ -232,7 +272,8 @@ extern void tao_discard_errors(tao_error_t** errs);
  *
  * @return A string.
  */
-extern const char* tao_get_error_text(int code);
+extern const char*
+tao_get_error_text(int code);
 
 /**
  * Get human readable error identifier.
@@ -250,7 +291,8 @@ extern const char* tao_get_error_text(int code);
  *
  * @see tao_get_error_text.
  */
-extern const char* tao_get_error_id(int code);
+extern const char*
+tao_get_error_id(int code);
 
 /** @} */
 
@@ -463,8 +505,7 @@ tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
  * `NULL` on failure.
  */
 extern tao_shared_object_t*
-tao_attach_shared_object(tao_error_t** errs, tao_object_type_t type,
-                         int ident);
+tao_attach_shared_object(tao_error_t** errs, int type, int ident);
 
 /**
  * Detach a shared object.
