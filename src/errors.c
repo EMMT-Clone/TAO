@@ -14,8 +14,11 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <locale.h>
 
 #include "tao-private.h"
+
+#define USE_STRERROR 0 /* FIXME: should be in config.h */
 
 static const char* blank_prefix = "     - ";
 static const char* error_prefix = "{ERROR}";
@@ -133,21 +136,462 @@ tao_discard_errors(tao_error_t** errs)
 const char*
 tao_get_error_text(int code)
 {
-    if (code > 0) {
-        return strerror(code);
-    }
+#define CASE(c, s) case c: return s
     switch (code) {
-    case TAO_SUCCESS:          return "Operation was successful";
-    case TAO_BAD_MAGIC:        return "Invalid magic number";
-    case TAO_BAD_SERIAL:       return "Invalid serial number";
-    case TAO_BAD_SIZE:         return "Invalid size";
-    case TAO_BAD_TYPE:         return "Invalid type";
-    case TAO_BAD_RANK:         return "Invalid number of dimensions";
-    case TAO_DESTROYED:        return "Ressource has been destroyed";
-    case TAO_SYSTEM_ERROR:     return "Unknown system error";
-    case TAO_CANT_TRACK_ERROR: return "Insufficient memory for tracking error";
-    default:                   return "Unknown error";
+        CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory for tracking error");
+        CASE(TAO_SYSTEM_ERROR,     "Unknown system error");
+        CASE(TAO_DESTROYED,        "Ressource has been destroyed");
+        CASE(TAO_BAD_RANK,         "Invalid number of dimensions");
+        CASE(TAO_BAD_TYPE,         "Invalid type");
+        CASE(TAO_BAD_SIZE,         "Invalid size");
+        CASE(TAO_BAD_SERIAL,       "Invalid serial number");
+        CASE(TAO_BAD_MAGIC,        "Invalid magic number");
+        CASE(TAO_SUCCESS,          "Operation was successful");
+#ifdef EPERM
+        CASE(EPERM, "Operation not permitted");
+#endif
+#ifdef ENOENT
+        CASE(ENOENT, "No such file or directory");
+#endif
+#ifdef ESRCH
+        CASE(ESRCH, "No such process");
+#endif
+#ifdef EINTR
+        CASE(EINTR, "Interrupted system call");
+#endif
+#ifdef EIO
+        CASE(EIO, "I/O error");
+#endif
+#ifdef ENXIO
+        CASE(ENXIO, "No such device or address");
+#endif
+#if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
+        CASE(E2BIG, "Argument list too long");
+#endif
+#ifdef ENOEXEC
+        CASE(ENOEXEC, "Exec format error");
+#endif
+#ifdef EBADF
+        CASE(EBADF, "Bad file number");
+#endif
+#ifdef ECHILD
+        CASE(ECHILD, "No child processes");
+#endif
+#ifdef EAGAIN
+        CASE(EAGAIN, "Resource temporarily unavailable");
+#endif
+#ifdef ENOMEM
+        CASE(ENOMEM, "Not enough memory");
+#endif
+#ifdef EACCES
+        CASE(EACCES, "Permission denied");
+#endif
+#ifdef EFAULT
+        CASE(EFAULT, "Bad address");
+#endif
+#ifdef ENOTBLK
+        CASE(ENOTBLK, "Block device required");
+#endif
+#ifdef EBUSY
+        CASE(EBUSY, "Device or resource busy");
+#endif
+#ifdef EEXIST
+        CASE(EEXIST, "File already exists");
+#endif
+#ifdef EXDEV
+        CASE(EXDEV, "Cross-device link");
+#endif
+#ifdef ENODEV
+        CASE(ENODEV, "No such device");
+#endif
+#ifdef ENOTDIR
+        CASE(ENOTDIR, "Not a directory");
+#endif
+#ifdef EISDIR
+        CASE(EISDIR, "Illegal operation on a directory");
+#endif
+#ifdef EINVAL
+        CASE(EINVAL, "Invalid argument");
+#endif
+#ifdef ENFILE
+        CASE(ENFILE, "File table overflow");
+#endif
+#ifdef EMFILE
+        CASE(EMFILE, "Too many open files");
+#endif
+#ifdef ENOTTY
+        CASE(ENOTTY, "Not a typewriter");
+#endif
+#ifdef ETXTBSY
+        CASE(ETXTBSY, "Text file or pseudo-device busy");
+#endif
+#ifdef EFBIG
+        CASE(EFBIG, "File too large");
+#endif
+#ifdef ENOSPC
+        CASE(ENOSPC, "No space left on device");
+#endif
+#ifdef ESPIPE
+        CASE(ESPIPE, "Invalid seek");
+#endif
+#ifdef EROFS
+        CASE(EROFS, "Read-only file system");
+#endif
+#ifdef EMLINK
+        CASE(EMLINK, "Too many links");
+#endif
+#ifdef EPIPE
+        CASE(EPIPE, "Broken pipe");
+#endif
+#ifdef EDOM
+        CASE(EDOM, "Math argument out of function domain");
+#endif
+#ifdef ERANGE
+        CASE(ERANGE, "Math result not representable");
+#endif
+#ifdef EADDRINUSE
+        CASE(EADDRINUSE, "Address already in use");
+#endif
+#ifdef EADDRNOTAVAIL
+        CASE(EADDRNOTAVAIL, "Cannot assign requested address");
+#endif
+#ifdef EADV
+        CASE(EADV, "Advertise error");
+#endif
+#ifdef EAFNOSUPPORT
+        CASE(EAFNOSUPPORT, "Address family not supported by protocol");
+#endif
+#ifdef EALIGN
+        CASE(EALIGN, "EALIGN");
+#endif
+#if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY))
+        CASE(EALREADY, "Operation already in progress");
+#endif
+#ifdef EBADE
+        CASE(EBADE, "Bad exchange descriptor");
+#endif
+#ifdef EBADFD
+        CASE(EBADFD, "File descriptor in bad state");
+#endif
+#ifdef EBADMSG
+        CASE(EBADMSG, "Not a data message");
+#endif
+#ifdef ECANCELED
+        CASE(ECANCELED, "Operation canceled");
+#endif
+#ifdef EBADR
+        CASE(EBADR, "Bad request descriptor");
+#endif
+#ifdef EBADRPC
+        CASE(EBADRPC, "RPC structure is bad");
+#endif
+#ifdef EBADRQC
+        CASE(EBADRQC, "Bad request code");
+#endif
+#ifdef EBADSLT
+        CASE(EBADSLT, "Invalid slot");
+#endif
+#ifdef EBFONT
+        CASE(EBFONT, "Bad font file format");
+#endif
+#ifdef ECHRNG
+        CASE(ECHRNG, "Channel number out of range");
+#endif
+#ifdef ECOMM
+        CASE(ECOMM, "Communication error on send");
+#endif
+#ifdef ECONNABORTED
+        CASE(ECONNABORTED, "Software caused connection abort");
+#endif
+#ifdef ECONNREFUSED
+        CASE(ECONNREFUSED, "Connection refused");
+#endif
+#ifdef ECONNRESET
+        CASE(ECONNRESET, "Connection reset by peer");
+#endif
+#if defined(EDEADLK) && (!defined(EWOULDBLOCK) || (EDEADLK != EWOULDBLOCK))
+        CASE(EDEADLK, "Resource deadlock avoided");
+#endif
+#if defined(EDEADLOCK) && (!defined(EDEADLK) || (EDEADLOCK != EDEADLK))
+        CASE(EDEADLOCK, "Resource deadlock avoided");
+#endif
+#ifdef EDESTADDRREQ
+        CASE(EDESTADDRREQ, "Destination address required");
+#endif
+#ifdef EDIRTY
+        CASE(EDIRTY, "Mounting a dirty fs w/o force");
+#endif
+#ifdef EDOTDOT
+        CASE(EDOTDOT, "Cross mount point");
+#endif
+#ifdef EDQUOT
+        CASE(EDQUOT, "Disk quota exceeded");
+#endif
+#ifdef EDUPPKG
+        CASE(EDUPPKG, "Duplicate package name");
+#endif
+#ifdef EHOSTDOWN
+        CASE(EHOSTDOWN, "Host is down");
+#endif
+#ifdef EHOSTUNREACH
+        CASE(EHOSTUNREACH, "Host is unreachable");
+#endif
+#if defined(EIDRM) && (!defined(EINPROGRESS) || (EIDRM != EINPROGRESS))
+        CASE(EIDRM, "Identifier removed");
+#endif
+#ifdef EINIT
+        CASE(EINIT, "Initialization error");
+#endif
+#ifdef EINPROGRESS
+        CASE(EINPROGRESS, "Operation now in progress");
+#endif
+#ifdef EISCONN
+        CASE(EISCONN, "Socket is already connected");
+#endif
+#ifdef EISNAME
+        CASE(EISNAM, "Is a name file");
+#endif
+#ifdef ELBIN
+        CASE(ELBIN, "ELBIN");
+#endif
+#ifdef EL2HLT
+        CASE(EL2HLT, "Level 2 halted");
+#endif
+#ifdef EL2NSYNC
+        CASE(EL2NSYNC, "Level 2 not synchronized");
+#endif
+#ifdef EL3HLT
+        CASE(EL3HLT, "Level 3 halted");
+#endif
+#ifdef EL3RST
+        CASE(EL3RST, "Level 3 reset");
+#endif
+#ifdef ELIBACC
+        CASE(ELIBACC, "Cannot access a needed shared library");
+#endif
+#ifdef ELIBBAD
+        CASE(ELIBBAD, "Accessing a corrupted shared library");
+#endif
+#ifdef ELIBEXEC
+        CASE(ELIBEXEC, "Cannot exec a shared library directly");
+#endif
+#if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
+        CASE (ELIBMAX,
+              "Attempting to link in more shared libraries than system limit");
+#endif
+#ifdef ELIBSCN
+        CASE(ELIBSCN, "Corrupted .lib section in a.out");
+#endif
+#ifdef ELNRNG
+        CASE(ELNRNG, "Link number out of range");
+#endif
+#if defined(ELOOP) && (!defined(ENOENT) || (ELOOP != ENOENT))
+        CASE(ELOOP, "Too many levels of symbolic links");
+#endif
+#ifdef EMSGSIZE
+        CASE(EMSGSIZE, "Message too long");
+#endif
+#ifdef EMULTIHOP
+        CASE(EMULTIHOP, "Multihop attempted");
+#endif
+#ifdef ENAMETOOLONG
+        CASE(ENAMETOOLONG, "File name too long");
+#endif
+#ifdef ENAVAIL
+        CASE(ENAVAIL, "Not available");
+#endif
+#ifdef ENET
+        CASE(ENET, "ENET");
+#endif
+#ifdef ENETDOWN
+        CASE(ENETDOWN, "Network is down");
+#endif
+#ifdef ENETRESET
+        CASE(ENETRESET, "Network dropped connection on reset");
+#endif
+#ifdef ENETUNREACH
+        CASE(ENETUNREACH, "Network is unreachable");
+#endif
+#ifdef ENOANO
+        CASE(ENOANO, "Anode table overflow");
+#endif
+#if defined(ENOBUFS) && (!defined(ENOSR) || (ENOBUFS != ENOSR))
+        CASE(ENOBUFS, "No buffer space available");
+#endif
+#ifdef ENOCSI
+        CASE(ENOCSI, "No CSI structure available");
+#endif
+#if defined(ENODATA) && (!defined(ECONNREFUSED) || (ENODATA != ECONNREFUSED))
+        CASE(ENODATA, "No data available");
+#endif
+#ifdef ENOLCK
+        CASE(ENOLCK, "No locks available");
+#endif
+#ifdef ENOLINK
+        CASE(ENOLINK, "Link has been severed");
+#endif
+#ifdef ENOMSG
+        CASE(ENOMSG, "No message of desired type");
+#endif
+#ifdef ENONET
+        CASE(ENONET, "Machine is not on the network");
+#endif
+#ifdef ENOPKG
+        CASE(ENOPKG, "Package not installed");
+#endif
+#ifdef ENOPROTOOPT
+        CASE(ENOPROTOOPT, "Bad protocol option");
+#endif
+#if defined(ENOSR) && (!defined(ENAMETOOLONG) || (ENAMETOOLONG != ENOSR))
+        CASE(ENOSR, "Out of stream resources");
+#endif
+#if defined(ENOSTR) && (!defined(ENOTTY) || (ENOTTY != ENOSTR))
+        CASE(ENOSTR, "Not a stream device");
+#endif
+#ifdef ENOSYM
+        CASE(ENOSYM, "Unresolved symbol name");
+#endif
+#ifdef ENOSYS
+        CASE(ENOSYS, "Function not implemented");
+#endif
+#ifdef ENOTCONN
+        CASE(ENOTCONN, "Socket is not connected");
+#endif
+#ifdef ENOTRECOVERABLE
+        CASE(ENOTRECOVERABLE, "State not recoverable");
+#endif
+#if defined(ENOTEMPTY) && (!defined(EEXIST) || (ENOTEMPTY != EEXIST))
+        CASE(ENOTEMPTY, "Directory not empty");
+#endif
+#ifdef ENOTNAM
+        CASE(ENOTNAM, "Not a name file");
+#endif
+#ifdef ENOTSOCK
+        CASE(ENOTSOCK, "Socket operation on non-socket");
+#endif
+#ifdef ENOTSUP
+        CASE(ENOTSUP, "Operation not supported");
+#endif
+#ifdef ENOTUNIQ
+        CASE(ENOTUNIQ, "Name not unique on network");
+#endif
+#if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
+        CASE(EOPNOTSUPP, "Operation not supported on socket");
+#endif
+#ifdef EOTHER
+        CASE(EOTHER, "Other error");
+#endif
+#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
+        CASE(EOVERFLOW, "File too big");
+#endif
+#ifdef EOWNERDEAD
+        CASE(EOWNERDEAD, "Owner died");
+#endif
+#if defined(EPFNOSUPPORT) && (!defined(ENOLCK) || (ENOLCK != EPFNOSUPPORT))
+        CASE(EPFNOSUPPORT, "Protocol family not supported");
+#endif
+#ifdef EPROCLIM
+        CASE(EPROCLIM, "Too many processes");
+#endif
+#ifdef EPROCUNAVAIL
+        CASE(EPROCUNAVAIL, "Bad procedure for program");
+#endif
+#ifdef EPROGMISMATCH
+        CASE(EPROGMISMATCH, "Program version wrong");
+#endif
+#ifdef EPROGUNAVAIL
+        CASE(EPROGUNAVAIL, "RPC program not available");
+#endif
+#ifdef EPROTO
+        CASE(EPROTO, "Protocol error");
+#endif
+#ifdef EPROTONOSUPPORT
+        CASE(EPROTONOSUPPORT, "Protocol not supported");
+#endif
+#ifdef EPROTOTYPE
+        CASE(EPROTOTYPE, "Protocol wrong type for socket");
+#endif
+#if defined(EREFUSED) && (!defined(ECONNREFUSED) || (EREFUSED != ECONNREFUSED))
+        CASE(EREFUSED, "EREFUSED");
+#endif
+#ifdef EREMCHG
+        CASE(EREMCHG, "Remote address changed");
+#endif
+#ifdef EREMDEV
+        CASE(EREMDEV, "Remote device");
+#endif
+#ifdef EREMOTE
+        CASE(EREMOTE, "Pathname hit remote file system");
+#endif
+#ifdef EREMOTEIO
+        CASE(EREMOTEIO, "Remote i/o error");
+#endif
+#ifdef EREMOTERELEASE
+        CASE(EREMOTERELEASE, "EREMOTERELEASE");
+#endif
+#ifdef ERPCMISMATCH
+        CASE(ERPCMISMATCH, "RPC version is wrong");
+#endif
+#ifdef ERREMOTE
+        CASE(ERREMOTE, "Object is remote");
+#endif
+#ifdef ESHUTDOWN
+        CASE(ESHUTDOWN, "Cannot send after socket shutdown");
+#endif
+#ifdef ESOCKTNOSUPPORT
+        CASE(ESOCKTNOSUPPORT, "Socket type not supported");
+#endif
+#ifdef ESRMNT
+        CASE(ESRMNT, "srmount error");
+#endif
+#ifdef ESTALE
+        CASE(ESTALE, "Stale remote file handle");
+#endif
+#ifdef ESUCCESS
+        CASE(ESUCCESS, "Error 0");
+#endif
+#if defined(ETIME) && (!defined(ELOOP) || (ETIME != ELOOP))
+        CASE(ETIME, "Timer expired");
+#endif
+#if defined(ETIMEDOUT) && (!defined(ENOSTR) || (ETIMEDOUT != ENOSTR))
+        CASE(ETIMEDOUT, "Connection timed out");
+#endif
+#ifdef ETOOMANYREFS
+        CASE(ETOOMANYREFS, "Too many references: cannot splice");
+#endif
+#ifdef EUCLEAN
+        CASE(EUCLEAN, "Structure needs cleaning");
+#endif
+#ifdef EUNATCH
+        CASE(EUNATCH, "Protocol driver not attached");
+#endif
+#ifdef EUSERS
+        CASE(EUSERS, "Too many users");
+#endif
+#ifdef EVERSION
+        CASE(EVERSION, "Version mismatch");
+#endif
+#if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
+        CASE(EWOULDBLOCK, "Operation would block");
+#endif
+#ifdef EXFULL
+        CASE(EXFULL, "Message tables full");
+#endif
+    default:
+#if defined(USE_STRERROR) && (USE_STRERROR != 0)
+    {
+        static int init = 0;
+        if (! init) {
+            (void)setlocale(LC_ALL, "C");
+            init = 1;
+        }
+	return strerror(code);
     }
+#else
+        return "Unknown system error";
+#endif
+    }
+#undef CASE
 }
 
 const char*
