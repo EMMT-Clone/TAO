@@ -38,7 +38,7 @@ static void
 report_error(const char* prefix, const char* func, int code)
 {
     fprintf(stderr, "%s %s in function `%s` [%s]", prefix,
-            tao_get_error_text(code), func, tao_get_error_id(code));
+            tao_get_error_reason(code), func, tao_get_error_name(code));
 }
 
 static void
@@ -149,10 +149,10 @@ tao_discard_errors(tao_error_t** errs)
 #   undef FUNC
 #   undef CASE
 #   if GET_ERR_FUNC == 1
-#       define FUNC       tao_get_error_text
+#       define FUNC       tao_get_error_reason
 #       define CASE(id, str) case id: return str
 #   elif GET_ERR_FUNC == 2
-#       define FUNC       tao_get_error_id
+#       define FUNC       tao_get_error_name
 #       define CASE(id, str) case id: return #id
 #   else
 #       error Invalid value for GET_ERR_FUNC

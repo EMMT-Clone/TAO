@@ -270,29 +270,32 @@ tao_discard_errors(tao_error_t** errs);
  *
  * @param code   Error identifier.
  *
- * @return A string.
+ * @return A permanent string.
+ *
+ * @history This function is based on `Tcl_ErrnoMsg` in the
+ * [Tcl/Tk](http://www.tcl.tk) library.
  */
 extern const char*
-tao_get_error_text(int code);
+tao_get_error_reason(int code);
 
 /**
  * Get human readable error identifier.
  *
  * Given one of the TAO error codes, this function returns a string with the
- * symbolic name of the code.  For instance, `tao_get_error_id(EINVAL)` yields
+ * symbolic name of the code.  For instance, `tao_get_error_name(EINVAL)` yields
  * the string `"EINVAL"`.
  *
  * @param code   Error identifier.
  *
- * @return A string.
+ * @return A permanent string.
  *
  * @history This function is based on `Tcl_ErrnoId` in the
  * [Tcl/Tk](http://www.tcl.tk) library.
  *
- * @see tao_get_error_text.
+ * @see tao_get_error_reason.
  */
 extern const char*
-tao_get_error_id(int code);
+tao_get_error_name(int code);
 
 /** @} */
 
@@ -498,14 +501,15 @@ tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
  * @warning The same process must not attach a shared object more than once.
  *
  * @param errs   Address of a variable to track errors.
- * @param type   Expected type identifier of the shared object.
  * @param ident  Unique identifier of the shared object.
+ * @param type   Expected type identifier of the shared object.  Can be
+ *               `TAO_SHARED_ANY` to accept any shared object type.
  *
  * @return The address of the shared object in the address space of the caller;
  * `NULL` on failure.
  */
 extern tao_shared_object_t*
-tao_attach_shared_object(tao_error_t** errs, int type, int ident);
+tao_attach_shared_object(tao_error_t** errs, int ident, int type);
 
 /**
  * Detach a shared object.

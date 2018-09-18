@@ -137,7 +137,7 @@ tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
 }
 
 tao_shared_object_t*
-tao_attach_shared_object(tao_error_t** errs, int type, int ident)
+tao_attach_shared_object(tao_error_t** errs, int ident, int type)
 {
     /* Check arguments. */
     if (ident < 0) {
