@@ -23,6 +23,11 @@ struct tao_shared_array {
     uint32_t ndims;               /**< Number of dimensions */
     uint32_t size[TAO_MAX_NDIMS]; /**< Length of each dimension (dimensions
                                    *   beyong `ndims` are assumed to be `1`) */
+    int32_t nwriters;             /**< Number of writers */
+    int32_t nreaders;             /**< Number of readers */
+    int64_t counter;              /**< Counter (used for acquired images) */
+    int64_t ts_sec;               /**< Time stamp (seconds part) */
+    int64_t ts_nsec;              /**< Time stamp (nanoseconds part) */
     uint64_t data[1];             /**< Shared array data (actual size is large
                                    *   enough to store all pixels, type is to
                                    *   force correct alignment whatever the
@@ -81,6 +86,58 @@ void*
 tao_get_array_data(const tao_shared_array_t* arr)
 {
     return (void*)&arr->data[0];
+}
+
+int
+tao_get_array_nreaders(const tao_shared_array_t* arr)
+{
+    return arr->nreaders;
+}
+
+int
+tao_adjust_array_nreaders(tao_shared_array_t* arr, int adj)
+{
+    return (arr->nreaders += adj);
+}
+
+int
+tao_get_array_nwriters(const tao_shared_array_t* arr)
+{
+    return arr->nwriters;
+}
+
+int
+tao_adjust_array_nwriters(tao_shared_array_t* arr, int adj)
+{
+    return (arr->nwriters += adj);
+}
+
+int64_t
+tao_get_array_counter(const tao_shared_array_t* arr)
+{
+    return arr->counter;
+}
+
+void
+tao_set_array_counter(tao_shared_array_t* arr, int64_t cnt)
+{
+    arr->counter = cnt;
+}
+
+void
+tao_get_array_timestamp(const tao_shared_array_t* arr,
+                        int64_t* ts_sec, int64_t* ts_nsec)
+{
+    *ts_sec = arr->ts_sec;
+    *ts_nsec = arr->ts_nsec;
+}
+
+void
+tao_set_array_timestamp(tao_shared_array_t* arr,
+                        int64_t ts_sec, int64_t ts_nsec)
+{
+    arr->ts_sec = ts_sec;
+    arr->ts_nsec = ts_nsec;
 }
 
 tao_shared_array_t*
@@ -152,6 +209,17 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
     for (int d = ndims; d < TAO_MAX_NDIMS; ++d) {
         arr->size[d] = 1;
     }
+    arr->nwriters = 0;
+    arr->nreaders = 0;
+    arr->counter = 0;
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+        /* Just ignore this error. */
+        ts.tv_sec = 0;
+        ts.tv_nsec = 0;
+    }
+    arr->ts_sec = ts.tv_sec;
+    arr->ts_nsec = ts.tv_nsec;
     return arr;
 }
 

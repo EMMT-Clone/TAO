@@ -473,6 +473,8 @@ typedef struct tao_shared_object {
  * call tao_detach_shared_object() to detach the object from its address space
  * and decrement its reference count by one.
  *
+ * The remaining bytes after the basic object information are set to zero.
+ *
  * @param errs   Address of a variable to track errors.
  * @param type   Type identifier of the object.
  * @param size   Total number of bytes to allocate.
@@ -869,6 +871,154 @@ tao_get_array_size(const tao_shared_array_t* arr, int d);
  */
 extern void*
 tao_get_array_data(const tao_shared_array_t* arr);
+
+/**
+ * Get number of readers for a shared array.
+ *
+ * @param arr    Pointer to a shared array attached to the address space of
+ *               the caller and locked by the caller.
+ *
+ * @warning Since the number of readers is variable, the caller must have
+ * locked the shared array.  For efficiency reasons, this function does not
+ * perform error checking.
+ *
+ * @return The number of readers registered on the shared array.
+ *
+ * @see tao_lock_shared_array.
+ */
+extern int
+tao_get_array_nreaders(const tao_shared_array_t* arr);
+
+/**
+ * Adjust number of readers for a shared array.
+ *
+ * @param arr    Pointer to a shared array attached to the address space of
+ *               the caller and locked by the caller.
+ * @param adj    Increment to add to the number of readers.
+ *
+ * @warning Since the number of readers is variable, the caller must have
+ * locked the shared array.  For efficiency reasons, this function does not
+ * perform error checking.
+ *
+ * @return The number of readers registered on the shared array after the
+ * adjustment.
+ *
+ * @see tao_lock_shared_array.
+ */
+extern int
+tao_adjust_array_nreaders(tao_shared_array_t* arr, int adj);
+
+/**
+ * Get number of writers for a shared array.
+ *
+ * @param arr    Pointer to a shared array attached to the address space of
+ *               the caller and locked by the caller.
+ *
+ * @warning Since the number of writers is variable, the caller must have
+ * locked the shared array.  For efficiency reasons, this function does not
+ * perform error checking.
+ *
+ * @return The number of writers registered on the shared array.
+ *
+ * @see tao_lock_shared_array.
+ */
+extern int
+tao_get_array_nwriters(const tao_shared_array_t* arr);
+
+/**
+ * Adjust number of writers for a shared array.
+ *
+ * @param arr    Pointer to a shared array attached to the address space of
+ *               the caller and locked by the caller.
+ * @param adj    Increment to add to the number of writers.
+ *
+ * @warning Since the number of writers is variable, the caller must have
+ * locked the shared array.  For efficiency reasons, this function does not
+ * perform error checking.
+ *
+ * @return The number of writers registered on the shared array after the
+ * adjustment.
+ *
+ * @see tao_lock_shared_array.
+ */
+extern int
+tao_adjust_array_nwriters(tao_shared_array_t* arr, int adj);
+
+/**
+ * Get the value of a shared array counter.
+ *
+ * @param arr    Pointer to a shared array attached to the address space of
+ *               the caller and locked by the caller.
+ *
+ * @warning Since the counter value is variable, the caller must have
+ * locked the shared array.  For efficiency reasons, this function does not
+ * perform error checking.
+ *
+ * @return The counter value of the shared array.
+ *
+ * @see tao_lock_shared_array.
+ */
+extern int64_t
+tao_get_array_counter(const tao_shared_array_t* arr);
+
+/**
+ * Set the value of a shared array counter.
+ *
+ * @param arr    Pointer to a shared array attached to the address space of
+ *               the caller and locked by the caller.
+ * @param cnt    Counter value to set.
+ *
+ * @warning Since the counter value is variable, the caller must have
+ * locked the shared array.  For efficiency reasons, this function does not
+ * perform error checking.
+ *
+ * @see tao_lock_shared_array.
+ */
+extern void
+tao_set_array_counter(tao_shared_array_t* arr, int64_t cnt);
+
+/**
+ * Get the time-stamp of a shared array counter.
+ *
+ * The time-stamp of a shared array is divided in two integer parts, one gives
+ * the integer number of seconds, the other gives the rest as an integer number
+ * of nanoseconds.  Thus the resolution of the time-stamp is one nanosecond
+ * at best.
+ *
+ * @param arr     Pointer to a shared array attached to the address space of
+ *                the caller and locked by the caller.
+ * @param ts_sec  Address to store the integer part of the time-stamp in
+ *                seconds.
+ * @param ts_nsec Address to store the fractional part of the time-stamp in
+ *                nanoseconds.
+ *
+ * @warning Since the time-stamp is variable, the caller must have
+ * locked the shared array.  For efficiency reasons, this function does not
+ * perform error checking.
+ *
+ * @see tao_lock_shared_array.
+ */
+extern void
+tao_get_array_timestamp(const tao_shared_array_t* arr,
+                        int64_t* ts_sec, int64_t* ts_nsec);
+
+/**
+ * Set the time-stamp of a shared array counter.
+ *
+ * @param arr     Pointer to a shared array attached to the address space of
+ *                the caller and locked by the caller.
+ * @param ts_sec  The integer part of the time-stamp in seconds.
+ * @param ts_nsec The fractional part  of the time-stamp in nanoseconds.
+ *
+ * @warning Since the time-stamp is variable, the caller must have
+ * locked the shared array.  For efficiency reasons, this function does not
+ * perform error checking.
+ *
+ * @see tao_lock_shared_array.
+ */
+extern void
+tao_set_array_timestamp(tao_shared_array_t* arr,
+                        int64_t ts_sec, int64_t ts_nsec);
 
 /**
  * Lock a shared array.
