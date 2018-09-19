@@ -163,8 +163,12 @@ FUNC(int code)
 {
     switch (code) {
         CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory for tracking error");
+        CASE(TAO_ASSERTION_FAILED, "Assertion failed");
         CASE(TAO_SYSTEM_ERROR,     "Unknown system error");
         CASE(TAO_DESTROYED,        "Ressource has been destroyed");
+        CASE(TAO_CORRUPTED,        "Corrupted structure");
+        CASE(TAO_OUT_OF_RANGE,     "Out of range argument");
+        CASE(TAO_BAD_ADDRESS,      "Invalid address");
         CASE(TAO_BAD_RANK,         "Invalid number of dimensions");
         CASE(TAO_BAD_TYPE,         "Invalid type");
         CASE(TAO_BAD_SIZE,         "Invalid size");

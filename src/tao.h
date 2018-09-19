@@ -23,6 +23,7 @@
  * \defgroup Errors        Error Reporting
  * \defgroup SharedObjects Shared Objects
  * \defgroup SharedArrays  Shared Multi-Dimensional Arrays.
+ * \defgroup Buffers       Input/Output Buffers.
  * \defgroup Utilities     Low-Level and Utility Functions
  */
 
@@ -165,9 +166,13 @@ typedef enum tao_error_code {
     TAO_BAD_SIZE         =  -3, /**< Invalid size */
     TAO_BAD_TYPE         =  -4, /**< Invalid type */
     TAO_BAD_RANK         =  -5, /**< Invalid number of dimensions */
-    TAO_DESTROYED        =  -6, /**< Ressource has been destroyed */
-    TAO_SYSTEM_ERROR     =  -7, /**< Unknown system error */
-    TAO_CANT_TRACK_ERROR =  -8  /**< Insufficient memory for tracking error */
+    TAO_BAD_ADDRESS      =  -6, /**< Invalid address */
+    TAO_OUT_OF_RANGE     =  -7, /**< Out of range argument */
+    TAO_CORRUPTED        =  -8, /**< Corrupted structure */
+    TAO_DESTROYED        =  -9, /**< Ressource has been destroyed */
+    TAO_SYSTEM_ERROR     = -10, /**< Unknown system error */
+    TAO_ASSERTION_FAILED = -11, /**< Assertion failed */
+    TAO_CANT_TRACK_ERROR = -12  /**< Insufficient memory for tracking error */
 } tao_error_code_t;
 
 /**
@@ -296,6 +301,322 @@ tao_get_error_reason(int code);
  */
 extern const char*
 tao_get_error_name(int code);
+
+/** @} */
+
+/*---------------------------------------------------------------------------*/
+
+/**
+ * \addtogroup Buffers
+ *
+ * Input/Output Buffers.
+ *
+ * I/O buffers are useful to store data of variable size (their contents may be
+ * dynamically resized) and which may only be partially transferred during
+ * read/write operations.  They are mostly useful for input/output but may be
+ * used for other purposes.
+ *
+ * @{
+ */
+
+/**
+ * Input/output buffer.
+ *
+ * This structure is used to buffer input/output (i/o) data.  This structure is
+ * exposed so that callers may use static structure.  The members of the
+ * structure may however change and users should only use the provided
+ * functions to manipulate i/o buffers.
+ */
+typedef struct tao_buffer {
+    char* data;         /**< Dynamic buffer */
+    size_t size;        /**< Number of allocated bytes */
+    size_t offset;      /**< Offset of first pending byte */
+    size_t pending;     /**< Number of pending bytes */
+    unsigned int flags; /**< Bitwise flags used internally */
+} tao_buffer_t;
+
+/**
+ * Initialize a static i/o buffer.
+ *
+ * Use this function to initialize a static i/o buffer structure.  When no
+ * longer needed, the internal ressources which may have been allocated must be
+ * released by calling tao_destroy_buffer().  The structure itself is assumed
+ * static and will not be freed by tao_destroy_buffer() which will reset its
+ * contents as if just initialized instead.
+ *
+ * @param buf   Address of a static i/o buffer structure.
+ */
+extern void
+tao_initialize_static_buffer(tao_buffer_t* buf);
+
+/**
+ * Create a dynamic i/o buffer.
+ *
+ * This function creates a new i/o buffer.  Both the container (the buffer
+ * structure) and the contents (the data stored by the buffer) will be
+ * dynamically allocated.  When no longer needed, the caller is responsible of
+ * calling tao_destroy_buffer() to release all the ressources allocated for the
+ * buffer (that is, the container and the contents).
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param size   Initial number of bytes of the buffer (actual number of
+ *               bytes may be larger but not smaller).
+ *
+ * @return The address of the new buffer; `NULL` in case of errors.
+ */
+extern tao_buffer_t*
+tao_create_buffer(tao_error_t** errs, size_t size);
+
+/**
+ * Destroy dynamic ressources of an i/o buffer.
+ *
+ * This function frees any dynamic ressources used by the i/o buffer @p buf.
+ * If the buffer has been initialized by tao_initialize_static_buffer(), only
+ * the contents of the buffer may be destroyed and the buffer is reset to have
+ * an empty contents, just as done by tao_initialize_static_buffer(), and can
+ * be safely re-used.  If the buffer has been created by tao_create_buffer(),
+ * the contents and the container (that is, the structure itself) are destroyed
+ * and @p buf must no longer be used.
+ *
+ * @param buf    Address of the i/o buffer to destroy (can be `NULL`).
+ */
+extern void
+tao_destroy_buffer(tao_buffer_t* buf);
+
+/**
+ * Resize an i/o buffer.
+ *
+ * This function has to be called to ensure that a given number of unused bytes
+ * are available after the end of the contents (the pending data) stored by an
+ * i/o buffer.
+ *
+ * This function checks the consistency of the buffer structure but, otherwise,
+ * tries to make the minimal effort to ensure that the requested number of
+ * unused bytes are available.  As needed, it may flush or re-allocate the
+ * internal data buffer.  The size of the internal data can never decrease when
+ * calling this function.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param buf    Address of the i/o buffer.
+ * @param cnt    Minimum size (in bytes) of unused space.
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int
+tao_resize_buffer(tao_error_t** errs, tao_buffer_t* buf, size_t cnt);
+
+/**
+ * Flush the contents of an i/o buffer.
+ *
+ * This function moves the contents (the pending data) of an i/o buffer to the
+ * beginning of its internal storage area so as to left the maximum possible
+ * amount of unused bytes after the pending bytes.
+ *
+ * @warning This function is meant to be fast.  It assumes its argument is
+ * correct and makes no error checking.
+ *
+ * @param buf    Address of the i/o buffer.
+ */
+extern void
+tao_flush_buffer(tao_buffer_t* buf);
+
+/**
+ * Clear the contents of an i/o buffer.
+ *
+ * This function drops all the contents (the pending data) of an i/o buffer.
+ *
+ * @warning This function is meant to be fast.  It assumes its argument is
+ * correct and makes no error checking.
+ *
+ * @param buf    Address of the i/o buffer.
+ */
+extern void
+tao_clear_buffer(tao_buffer_t* buf);
+
+/**
+ * Get the size of the contents of an i/o buffer.
+ *
+ * This fnuction yields the size of the contents (the pending data) of an i/o
+ * buffer.  Use tao_get_buffer_contents() to retrieve the address of the
+ * contents of the buffer and tao_adjust_buffer_contents_size() to remove the
+ * bytes you may have consumed.
+
+ * @warning This function is meant to be fast.  It assumes its argument is
+ * correct and makes no error checking.
+ *
+ * @param buf    Address of the i/o buffer.
+ *
+ * @return The number of pending bytes in the buffer.
+ *
+ * @see tao_get_buffer_contents, tao_adjust_buffer_contents_size.
+ */
+extern size_t
+tao_get_buffer_contents_size(tao_buffer_t* buf);
+
+/**
+ * Query the contents an i/o buffer.
+ *
+ * This function yields the address and number of bytes of the contents (the
+ * pending bytes) stored in an i/o buffer and which has yet not been consumed.
+ * Call tao_adjust_buffer_contents_size() to remove the bytes you may have
+ * consumed.
+ *
+ * @warning The returned information is only valid until no operations that may
+ * change the i/o buffer are applied.  The operations which takes a `const
+ * tao_buffer_t*` are safe.
+ *
+ * @warning This function is meant to be fast.  It assumes its arguments are
+ * correct and makes no error checking.
+ *
+ * @param buf    Address of the i/o buffer.
+ * @param data   Pointer where to store the address of the first pending byte.
+ *               Must not be `NULL`, call tao_get_buffer_contents_size() if you
+ *               are only interested in getting the number of pending bytes.
+ *
+ * @return The number of pending bytes.
+ *
+ * @see tao_get_buffer_contents_size, tao_adjust_buffer_contents_size.
+ */
+extern size_t
+tao_get_buffer_contents(const tao_buffer_t* buf, void** data);
+
+/**
+ * Get the size of the unused space in an i/o buffer.
+ *
+ * This function returns the number of unused bytes after the contents of an
+ * i/o buffer.  These bytes are directly available to add more contents to the
+ * buffer.  You may call tao_resize_buffer() to make sure enough unused space
+ * is available.  Call tao_get_buffer_unused_part() to retrieve the address of
+ * the unused part and then, possibly, tao_adjust_buffer_contents_size() to
+ * indicate the number of bytes that have been added.
+
+ * @warning This function is meant to be fast.  It assumes its argument is
+ * correct and makes no error checking.
+ *
+ * @param buf    Address of the i/o buffer.
+ *
+ * @return The number of unused bytes after the contents of the buffer.
+ *
+ * @see tao_resize_buffer, tao_flush_buffer, tao_get_buffer_unused_part,
+ * tao_get_total_unused_buffer_size, tao_adjust_buffer_contents_size.
+ */
+extern size_t
+tao_get_buffer_unused_size(const tao_buffer_t* buf);
+
+/**
+ * Get the total number of unused bytes in an i/o buffer.
+ *
+ * This function yields the total number of unused bytes in an i/o buffer.
+ * That is, the number of bytes that would be unused after the contents of the
+ * buffer if tao_flush_buffer() have been called.
+ *
+ * @warning This function is meant to be fast.  It assumes its argument is
+ * correct and makes no error checking.
+ *
+ * @param buf    Address of the i/o buffer.
+ *
+ * @return The total number of unused bytes in the buffer.
+ *
+ * @see tao_flush_buffer, tao_get_unused_buffer_size.
+ */
+extern size_t
+tao_get_total_unused_buffer_size(const tao_buffer_t* buf);
+
+/**
+ * Query the unused data at the end of an i/o buffer.
+ *
+ * This function yields the address and the size of the unused space at the end
+ * an i/o buffer and which can directly be used to append more data.  If you
+ * write some bytes in the returned space, use
+ * tao_adjust_buffer_contents_size() to change the size of the contents of the
+ * i/o buffer.
+ *
+ * @warning The returned information is only valid until no operations that may
+ * change the i/o buffer are applied.  The operations which takes a `const
+ * tao_buffer_t*` are safe.
+ *
+ * @warning This function is meant to be fast.  It assumes its arguments are
+ * correct and makes on error checking.
+ *
+ * @param buf    Address of the i/o buffer.
+ * @param data   Pointer where to store the address of the first unused byte.
+ *               Must not be `NULL`,  call tao_get_buffer_unused_size() if you
+ *               are only interested in getting the number of unused bytes.
+ *
+ * @return The number of unused bytes at the end of the internal data buffer.
+ */
+extern size_t
+tao_get_buffer_unused_part(const tao_buffer_t* buf, void** data);
+
+/**
+ * Adjust the size of the contents of an i/o buffer.
+ *
+ * Call this function to pretend that some bytes have been consumed at the
+ * beginning of the contents (the pending data) of an i/o buffer or that some
+ * bytes have been added to the end of the contents of the an i/o buffer.
+ *
+ * No more than the number of pending bytes can be consumed and no more than
+ * the number of unused bytes after the pending data can be added.  If the
+ * adjustment is too large, nothing is done and the function reports a
+ * `TAO_OUT_OF_RANGE` error.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param buf    Address of the i/o buffer.
+ * @param adj    Number of bytes to consume (if negative) or add (if positive).
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int
+tao_adjust_buffer_contents_size(tao_error_t** errs, tao_buffer_t* buf,
+                                ssize_t adj);
+
+/**
+ * Read bytes from a file descriptor to an i/o buffer.
+ *
+ * This functions attempt to read some bytes from a file descriptor and append
+ * them to the contents of an i/o buffer.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param fd     File descriptor to read from.
+ * @param buf    Dynamic buffer to collect bytes read.
+ * @param cnt    Number of bytes to read.
+ *
+ * @return The number of bytes actually read, `-1` in case of errors.  The
+ * number of bytes read may be different from @p cnt: it may be smaller if the
+ * number of available bytes is insufficient (for instance because we are close
+ * to the end of the file or because the peer did not write that much on the
+ * other end of the bidirectional communication channel); it may also be larger
+ * because, for efficiency reasons, the function attempts to fill the space
+ * available in the buffer @p buf.
+ *
+ * @see tao_write_bytes.
+ */
+extern ssize_t
+tao_read_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt);
+
+/**
+ * Write the contents of an i/o buffer to a file descriptor.
+ *
+ * This function attempts to write the contents (the pending data) of an i/o
+ * buffer to a file descriptor.  If some bytes are written, they are "removed"
+ * from the contents (the pending data) of the i/o buffer.  A single attempt
+ * may not be sufficient to write all contents, tao_get_buffer_contents_size()
+ * can be used to figure out whether there are remaining unwritten bytes.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param fd     File descriptor to write to.
+ * @param buf    Dynamic buffer whose contents is to be written.
+ *
+ * @return The number of bytes actually written, `-1` in case of errors.  The
+ * returned value may be zero if the contents of the i/o buffer is empty or if
+ * the file descriptor is marked for being non-blocking and the operation would
+ * block.  To disentangle, call tao_get_buffer_contents_size() to check whether
+ * the contents was empty.
+ *
+ * @see tao_read_bytes, tao_get_buffer_contents_size.
+ */
+extern ssize_t
+tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
 
 /** @} */
 
