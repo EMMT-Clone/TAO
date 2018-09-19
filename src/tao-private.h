@@ -41,4 +41,10 @@
  */
 #define TAO_OFFSET_OF(type, member) ((char*)&((type*)0)->member - (char*)0)
 
+/**
+ * Round-up `a` by chuncks of size `b`.
+ */
+#define TAO_ROUND_UP(a, b)  ((((a) + ((b) - 1))/(b))*(b))
+
+
 #endif /* _TAO_PRIVATE_H_ */

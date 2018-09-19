@@ -304,11 +304,58 @@ tao_get_error_name(int code);
 /**
  * \addtogroup Utilities
  *
- * Utilities functions are provided to wrap system calls so as to report
+ * Utilities functions to wrap system calls so as to report
  * errors in the TAO way.
  *
  * @{
  */
+
+/**
+ * Allocate dynamic memory.
+ *
+ * This function behaves as malloc() except that error information may be
+ * tracked in @p errs.  The caller is responsible to call free() or tao_free()
+ * to free the allocated memory when no longer needed.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param size   Number of bytes to allocate.
+ *
+ * @return The address of allocated dynamic memory; `NULL` in case of errors.
+ *
+ * @see tao_free, tao_calloc.
+ */
+extern void*
+tao_malloc(tao_error_t** errs, size_t size);
+
+/**
+ * Allocate dynamic memory.
+ *
+ * This function behaves as calloc() except that error information may be
+ * tracked in @p errs.  The caller is responsible to call free() or tao_free()
+ * to free the allocated memory when no longer needed.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param nelem  Number of elements to allocate.
+ * @param elsize Number of bytes per element.
+ *
+ * @return The address of allocated dynamic memory; `NULL` in case of errors.
+ *
+ * @see tao_free, tao_malloc.
+ */
+extern void*
+tao_calloc(tao_error_t** errs, size_t nelem, size_t elsize);
+
+/**
+ * Free dynamic memory.
+ *
+ * This function behaves as free() except that it accepts a `NULL` pointer.
+ *
+ * @param ptr    Address of dynamic memory (can be `NULL`).
+ *
+ * @see tao_malloc, tao_calloc.
+ */
+extern void
+tao_free(void* ptr);
 
 /**
  * Initialize a non-static mutex.
