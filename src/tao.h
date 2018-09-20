@@ -679,6 +679,117 @@ extern void
 tao_free(void* ptr);
 
 /**
+ * \addtogroup Time
+ *
+ * Measurement of time and time intervals.
+ *
+ * Time is stored in a structure of type @ref tao_time_t with a nanosecond
+ * resolution.  The actual precision however depends on the resolution of the
+ * functions provided by the system to get a time.  The maximum time amplitude
+ * that can be repesented is @f$\approx\pm2.9\times10^{11}@f$ years (nearly 20
+ * times the age of the Universe).  So it is probably sufficient to represent
+ * any absolute time.
+ *
+ * The function tao_get_monotonic_time() can be used to precisely measure time
+ * intervals, while the function tao_get_current_time() can be called to get
+ * the current time.
+ *
+ * @{
+ */
+
+/**
+ * Structure to store time with a nanosecond resolution.
+ */
+typedef struct tao_time {
+    int64_t s;   /**< Seconds */
+    int64_t ns;  /**< Nanoseconds */
+} tao_time_t;
+
+/**
+ * Get monotonic time.
+ *
+ * This function yields a monotonic time since some unspecified starting point
+ * but which is not affected by discontinuous jumps in the system time (e.g.,
+ * if the system administrator manually changes the clock), but is affected by
+ * the incremental adjustments performed by adjtime() and NTP.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param dest   Address to store the time.
+ *
+ * @return `0` on success, `-1` on error.  In case of error, 0 seconds and -1
+ * nanoseconds are stored in @p dest.
+ */
+extern int
+tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest);
+
+/**
+ * Get the current time.
+ *
+ * This function yields the current time since a specified starting point.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param dest   Address to store the time.
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int
+tao_get_current_time(tao_error_t** errs, tao_time_t* dest);
+
+/**
+ * Add times.
+ *
+ * This function adds 2 times.
+ *
+ * @param dest   Address to store the result.
+ * @param a      Address of first time value.
+ * @param b      Address of second time value.
+ */
+extern void
+tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
+
+/**
+ * Subtract times.
+ *
+ * This function subtracts 2 times.
+ *
+ * @param dest   Address to store the result.
+ * @param a      Address of first time value.
+ * @param b      Address of second time value.
+ */
+extern void
+tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
+
+/**
+ * Convert time in seconds.
+ *
+ * @param t      Address of time value.
+ *
+ * @return The number of seconds given by the time stored in @p t.
+ */
+extern double
+tao_time_to_seconds(const tao_time_t* t);
+
+/**
+ * Convert a number of seconds into a time structure.
+ *
+ * @param dest   Address to store the result.
+ * @param secs   A fractional number of seconds.
+ *
+ * @warning This function never fails.  If @p secs is too large (in amplitude)
+ * to be represented, `INT64_MAX` or `INT64_MIN` seconds and 0 nanoseconds are
+ * assumed.  If @p secs is a NaN (Not a Number), 0 seconds and -1 nanoseconds
+ * are assumed.  Otherwise, the number of seconds stored in @p dest is strictly
+ * greater than `INT64_MIN` and strictly less than `INT64_MAX` while the number
+ * of nanoseconds is greater of equal 0 and strictly less than 1,000,000,000.
+ * It is therefore always possible guess from the stored time whether @p secs
+ * was representable as a time structure with nanosecond precision.
+ */
+extern void
+tao_seconds_to_time(tao_time_t* dest, double secs);
+
+/** @} */
+
+/**
  * Initialize a non-static mutex.
  *
  * This functions initialize a mutex prior to its usage.  The function
@@ -1391,6 +1502,7 @@ tao_set_array_timestamp(tao_shared_array_t* arr,
 /**
  * Lock a shared array.
  *
+ * @param errs   Address of a variable to track errors.
  * @param arr    Pointer to a shared array attached to the address space of
  *               the caller.
  *
@@ -1404,6 +1516,7 @@ tao_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
 /**
  * Attempt to lock a shared array.
  *
+ * @param errs   Address of a variable to track errors.
  * @param arr    Pointer to a shared array attached to the address space of
  *               the caller.
  *
@@ -1417,6 +1530,7 @@ tao_try_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
 /**
  * Unlock a shared array.
  *
+ * @param errs   Address of a variable to track errors.
  * @param arr    Pointer to a shared array attached to the address space of
  *               the caller.
  *
