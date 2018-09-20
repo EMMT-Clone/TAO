@@ -19,12 +19,16 @@
 #include <pthread.h>
 
 /**
- * \defgroup Messages      Messages and Logging
- * \defgroup Errors        Error Reporting
- * \defgroup SharedObjects Shared Objects
- * \defgroup SharedArrays  Shared Multi-Dimensional Arrays.
- * \defgroup Buffers       Input/Output Buffers.
- * \defgroup Utilities     Low-Level and Utility Functions
+ * @defgroup Messages             Messages and logging
+ * @defgroup Errors               Error reporting
+ * @defgroup SharedObjects        Shared objects
+ * @defgroup   BasicSharedObjects Basic shared objects
+ * @defgroup   SharedArrays       Shared multi-dimensional arrays
+ * @defgroup Buffers              Input/output buffers.
+ * @defgroup Utilities            Utility functions
+ * @defgroup   DynamicMemory      Dynamic memory
+ * @defgroup   Locks              Locks
+ * @defgroup   Time               Date and time
  */
 
 #ifdef __cplusplus
@@ -40,7 +44,7 @@ _TAO_BEGIN_DECLS
 /*---------------------------------------------------------------------------*/
 
 /**
- * \addtogroup Messages
+ * @addtogroup Messages
  * @{
  */
 
@@ -98,7 +102,7 @@ extern void tao_set_message_level(tao_message_type_t level);
 /*---------------------------------------------------------------------------*/
 
 /**
- * \addtogroup Errors
+ * @addtogroup Errors
  *
  * Management of errors.
  *
@@ -307,7 +311,7 @@ tao_get_error_name(int code);
 /*---------------------------------------------------------------------------*/
 
 /**
- * \addtogroup Buffers
+ * @addtogroup Buffers
  *
  * Input/Output Buffers.
  *
@@ -623,10 +627,20 @@ tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
 /*---------------------------------------------------------------------------*/
 
 /**
- * \addtogroup Utilities
+ * @addtogroup Utilities
  *
- * Utilities functions to wrap system calls so as to report
- * errors in the TAO way.
+ * Low-level and utilities functions.
+ *
+ * @{
+ */
+
+/**
+ * @addtogroup DynamicMemory
+ *
+ * Management of dynamic memory.
+ *
+ * These functions are provided to report errors like other fucntions in AO
+ * library.
  *
  * @{
  */
@@ -678,8 +692,10 @@ tao_calloc(tao_error_t** errs, size_t nelem, size_t elsize);
 extern void
 tao_free(void* ptr);
 
+/** @} */
+
 /**
- * \addtogroup Time
+ * @addtogroup Time
  *
  * Measurement of time and time intervals.
  *
@@ -740,6 +756,11 @@ tao_get_current_time(tao_error_t** errs, tao_time_t* dest);
  *
  * This function adds 2 times.
  *
+ * @warning This function is meant to be fast.  It makes no checking about the
+ * validity of the arguments nor integer oveflows.  Normally the destination
+ * time is such that the number of nanoseconds is nonnegative and strictly less
+ * than 1,000,000,000.
+ *
  * @param dest   Address to store the result.
  * @param a      Address of first time value.
  * @param b      Address of second time value.
@@ -751,6 +772,11 @@ tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
  * Subtract times.
  *
  * This function subtracts 2 times.
+ *
+ * @warning This function is meant to be fast.  It makes no checking about the
+ * validity of the arguments nor integer oveflows.  Normally the destination
+ * time is such that the number of nanoseconds is nonnegative and strictly less
+ * than 1,000,000,000.
  *
  * @param dest   Address to store the result.
  * @param a      Address of first time value.
@@ -780,7 +806,7 @@ tao_time_to_seconds(const tao_time_t* t);
  * assumed.  If @p secs is a NaN (Not a Number), 0 seconds and -1 nanoseconds
  * are assumed.  Otherwise, the number of seconds stored in @p dest is strictly
  * greater than `INT64_MIN` and strictly less than `INT64_MAX` while the number
- * of nanoseconds is greater of equal 0 and strictly less than 1,000,000,000.
+ * of nanoseconds is greater or equal 0 and strictly less than 1,000,000,000.
  * It is therefore always possible guess from the stored time whether @p secs
  * was representable as a time structure with nanosecond precision.
  */
@@ -788,6 +814,14 @@ extern void
 tao_seconds_to_time(tao_time_t* dest, double secs);
 
 /** @} */
+
+/**
+ * @addtogroup Locks
+ *
+ * Mutexes, conditions variables and semaphores.
+ *
+ * @{
+ */
 
 /**
  * Initialize a non-static mutex.
@@ -850,12 +884,22 @@ extern int tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
 
 /** @} */
 
+/** @} */
+
 /*---------------------------------------------------------------------------*/
 
 /**
- * \addtogroup SharedObjects
+ * @addtogroup SharedObjects
  *
- * Generic objects whose contents is shared between processes.
+ * Objects whose contents is shared between processes.
+ *
+ * @{
+ */
+
+/**
+ * @addtogroup BasicSharedObjects
+ *
+ * Basic building block for shared objects.
  *
  * @{
  */
@@ -1102,7 +1146,7 @@ tao_unlock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
 /*---------------------------------------------------------------------------*/
 
 /**
- * \addtogroup SharedArrays
+ * @addtogroup SharedArrays
  *
  * Multi-dimensional arrays whose contents is shared between processes.
  *
@@ -1540,6 +1584,8 @@ tao_try_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
  */
 extern int
 tao_unlock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
+
+/** @} */
 
 /** @} */
 
