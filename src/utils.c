@@ -13,6 +13,7 @@
 
 #include <math.h>
 #include <time.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/time.h>
 
@@ -47,6 +48,15 @@ tao_free(void* ptr)
     if (ptr != NULL) {
         free(ptr);
     }
+}
+
+/*---------------------------------------------------------------------------*/
+/* STRINGS */
+
+size_t
+tao_strlen(const char* str)
+{
+    return (str == NULL ? 0 : strlen(str));
 }
 
 /*---------------------------------------------------------------------------*/

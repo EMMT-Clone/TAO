@@ -636,6 +636,20 @@ tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
  */
 
 /**
+ * Get the length of a string.
+ *
+ * This function behaves as strlen() except that a `NULL` argument yield 0.
+ *
+ * @param str   String.
+ *
+ * @return The length of the string; 0 if @p str is `NULL`.
+ *
+ * @see strlen.
+ */
+extern size_t
+tao_strlen(const char* str);
+
+/**
  * @addtogroup DynamicMemory
  *
  * Management of dynamic memory.
