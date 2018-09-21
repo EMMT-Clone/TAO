@@ -45,6 +45,7 @@ _TAO_BEGIN_DECLS
 
 /**
  * @addtogroup Messages
+ *
  * @{
  */
 
@@ -344,8 +345,8 @@ typedef struct tao_buffer {
  *
  * Use this function to initialize a static i/o buffer structure.  When no
  * longer needed, the internal ressources which may have been allocated must be
- * released by calling tao_destroy_buffer().  The structure itself is assumed
- * static and will not be freed by tao_destroy_buffer() which will reset its
+ * released by calling tao_finalize_buffer().  The structure itself is assumed
+ * static and will not be freed by tao_finalize_buffer() which will reset its
  * contents as if just initialized instead.
  *
  * @param buf   Address of a static i/o buffer structure.
@@ -359,8 +360,8 @@ tao_initialize_static_buffer(tao_buffer_t* buf);
  * This function creates a new i/o buffer.  Both the container (the buffer
  * structure) and the contents (the data stored by the buffer) will be
  * dynamically allocated.  When no longer needed, the caller is responsible of
- * calling tao_destroy_buffer() to release all the ressources allocated for the
- * buffer (that is, the container and the contents).
+ * calling tao_finalize_buffer() to release all the ressources allocated for
+ * the buffer (that is, the container and the contents).
  *
  * @param errs   Address of a variable to track errors.
  * @param size   Initial number of bytes of the buffer (actual number of
@@ -385,7 +386,7 @@ tao_create_buffer(tao_error_t** errs, size_t size);
  * @param buf    Address of the i/o buffer to destroy (can be `NULL`).
  */
 extern void
-tao_destroy_buffer(tao_buffer_t* buf);
+tao_finalize_buffer(tao_buffer_t* buf);
 
 /**
  * Resize an i/o buffer.

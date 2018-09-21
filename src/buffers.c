@@ -91,7 +91,7 @@ tao_create_buffer(tao_error_t** errs, size_t size)
 }
 
 void
-tao_destroy_buffer(tao_buffer_t* buf)
+tao_finalize_buffer(tao_buffer_t* buf)
 {
     if (buf != NULL) {
         void* data = buf->data;
