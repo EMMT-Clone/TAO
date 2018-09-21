@@ -37,7 +37,7 @@ struct tao_error {
 static void
 report_error(const char* prefix, const char* func, int code)
 {
-    fprintf(stderr, "%s %s in function `%s` [%s]", prefix,
+    fprintf(stderr, "%s %s in function `%s` [%s]\n", prefix,
             tao_get_error_reason(code), func, tao_get_error_name(code));
 }
 
@@ -605,20 +605,27 @@ FUNC(int code)
 #ifdef EXFULL
         CASE(EXFULL, "Message tables full");
 #endif
-    default:
+    }
+    if (code > 0) {
+        /* Unknown system error. */
 #if GET_ERR_FUNC == 1
 #    if defined(USE_STRERROR) && (USE_STRERROR != 0)
-    {
         static int init = 0;
         if (! init) {
             (void)setlocale(LC_ALL, "C");
             init = 1;
         }
 	return strerror(code);
-    }
 #    else
         return "Unknown system error";
 #    endif
+#else
+        return "UNKNOWN_SYSTEM_ERROR";
+#endif
+    } else {
+        /* Unknown error in TAO library. */
+#if GET_ERR_FUNC == 1
+        return "Unknown error";
 #else
         return "UNKNOWN_ERROR";
 #endif
