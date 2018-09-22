@@ -162,19 +162,26 @@ const char*
 FUNC(int code)
 {
     switch (code) {
+
+        CASE(TAO_UNCLOSED_STRING, "Unclosed string");
+        CASE(TAO_SYSTEM_ERROR, "Unknown system error");
+        CASE(TAO_OUT_OF_RANGE, "Out of range argument");
+        CASE(TAO_MISSING_SEPARATOR, "Separator missing");
+        CASE(TAO_DESTROYED, "Ressource has been destroyed");
+        CASE(TAO_CORRUPTED, "Corrupted structure");
         CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory for tracking error");
+        CASE(TAO_BAD_TYPE, "Invalid type");
+        CASE(TAO_BAD_SIZE, "Invalid size");
+        CASE(TAO_BAD_SERIAL, "Invalid serial number");
+        CASE(TAO_BAD_RANK, "Invalid number of dimensions");
+        CASE(TAO_BAD_MAGIC, "Invalid magic number");
+        CASE(TAO_BAD_ESCAPE, "Unknown escape sequence");
+        CASE(TAO_BAD_CHARACTER, "Illegal character");
+        CASE(TAO_BAD_ARGUMENT, "Invalid argument");
+        CASE(TAO_BAD_ADDRESS, "Invalid address");
         CASE(TAO_ASSERTION_FAILED, "Assertion failed");
-        CASE(TAO_SYSTEM_ERROR,     "Unknown system error");
-        CASE(TAO_DESTROYED,        "Ressource has been destroyed");
-        CASE(TAO_CORRUPTED,        "Corrupted structure");
-        CASE(TAO_OUT_OF_RANGE,     "Out of range argument");
-        CASE(TAO_BAD_ADDRESS,      "Invalid address");
-        CASE(TAO_BAD_RANK,         "Invalid number of dimensions");
-        CASE(TAO_BAD_TYPE,         "Invalid type");
-        CASE(TAO_BAD_SIZE,         "Invalid size");
-        CASE(TAO_BAD_SERIAL,       "Invalid serial number");
-        CASE(TAO_BAD_MAGIC,        "Invalid magic number");
-        CASE(TAO_SUCCESS,          "Operation was successful");
+        CASE(TAO_SUCCESS, "Operation was successful");
+
 #ifdef EPERM
         CASE(EPERM, "Operation not permitted");
 #endif

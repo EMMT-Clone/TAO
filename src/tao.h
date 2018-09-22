@@ -26,6 +26,7 @@
  * @defgroup   SharedArrays       Shared multi-dimensional arrays
  * @defgroup Buffers              Input/output buffers.
  * @defgroup Utilities            Utility functions
+ * @defgroup   Commands           Parsing of commands
  * @defgroup   DynamicMemory      Dynamic memory
  * @defgroup   Locks              Locks
  * @defgroup   Time               Date and time
@@ -165,19 +166,24 @@ typedef struct tao_error tao_error_t;
  * indicate a successful operation.
  */
 typedef enum tao_error_code {
-    TAO_SUCCESS          =   0, /**< Operation was successful */
-    TAO_BAD_MAGIC        =  -1, /**< Invalid magic number */
-    TAO_BAD_SERIAL       =  -2, /**< Invalid serial number */
-    TAO_BAD_SIZE         =  -3, /**< Invalid size */
-    TAO_BAD_TYPE         =  -4, /**< Invalid type */
-    TAO_BAD_RANK         =  -5, /**< Invalid number of dimensions */
-    TAO_BAD_ADDRESS      =  -6, /**< Invalid address */
-    TAO_OUT_OF_RANGE     =  -7, /**< Out of range argument */
-    TAO_CORRUPTED        =  -8, /**< Corrupted structure */
-    TAO_DESTROYED        =  -9, /**< Ressource has been destroyed */
-    TAO_SYSTEM_ERROR     = -10, /**< Unknown system error */
-    TAO_ASSERTION_FAILED = -11, /**< Assertion failed */
-    TAO_CANT_TRACK_ERROR = -12  /**< Insufficient memory for tracking error */
+    TAO_SUCCESS           =   0, /**< Operation was successful */
+    TAO_ASSERTION_FAILED  =  -1, /**< Assertion failed */
+    TAO_BAD_ADDRESS       =  -2, /**< Invalid address */
+    TAO_BAD_ARGUMENT      =  -3, /**< Invalid argument */
+    TAO_BAD_CHARACTER     =  -4, /**< Illegal character */
+    TAO_BAD_ESCAPE        =  -5, /**< Unknown escape sequence */
+    TAO_BAD_MAGIC         =  -6, /**< Invalid magic number */
+    TAO_BAD_RANK          =  -7, /**< Invalid number of dimensions */
+    TAO_BAD_SERIAL        =  -8, /**< Invalid serial number */
+    TAO_BAD_SIZE          =  -9, /**< Invalid size */
+    TAO_BAD_TYPE          = -10, /**< Invalid type */
+    TAO_CANT_TRACK_ERROR  = -11, /**< Insufficient memory for tracking error */
+    TAO_CORRUPTED         = -12, /**< Corrupted structure */
+    TAO_DESTROYED         = -13, /**< Ressource has been destroyed */
+    TAO_MISSING_SEPARATOR = -14, /**< Separator missing */
+    TAO_OUT_OF_RANGE      = -15, /**< Out of range argument */
+    TAO_SYSTEM_ERROR      = -16, /**< Unknown system error */
+    TAO_UNCLOSED_STRING   = -17, /**< Unclosed string */
 } tao_error_code_t;
 
 /**
@@ -648,6 +654,152 @@ tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
  */
 extern size_t
 tao_strlen(const char* str);
+
+/**
+ * @addtogroup Commands
+ *
+ * Parsing of commands.
+ *
+ * These functions are provided to split lines of commands into arguments and
+ * conversely to pack arguments into a command-line.
+ *
+ * Just like the `argv` array in C `main` function, a command is a list of
+ * "words" which are ordinary C-strings.  All characters are allowed in a word
+ * except the null character `\0` as it serves as a marker of the end of the
+ * string.
+ *
+ * In order to communicate, processes may exchange commands packed into a
+ * single string and sent through communication channels.  In order to allow
+ * for sendind/receiving several successive commands and for coping with
+ * partially transmitted commands, their size must be part of the sent data or
+ * they must be terminated by some given marker.  In order to make things
+ * simple, it has been chosen that successive commands be separated by a single
+ * line-feed character (`'\n'`, ASCII code '0x0A').  This also simplify the
+ * writing of commands into scripts.
+ *
+ * String commands have to be parsed into words before being used.  Since any
+ * character (but the null) is allowed in such words there must be means to
+ * separate words in command strings and to allow for having a line-feed
+ * character in a word (not a true one because it is used to indicate end of
+ * the command string).
+ *
+ * The following rules are applied to parse a command string into words:
+ *
+ * 1- An end-of-line (EOL) sequence at the end of the command string is allowed
+ *    and ignored.  To cope with different styles, an EOL can be any of the
+ *    following sequences: a single carriage-return (CR) character, a single
+ *    line-feed (LF) character or a sequence of the two charaters CR-LF.
+ *
+ * 2- Leading and trailing spaces in a command string are ignored (trailing
+ *    spaces may occur before the EOL sequence if any but not after).  Space
+ *    charaters are ordinary spaces `' `' or tabulations `'\t'`.
+ *
+ * 3- Words are separated by one or more space characters.  A word is either a
+ *    sequence of contiguous ordinary characters (non-space, non-quote,
+ *    non-escape, non-forbidden) or a quoted string (see next).
+ *
+ * 6- Strings start with a quoting character (either a single or a double
+ *    quote) and end with the same quoting character.  The opening and closing
+ *    quotes are not part of the resulting word.  There must be at least one
+ *    space character after (respectively before) the openning (respectively
+ *    closing) quote if the string is not the first (respectively last) word of
+ *    the sequence.  That is, quotes cannot be part of non-quoted words and are
+ *    therefore not considered as ordinary characters.  There are 2 forms of
+ *    quoted strings: strings enclosed in single quotes are extracted literaly
+ *    (there may be double quotes inside but no single quotes and the escape
+ *    character is considered as an ordinary character in literal strings) and
+ *    strings enclosed in double quotes which may contain escape sequence to
+ *    represent some special characters.  The following escape sequences are
+ *    allowed and recognized in double quoted strings (any other occurences of
+ *    the escape character is considered as an error):
+ *
+ *   - `\t` yields an horizontal tabulation character;
+ *   - `\n` yields a line-feed character;
+ *   - `\r` yields a carriage-return character;
+ *   - `\"` yields a double-quote character;
+ *   - `\\` yields a backslash character.
+ *
+ * Thus quoted strings can have embedded spaces.  To have a zero-length word, a
+ * quoted string must be used.
+ *
+ * The following errors may occur:
+ *
+ *  - Illegal characters: Anywhere but at the end of the command string, CR and
+ *    LF characters are considered as an error.  This is because LF are used to
+ *    separate successive commands in communication channels.  The null
+ *    character must not appear in the command string (as it serves as end of
+ *    string marker).
+ *
+ *  - Successive quoted strings not separated by a space.  Quotes appearing in
+ *    a non-quoted word.  Unclosed quoted strings.  Unterminated escape
+ *    sequences.
+ *
+ * @{
+ */
+
+/**
+ * Split command in individual words.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param list   Address of a variable to store the list.  The list and its
+ *               constitutive words are stored in a single block of memory.
+ * @param cmd    Command line string to split.
+ * @param len    Optional length of @p cmd.  If @p len is nonnegative, it is
+ *               assumed to give the number of characters of the command line
+ *               (which must not then be null-terminated).  Otherwise, @p len
+ *               may be equal to `-1` and the command line must be
+ *               null-terminated.
+ *
+ * The caller is responsible of properly initializing the list pointer to
+ * `NULL` and calling free() when the list is no longer needed.  The list
+ * argument can be re-used several times to parse different command lines.
+ *
+ * @fixme What are the advantages of this kind of allocation?  This is only
+ * useful if we can avoid reallocating such lists.  There is no portable way to
+ * query the size of a malloc'ed block of memory given its address.  The only
+ * possibility is to make a hack an allocate more bytes to store the size
+ * (however beware of alignment).  On my laptop, malloc() and free() of blocks
+ * or random sizes (between 1 and 10,000 bytes) takes less than 100ns on
+ * average.
+ *
+ * @return The number of words in the list; `-1` in case of errors.
+ */
+extern int
+tao_split_command(tao_error_t** errs, const char*** list,
+                  const char* cmd, ssize_t given_length);
+/**
+ * Pack words into a command-line.
+ *
+ * This function assembles given words into a single command-line.  This
+ * function does the opposite of tao_unpack_words().
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param dest   Address of an i/o buffer to store the result.  The resulting
+ *               command-line is appended to any existing contents of @p dest.
+ * @param argv   List of words.  The elements of the list must be non-null
+ *               pointers to ordinary C-strings terminated by a null character.
+ *               If @p argc is equal to `-1`, the list must have one more
+ *               pointer then the number of words, this last pointer being set
+ *               to `NULL` to mark the end of the list.
+ * @param argc   Optional number of words in @p argv.  If @p argc is
+ *               nonnegative, it is assumed to give the number of words in the
+ *               list.  Otherwise, @p argc can be equal to `-1` to indicate
+ *               that the first null-pointer in @p argv marks the end of the
+ *               list.
+ *
+ * @return `0` on success; `-1` on failure.
+ *
+ * @note In case of failure, the contents of @p dest existing prior to the call
+ * is untouched but its location may have change.
+ *
+ * @see tao_unpack_words.
+ */
+extern int
+tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
+               const char* argv[], int argc);
+
+
+/** @} */
 
 /**
  * @addtogroup DynamicMemory

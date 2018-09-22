@@ -22,6 +22,14 @@
 #include "tao.h"
 #include "config.h"
 
+#define TAO_ASSERT(expr, code)                                          \
+    do {                                                                \
+        if (!(expr)) {                                                  \
+            tao_push_error(errs, __func__, TAO_ASSERTION_FAILED);       \
+            return code;                                                \
+        }                                                               \
+    } while (0)
+
 /**
  * Check whether any errors occured.
  *
