@@ -1,11 +1,11 @@
 #
 # sharedobjects.jl --
 #
-# Management of shared objects for Julia interface to TAO.
+# Management of shared objects for Julia interface to the TAO C-library.
 #
 #-------------------------------------------------------------------------------
 #
-# This file if part of the TAO library (https://github.com/emmt/TAO) licensed
+# This file if part of the TAO software (https://github.com/emmt/TAO) licensed
 # under the MIT license.
 #
 # Copyright (C) 2018, Éric Thiébaut.
@@ -19,11 +19,6 @@ function _fix_shared_object_type(type::Cint) :: Cint
     return (0 ≤ type ≤ 255 ? (SHARED_MAGIC | type) : type)
 end
 
-"""
-
-`attach(T, ident, type=TAO.SHARED_ANY)`
-
-"""
 function attach(::Type{SharedObject}, ident::Integer,
                 type::Integer = SHARED_ANY)
     # Attach the shared object to the address space of the caller, then wrap it
@@ -51,6 +46,7 @@ function detach(obj::AnySharedObject)
         obj.ptr = C_NULL # to avoid detaching more than once
         _check(_detach(ptr))
     end
+    return nothing
 end
 
 # This method assumes that the given pointer is correct and that the caller

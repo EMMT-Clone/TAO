@@ -1,11 +1,12 @@
 #
 # sharedarrays.jl --
 #
-# Management of shared multi-dimensional arrays for Julia interface to TAO.
+# Management of shared multi-dimensional arrays for Julia interface to TAO
+# C-library.
 #
 #-------------------------------------------------------------------------------
 #
-# This file if part of the TAO library (https://github.com/emmt/TAO) licensed
+# This file if part of the TAO software (https://github.com/emmt/TAO) licensed
 # under the MIT license.
 #
 # Copyright (C) 2018, Éric Thiébaut.

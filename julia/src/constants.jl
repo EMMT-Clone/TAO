@@ -1,19 +1,16 @@
 #
 # constants.jl --
 #
-# Definitions of constants for Julia interface to TAO.
+# Definitions of constants for Julia interface to TAO C-library.  These
+# constants can be defined even though the library is not yet loaded.
 #
 #-------------------------------------------------------------------------------
 #
-# This file if part of the TAO library (https://github.com/emmt/TAO) licensed
+# This file if part of the TAO software (https://github.com/emmt/TAO) licensed
 # under the MIT license.
 #
 # Copyright (C) 2018, Éric Thiébaut.
 #
-
-# Constant `taolib` is defined in another file which is built at installation
-# time.
-include("../deps/deps.jl")
 
 """
 
