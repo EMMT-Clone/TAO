@@ -28,5 +28,7 @@ include("constants.jl")
 include("types.jl")
 include("clib.jl")
 include("utils.jl")
+include("images.jl")
+using .Images
 
 end # module
