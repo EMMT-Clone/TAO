@@ -11,6 +11,8 @@
 # Copyright (C) 2018, Éric Thiébaut.
 #
 
+isdefined(Base, :__precompile__) && __precompile__(true)
+
 module TAO
 
 import Base: detach, lock, trylock, unlock
@@ -29,6 +31,7 @@ include("types.jl")
 include("clib.jl")
 include("utils.jl")
 include("weighted.jl")
+include("detector.jl")
 include("images.jl")
 using .Images
 
