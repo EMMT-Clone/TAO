@@ -39,8 +39,8 @@ to specify the type of the elements of the result.  The filter `f` can be:
   ```
 
 * The coefficients of a 3×3 kernel specified as a 3×3 tuple (whose elements
-  have the same type) or a 3×3 array function.  The coefficients of the
-  kernel are used as:
+  have the same type) or a 3×3 array.  The coefficients of the kernel are used
+  as:
 
   ```julia
   B[x,y] = ((f[1,1]*A[x-1,y-1] + f[2,1]*A[x,y-1] + f[3,1]*A[x+1,y-1]) +
@@ -169,12 +169,14 @@ yields the spatial gradients of image `img` approximated by Sobel's filter.
 The result is a 2-by-`size(img)` array such that:
 
 ```julia
-grd(1,..,) = ∂img/∂x
-grd(2,..,) = ∂img/∂y
+grd[1,...] = ∂img/∂x
+grd[2,...] = ∂img/∂y
 ```
 
 where `x` and `y` are assumed to be the coordinates along the 1st and 2nd
 dimensions of the image.
+
+See also: [`boxfilter`](@ref).
 
 """
 sobel(A::AbstractMatrix{T}) where {T<:Real} =
@@ -184,7 +186,6 @@ sobel(::Type{R}, A::AbstractMatrix{T}) where {R,T} =
     sobel!(Array{R}(undef, 2, size(A)...), A)
 
 function sobel!(dst::AbstractArray{R,3}, A::AbstractMatrix{T}) where {R,T}
-    # This version achieves ~ 2.64 Gflops on my laptop for Float32 elements.
     dims = size(dst)
     dims[1] == 2 || throw(DimensionMismatch("leading dimension of gradient must be 2"))
     dims[2:3] == size(A) || throw(DimensionMismatch("trailing dimensions of gradient must match image dimensions"))
