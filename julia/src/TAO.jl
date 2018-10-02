@@ -32,6 +32,7 @@ include("clib.jl")
 include("utils.jl")
 include("weighted.jl")
 include("detector.jl")
+include("kolmogorov.jl")
 include("images.jl")
 using .Images
 
