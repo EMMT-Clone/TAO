@@ -16,7 +16,9 @@ module Images
 
 export
     boxfilter,
-    boxfilter!
+    boxfilter!,
+    sobel,
+    sobel!
 
 """
 
@@ -155,6 +157,62 @@ function _repack_box_kernel(ker::AbstractMatrix{K}) where {K}
     return ((ker[1,1], ker[2,1], ker[3,1]),
             (ker[1,2], ker[2,2], ker[3,2]),
             (ker[1,3], ker[2,3], ker[3,3]))
+end
+
+"""
+
+```julia
+sobel(img) -> grd
+```
+
+yields the spatial gradients of image `img` approximated by Sobel's filter.
+The result is a 2-by-`size(img)` array such that:
+
+```julia
+grd(1,..,) = ∂img/∂x
+grd(2,..,) = ∂img/∂y
+```
+
+where `x` and `y` are assumed to be the coordinates along the 1st and 2nd
+dimensions of the image.
+
+"""
+sobel(A::AbstractMatrix{T}) where {T<:Real} =
+    sobel(float(T), A)
+
+sobel(::Type{R}, A::AbstractMatrix{T}) where {R,T} =
+    sobel!(Array{R}(undef, 2, size(A)...), A)
+
+function sobel!(dst::AbstractArray{R,3}, A::AbstractMatrix{T}) where {R,T}
+    # This version achieves ~ 2.64 Gflops on my laptop for Float32 elements.
+    dims = size(dst)
+    dims[1] == 2 || throw(DimensionMismatch("leading dimension of gradient must be 2"))
+    dims[2:3] == size(A) || throw(DimensionMismatch("trailing dimensions of gradient must match image dimensions"))
+    width, height = size(A)
+    if height ≥ 1 && width ≥ 1
+        q = R(1)/R(8)
+        local a7::R, a8::R, a9::R
+        local a4::R, a5::R, a6::R
+        local a1::R, a2::R, a3::R
+        @inbounds for y in 1:height
+            ym1 = max(y - 1, 1)
+            yp1 = min(y + 1, height)
+            a2 = a3 = A[1, ym1]
+            a5 = a6 = A[1, y  ]
+            a8 = a9 = A[1, yp1]
+            @simd for x in 1:width
+                xp1 = min(x + 1, width)
+                a1, a2, a3 = a2, a3, A[xp1, ym1]
+                a4, a5, a6 = a5, a6, A[xp1, y  ]
+                a7, a8, a9 = a8, a9, A[xp1, yp1]
+                dst[1,x,y] = q*((a3 + 2*a6 + a9) -
+                                (a1 + 2*a4 + a7))
+                dst[2,x,y] = q*((a7 + 2*a8 + a9) -
+                                (a1 + 2*a2 + a3))
+            end
+        end
+    end
+    return dst
 end
 
 end # module
