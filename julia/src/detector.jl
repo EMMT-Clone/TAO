@@ -148,7 +148,7 @@ function calibrate(md::DenseArray{T,N},
 
         # u = gain/a
         if a[i] > 0 && gain[i] > 0
-            u[i] = a[i]/gain[i]
+            u[i] = gain[i]/a[i]
         else
             u[i] = 0
         end
