@@ -64,3 +64,29 @@ struct TimeStamp
     sec::Int64
     nsec::Int64
 end
+
+"""
+
+```julia
+WeightedArray(wgt, dat, verify=false)
+```
+
+yields and instance of `WeightedArray` which stores an array of data `dat` with
+corresponding weights `wgt`.  The conventions are that all weights and data
+have finite values (to avoid numerical issues in computations) and that weights
+are nonnegative (a weight of zero indicates an invalid data value).  If
+optional argument `verify` is set true, theses assumptions are verified.
+
+"""
+struct WeightedArray{T<:AbstractFloat,N,W<:DenseArray{T,N},D<:DenseArray{T,N}}
+    wgt::W
+    dat::D
+    # This unique inner constructor is to make sure that the two arrays have
+    # the same indices.  There is however no way to prevent resizing the arrays
+    # if they are vectors.
+    function WeightedArray{T,N,W,D}(wgt::W, dat::D) where {
+        W<:DenseArray{T,N},D<:DenseArray{T,N}} where {T<:AbstractFloat,N}
+        axes(wgt) == axes(dat) || throw(DimensionMismatch("weights and data must have the same indices"))
+        return new{T,N,W,D}(wgt, dat)
+    end
+end
