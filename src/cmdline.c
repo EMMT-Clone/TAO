@@ -27,15 +27,12 @@
 
 int
 tao_split_command(tao_error_t** errs, const char*** list,
-                  const char* cmd, ssize_t given_length)
+                  const char* cmd, long length)
 {
     /* Get the length of the command line if not specified by the caller. */
-    size_t length;
-    if (given_length >= 0) {
-        length = (size_t)given_length;
-    } else if (given_length == -1) {
+    if (length == -1) {
         length = tao_strlen(cmd);
-    } else {
+    } else if (length < 0) {
         tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
         return FAILURE;
     }
@@ -44,9 +41,9 @@ tao_split_command(tao_error_t** errs, const char*** list,
      * As we will allocate enough memory for the worst possible case, we want
      * to trim any leading and trailing characters that can be ignored.
      * Because we also want to accommodate for various end of line styles, we
-     * first trim a single trailing line-feed (LF) character or a trailing
-     * carriage-return (CR) or a trailing CR-LF sequence of 2 characters.  Then
-     * we trim leading and trailing spaces.
+     * first trim a single trailing line-feed (LF) character, or a trailing
+     * carriage-return (CR), or a trailing CR-LF sequence of 2 characters.
+     * Then we trim leading and trailing spaces.
      */
     if (length >= 2 && cmd[length-2] == '\r' && cmd[length-1] == '\n') {
         length -= 2;
@@ -56,7 +53,7 @@ tao_split_command(tao_error_t** errs, const char*** list,
     }
     if (length > 0) {
         /* Trim leading and trailing spaces. */
-        size_t first = 0, last = length - 1;
+        long first = 0, last = length - 1;
         while (first <= last) {
             int c = cmd[first];
             if (IS_SPACE(c)) {
@@ -85,10 +82,10 @@ tao_split_command(tao_error_t** errs, const char*** list,
      * amount, we must add the memory needed to store an array of pointers to
      * each words plus a final NULL pointer.
      */
-    size_t maxwords = (length + 1)/2; /* the maximum number of words */
-    size_t arrsize = sizeof(void*)*(maxwords + 1); /* the maximum size of the
+    long maxwords = (length + 1)/2; /* the maximum number of words */
+    long arrsize = sizeof(void*)*(maxwords + 1); /* the maximum size of the
                                                     * array of pointers */
-    size_t fullsize = arrsize + length + 1; /* the size to allocate */
+    long fullsize = arrsize + length + 1; /* the size to allocate */
 
     /*
      * Free the list if non-NULL, then allocate enough memory.
@@ -111,9 +108,9 @@ tao_split_command(tao_error_t** errs, const char*** list,
     char* word = (char*)ptr + arrsize;
 
     /* Parse the command line into words. */
-    size_t iarg = 0;
+    int iarg = 0;
     int sep = TRUE; /* a separator is not needed for the first word */
-    for (size_t i = 0; i < length; ++i) {
+    for (long i = 0; i < length; ++i) {
         /* Get next first non-space character. */
         int c = cmd[i];
         if (IS_SPACE(c)) {
@@ -139,7 +136,7 @@ tao_split_command(tao_error_t** errs, const char*** list,
         sep = FALSE;
 
         /* Parse next word. */
-        size_t j = 0; /* word index */
+        long j = 0; /* word index */
         if (c == '\'') {
             /* Singly quoted string. */
             while (TRUE) {
@@ -249,7 +246,7 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
      * successful termination of the function.  The following variable is used
      * to keep track of the size of the new contents.
      */
-    size_t off = 0;
+    long off = 0;
 
     /*
      * The following variables are used to keep track of the position and size
@@ -258,7 +255,7 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
      * time we need to resize the unused part.
      */
     char* buf;
-    size_t avail = tao_get_buffer_unused_part(dest, (void**)&buf);
+    long avail = tao_get_buffer_unused_part(dest, (void**)&buf);
 
     /*
      * Encode all words of the list.
@@ -279,7 +276,7 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
          * even though we may accept to decode more.
          */
         int quote = 0;
-        size_t len = 0, esc = 0;
+        long len = 0, esc = 0;
         while (TRUE) {
             int c = word[len];
             if (c == '\0') {
@@ -313,7 +310,7 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
          * Make sure there is enough space to store the new word in the buffer
          * after its contents.
          */
-        size_t minsize = off + len + 1;
+        long minsize = off + len + 1;
         if (len == 0 || quote == 1) {
             /* Add the characters needed for the surrounding quotes. */
             minsize += 2;
@@ -347,14 +344,14 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
             buf[off++] = '\'';
         } else if (quote == 0) {
             /* No quotes needed. */
-            for (size_t i = 0; i < len; ++i) {
+            for (long i = 0; i < len; ++i) {
                 buf[off + i] = word[i];
             }
             off += len;
         } else if (quote == 1) {
             /* Singly quoted string. */
             buf[off++] = '\'';
-            for (size_t i = 0; i < len; ++i) {
+            for (long i = 0; i < len; ++i) {
                 buf[off + i] = word[i];
             }
             off += len;
@@ -362,7 +359,7 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
         } else {
             /* Doubly quoted string.  */
             buf[off++] = '"';
-            for (size_t i = 0; i < len; ++i) {
+            for (long i = 0; i < len; ++i) {
                 int c = word[i];
                 if (c == '"' || c == '\\') {
                     buf[off++] = '\\';

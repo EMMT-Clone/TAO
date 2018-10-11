@@ -1,7 +1,8 @@
 # Specific files #
 ##################
-ywrap.c
 build/
+temp/
+work/
 
 # Automatic backups #
 #####################

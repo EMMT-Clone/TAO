@@ -766,7 +766,7 @@ tao_strlen(const char* str);
  */
 extern int
 tao_split_command(tao_error_t** errs, const char*** list,
-                  const char* cmd, ssize_t given_length);
+                  const char* cmd, long len);
 /**
  * Pack words into a command-line.
  *
