@@ -57,28 +57,28 @@
 /**
  * Private structure to store a shared array.
  *
- * The definition of this structure is exposed in `"tao-private.h"` but should
- * be considered as read-only.  That is, use the public API to manipulate
- * a shared array.
+ * The definition of this structure is exposed in `"tao-private.h"` but its
+ * members should be considered as read-only.  It is recommended to use the
+ * public API to manipulate a shared array.
  */
 struct tao_shared_array {
     tao_shared_object_t base;     /**< Shared object backing storage of the
-                                   *   shared array */
+                                       shared array */
     tao_element_type_t  eltype;   /**< Type of the elements of the shared
-                                   *   array */
+                                       array */
     size_t nelem;                 /**< Number of elements */
     uint32_t ndims;               /**< Number of dimensions */
     uint32_t size[TAO_MAX_NDIMS]; /**< Length of each dimension (dimensions
-                                   *   beyong `ndims` are assumed to be `1`) */
+                                       beyong `ndims` are assumed to be `1`) */
     int32_t nwriters;             /**< Number of writers */
     int32_t nreaders;             /**< Number of readers */
     int64_t counter;              /**< Counter (used for acquired images) */
     int64_t ts_sec;               /**< Time stamp (seconds part) */
     int64_t ts_nsec;              /**< Time stamp (nanoseconds part) */
     uint64_t data[1];             /**< Shared array data (actual size is large
-                                   *   enough to store all pixels, type is to
-                                   *   force correct alignment whatever the
-                                   *   actual element type) */
+                                       enough to store all pixels, type is to
+                                       force correct alignment whatever the
+                                       actual element type) */
 };
 
 #endif /* _TAO_PRIVATE_H_ */

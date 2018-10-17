@@ -1178,7 +1178,7 @@ typedef enum tao_object_type {
     TAO_SHARED_OBJECT = (TAO_SHARED_MAGIC | 0), /**< Basic shared object */
     TAO_SHARED_ARRAY  = (TAO_SHARED_MAGIC | 1), /**< Shared multi-dimensional
                                                  *   array */
-    TAO_FRAME_GRABBER = (TAO_SHARED_MAGIC | 2), /**< Frame grabber shared
+    TAO_SHARED_CAMERA = (TAO_SHARED_MAGIC | 2), /**< Frame grabber shared
                                                  *   data */
     TAO_SHARED_ANY    = 0xffffffff              /**< Any shared object */
 } tao_object_type_t;
@@ -1260,7 +1260,7 @@ typedef struct tao_shared_object {
  * call tao_detach_shared_object() to detach the object from its address space
  * and decrement its reference count by one.
  *
- * The remaining bytes after the basic object information are set to zero.
+ * The remaining bytes after the basic object information are all set to zero.
  *
  * @param errs   Address of a variable to track errors.
  * @param type   Type identifier of the object.
