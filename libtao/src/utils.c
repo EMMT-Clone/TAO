@@ -103,9 +103,11 @@ tao_get_current_time(tao_error_t** errs, tao_time_t* dest)
 #endif
 }
 
+#define KILO 1000
+#define MEGA 1000000
 #define GIGA 1000000000
 
-#define FIX_TIME(s, ns)                         \
+#define NORMALIZE_TIME(s, ns)                   \
     do {                                        \
         (s) += (ns)/GIGA;                       \
         (ns) = (ns)%GIGA;                       \
@@ -116,11 +118,21 @@ tao_get_current_time(tao_error_t** errs, tao_time_t* dest)
     } while (0)
 
 void
+tao_normalize_time(tao_time_t* ts)
+{
+    int64_t s  = ts->s;
+    int64_t ns = ts->ns;
+    NORMALIZE_TIME(s, ns);
+    ts->s = s;
+    ts->ns = ns;
+}
+
+void
 tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b)
 {
     int64_t s  = a->s  + b->s;
     int64_t ns = a->ns + b->ns;
-    FIX_TIME(s, ns);
+    NORMALIZE_TIME(s, ns);
     dest->s = s;
     dest->ns = ns;
 }
@@ -130,7 +142,7 @@ tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b)
 {
     int64_t s  = a->s  - b->s;
     int64_t ns = a->ns - b->ns;
-    FIX_TIME(s, ns);
+    NORMALIZE_TIME(s, ns);
     dest->s = s;
     dest->ns = ns;
 }

@@ -967,6 +967,17 @@ extern int
 tao_get_current_time(tao_error_t** errs, tao_time_t* dest);
 
 /**
+ * Normalize time-stamp.
+ *
+ * This function normalizes a given time-stamp so that the number of
+ * nanoseconds is nonnegative and strictly less than 1,000,000,000.
+ *
+ * @param ts     Address of time-stamp to normalize.
+ */
+extern void
+tao_normalize_time(tao_time_t* ts);
+
+/**
  * Add times.
  *
  * This function adds 2 times.
