@@ -1287,7 +1287,11 @@ tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
  * decrement its reference count by one and eventually free the shared memory
  * associated with the array.
  *
- * @warning The same process must not attach a shared object more than once.
+ * The same process may attach a shared object more than once but each
+ * attachment, due to tao_attach_shared_object() or to
+ * tao_create_shared_object(), should be matched by a
+ * tao_detach_shared_object() with the corresponding address in the caller's
+ * address space.
  *
  * @param errs   Address of a variable to track errors.
  * @param ident  Unique identifier of the shared object.
@@ -1563,8 +1567,6 @@ tao_create_3d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  * longer used by the caller, the caller must call tao_detach_shared_array() to
  * detach the array from its address space, decrement its reference count by
  * one and eventually free the shared memory associated with the array.
- *
- * @warning The same process must not attach a shared array more than once.
  *
  * @param errs   Address of a variable to track errors.
  * @param ident  Unique identifier of the shared object.
