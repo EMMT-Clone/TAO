@@ -15,6 +15,7 @@
 #define _TAO_H_ 1
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
 
@@ -1038,6 +1039,43 @@ tao_time_to_seconds(const tao_time_t* t);
  */
 extern void
 tao_seconds_to_time(tao_time_t* dest, double secs);
+
+/**
+ * Print a time-stamp in a human readable form to a string.
+ *
+ * @param str    Destination string (must have at least 32 characters
+ *               including the terminating null).
+ * @param ts     Time stamp.
+ */
+extern void
+tao_sprintf_time(char* str, const tao_time_t* ts);
+
+/**
+ * Print a time-stamp in a human readable form to a string.
+ *
+ * If the destination @a str is non-`NULL`, this function writes as much as
+ * possible of the resulting string in @a str but no more than `size` bytes and
+ * with a terminating null.  In any cases, the minimum number of bytes needed
+ * to store the complete result (including the terminating null) is returned.
+ *
+ * @param str    Destination string (nothing is written there if `NULL`).
+ * @param size   Number of bytes available in the destination string.
+ * @param ts     Time stamp.
+ *
+ * @return The number of bytes needed to store the complete formatted string
+ * (including the terminating null).
+ */
+extern size_t
+tao_snprintf_time(char* str, size_t size, const tao_time_t* ts);
+
+/**
+ * Print a time-stamp in a human readable form to a file stream.
+ *
+ * @param stream Destination stream.
+ * @param ts     Time stamp.
+ */
+extern void
+tao_fprintf_time(FILE* stream, const tao_time_t* ts);
 
 /** @} */
 

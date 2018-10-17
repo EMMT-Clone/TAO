@@ -186,3 +186,45 @@ tao_seconds_to_time(tao_time_t* dest, double secs)
         dest->ns = ns;
     }
 }
+
+void
+tao_sprintf_time(char* str, const tao_time_t* ts)
+{
+    int64_t s  = ts->s;
+    int64_t ns = ts->ns;
+    NORMALIZE_TIME(s, ns);
+    int negate = (s < 0);
+    if (negate) {
+        s = -s;
+        ns = -ns;
+        NORMALIZE_TIME(s, ns);
+    }
+    sprintf(str, "%s%ld.%09d", (negate ? "-" : ""), (long)s, (int)ns);
+}
+
+size_t
+tao_snprintf_time(char* str, size_t size, const tao_time_t* ts)
+{
+    char buf[32];
+    tao_sprintf_time(buf, ts);
+    size_t len = strlen(buf);
+    if (str != NULL && size > 0) {
+        if (len < size) {
+            strcpy(str, buf);
+        } else if (size > 1) {
+            strncpy(str, buf, size - 1);
+            str[size - 1] = '\0';
+        } else {
+            str[0] = '\0';
+        }
+    }
+    return len + 1;
+}
+
+void
+tao_fprintf_time(FILE *stream, const tao_time_t* ts)
+{
+    char buf[32];
+    tao_sprintf_time(buf, ts);
+    fputs(buf, stream);
+}
