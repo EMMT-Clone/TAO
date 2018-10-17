@@ -1853,6 +1853,332 @@ tao_unlock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
 
 /** @} */
 
+/*---------------------------------------------------------------------------*/
+/* (SHARED) CAMERAS */
+
+/**
+ * @addtogroup Cameras
+ *
+ * The management of every new frame is done in 3 steps.
+ *
+ * - First, a shared array is located or created to store the resulting data,
+ *   if possible an old frame data is recycled.
+ *
+ * - Second, the raw frame data is processed and stored in the selected shared
+ *   array.
+ *
+ * - Third, the shared array is updated (its counter is incremented) and is
+ *   marked as being readable.
+ *
+ * The first step is done by calling tao_fetch_next_frame() and the third
+ * steps is done by calling tao_publish_next_frame().  These two steps are
+ * performed while the shared camera data are locked.
+ *
+ * @{
+ */
+
+/**
+ * Shared camera data.
+ *
+ * This structure describes the shared data storing the global resources of a
+ * camera.  After querying the shared memory identifier to the server (the
+ * frame grabber), clients can attach this shared data part with
+ * tao_attach_shared_camera().  When a client no longer needs this shared
+ * data, it shall call tao_detach_shared_camera().
+ *
+ * Information in this structure should be considered as read-only by the
+ * clients and is only valid as long as the client locks this shared structure
+ * by calling tao_lock_shared_camera() and until the client unlock
+ * the structure by calling tao_lock_shared_camera().  Beware to not call
+ * tao_detach_shared_camera() while the shared data is locked.
+ */
+typedef struct tao_shared_camera {
+    tao_shared_object_t base; /**< Shared object backing storage of the
+                                   shared frame grabber */
+    int state;       /**< State of the camera: 0 if device not yet open, 1
+                          if device open but no acquisition is running, 2 if
+                          acquisition is running. */
+    int pixel_type;  /**< Pixel type. */
+    int xoff;        /**< Horizontal offset of the acquired images with respect
+                          to the left border of the detector. */
+    int yoff;        /**< Vertical offset of the acquired images with respect
+                          to the bottom border of the detector. */
+    int width;       /**< Number of pixels per line of the acquired images. */
+    int height;      /**< Number of lines of pixels in the acquired images. */
+    int fullwidth;   /**< Maximum image width for the detector. */
+    int fullheight;  /**< Maximum image height for the detector. */
+    double bias;     /**< Detector bias. */
+    double gain;     /**< Detector gain. */
+    double rate;     /**< Acquisition rate in frames per second. */
+    double exposure; /**< Exposure time in seconds. */
+    struct {
+        int32_t ident;   /**< Identifier of the shared array backing the
+                              storage of the last image, -1 means unused or
+                              invalid. */
+        int64_t counter; /**< Counter value of the last image.  It is a unique,
+                              monotically increasing number, starting at 1 (0
+                              means unused or invalid). */
+    } last_frame; /**< Information relative to the last acquired image. */
+} tao_shared_camera_t;
+
+/**
+ * Opaque camera structure for the server.
+ */
+typedef struct tao_camera tao_camera_t;
+
+/**
+ * Camera structure for the server.
+ *
+ * The server have access to the camera data that is shared with its clients
+ * plus a list of shared arrays used to store processed frame data as new
+ * frames are acquired. The size of this list is at most @a nframes and its
+ * contents is recycled if possible.
+ */
+typedef struct tao_camera {
+    tao_shared_camera_t* shared; /**< Attached shared camera data. */
+    unsigned perms;              /**< Access permissions for the shared data. */
+    int nframes;                 /**< Maximum number of memorized frames. */
+    tao_shared_array_t** frames; /**< List of shared arrays. */
+} tao_camera_t;
+
+/**
+ * Create a camera structure for a frame grabber server.
+ *
+ * The caller is responsible to eventually call tao_finalize_camera().
+ *
+ * @param errs     Address of a variable to track errors.
+ * @param nframes  Maximum number of shared arrays to memorize (at least 2).
+ * @param perms    Client access permissions for the shared data.
+ *
+ * @return The address of a camera structure; `NULL` in case of errors.
+ */
+extern tao_camera_t*
+tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms);
+
+/**
+ * Finalize a camera structure owned by a frame grabber server.
+ *
+ * @param errs     Address of a variable to track errors.
+ * @param cam      Address of the camera structure.
+ *
+ * @return `0` on success; `1` in case of errors.
+ */
+extern int
+tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam);
+
+/**
+ * Get shared array to store next camera image.
+ *
+ * This function is called by a frame grabber server when a new image is
+ * available.  Its purpose is to provide a suitable shared array to store the
+ * new pro-processed image.  If possible, an old shared array from the list
+ * owned by the server is recycled.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Address of the shared camera data.
+ *
+ * @return The address of a shared array to store the processed image;
+ * `NULL` in case of errors.
+ */
+tao_shared_array_t*
+tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam);
+
+/**
+ * Make a new image available to the clients of a frame grabber server.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Address of the camera data.
+ * @param arr    Address of the shared frame data.
+ *
+ * @return `0` on success; `1` in case of errors.
+ */
+int
+tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
+                       tao_shared_array_t* arr);
+
+/**
+ * Attach an existing shared camera to the address space of the caller.
+ *
+ * This function attaches an existing shared camera to the address space of the
+ * caller.  The caller will have a reference on the returned camera (whose
+ * reference count is therefore incremented by one).  When the camera is no
+ * longer used by the caller, the caller must call tao_detach_shared_camera()
+ * to detach the camera from its address space, decrement its reference count
+ * by one and eventually free the shared memory associated with the camera.
+ *
+ * @warning The same process must not attach a shared camera more than once.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param ident  Unique identifier of the shared object.
+ *
+ * @return The address of the shared camera in the address space of the caller;
+ * `NULL` on failure.
+ */
+extern tao_shared_camera_t*
+tao_attach_shared_camera(tao_error_t** errs, int ident);
+
+/**
+ * Detach a shared camera.
+ *
+ * Detach a shared camera referenced by the caller from the address space of
+ * the caller and decrement the reference count of the camera.
+ *
+ * @warning Detaching a shared camera does not detach shared arrays backing the
+ * storage of the images acquired by this camera.  They have to be explicitly
+ * detached.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller.
+ *
+ * @return `0` on success; `-1` on error.
+ */
+extern int
+tao_detach_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+
+/**
+ * Lock a shared camera.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller.
+ *
+ * @return `0` on success; `-1` on error.
+ *
+ * @see tao_lock_shared_object.
+ */
+extern int
+tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+
+/**
+ * Attempt to lock a shared camera.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller.
+ *
+ * @return `1` on success; `0` on failure; `-1` on error.
+ *
+ * @see tao_try_lock_shared_object.
+ */
+extern int
+tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+
+/**
+ * Unlock a shared camera.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller.
+ *
+ * @return `0` on success; `-1` on error.
+ *
+ * @see tao_unlock_shared_object.
+ */
+extern int
+tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+
+/**
+ * Attach the last acquired image to the address space of the caller.
+ *
+ * This function attaches the last image acquired by a frame grabber to the
+ * address space of the caller.  The caller will have a reference on the
+ * returned image (whose reference count is therefore incremented by one).
+ * When the image is no longer used by the caller, the caller must call
+ * tao_detach_shared_array() to detach the image from its address space,
+ * decrement its reference count by one and eventually free the shared memory
+ * associated with the image.
+ *
+ * @warning Since the last image may change (because acquisition is running),
+ * the caller must have locked the shared camera.  For efficiency reasons, this
+ * function does not perform error checking.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Address of a shared camera attached to the address space of
+ *               the caller.
+ *
+ * The following example shows how to retrieve the last image data providing
+ * the image counter has increased since previous image:
+ *
+ * ```.c
+ * tao_shared_camera_t* cam = ...;
+ * uint64_t previous_counter = ...;
+ * tao_shared_array_t* arr = NULL;
+ * tao_lock_shared_camera(NULL, cam);
+ * {
+ *     uint64_t last_counter = tao_get_last_image_counter(cam);
+ *     if (last_counter > previous_counter) {
+ *         arr = tao_attach_last_image(NULL, cam);
+ *         previous_counter = last_counter;
+ *     }
+ * }
+ * tao_unlock_shared_camera(NULL, cam);
+ * ```
+ *
+ * Note the use of braces to emphasizes the block of statements protected by
+ * the lock.  Also note that `NULL` is passed as the address of the variable to
+ * track errors so any error will be considered as fatal in this example.
+ *
+ * The same example without tao_attach_last_image():
+ *
+ * ```.c
+ * tao_shared_camera_t* cam = ...;
+ * uint64_t previous_counter = ...;
+ * tao_shared_array_t* arr = NULL;
+ * tao_lock_shared_camera(NULL, cam);
+ * {
+ *     uint64_t last_counter = tao_get_last_image_counter(cam);
+ *     if (last_counter > previous_counter) {
+ *         int ident = tao_get_last_image_ident(cam);
+ *         if (ident >= 0) {
+ *             arr = tao_attach_shared_array(NULL, ident);
+ *             previous_counter = last_counter;
+ *         }
+ *     }
+ * }
+ * tao_unlock_shared_camera(NULL, cam);
+ * ```
+ *
+ * @return The address of the shared camera in the address space of the caller;
+ * `NULL` on failure or if there is no valid last image.
+ */
+extern tao_shared_array_t*
+tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam);
+
+/**
+ * Get the counter value of the last acquired image.
+ *
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller and locked by the caller.
+ *
+ * @warning Since the last image may change (because acquisition is running),
+ * the caller must have locked the shared camera.  For efficiency reasons, this
+ * function does not perform error checking.
+ *
+ * @return The value of the counter of the last acquired image, `0` if none.
+ *
+ * @see tao_lock_shared_camera.
+ */
+extern uint64_t tao_get_last_image_counter(tao_shared_camera_t* cam);
+
+/**
+ * Get the identifier of the last acquired image.
+ *
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller and locked by the caller.
+ *
+ * @warning Since the last image may change (because acquisition is running),
+ * the caller must have locked the shared camera.  For efficiency reasons, this
+ * function does not perform error checking.
+ *
+ * @return The identifier of the last acquired image, `-1` if none.
+ *
+ * @see tao_lock_shared_camera.
+ */
+extern int tao_get_last_image_ident(tao_shared_camera_t* cam);
+
+/** @} */
+
 /** @} */
 
 _TAO_END_DECLS

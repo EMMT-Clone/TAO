@@ -13,50 +13,11 @@
 
 #include "tao-private.h"
 
-/**
- * This structure describes the shared data storing the global resources of a
- * frame grabber.
- *
- */
-typedef struct tao_shared_camera {
-    tao_shared_object_t base;     /**< Shared object backing storage of the
-                                       shared frame grabber */
-    struct {
-        int32_t ident;   /**< Identifier of the shared array backing the
-                              storage of the last image, -1 means unused or
-                              invalid. */
-        int64_t counter; /**< Counter value of the last image.  It is a unique,
-                              monotically increasing number, starting at 1 (0
-                              means unused or invalid). */
-    } last_frame;
-    unsigned int perms;
-    int state; /* 0 = device not yet open,
-                * 1 = device open, no acquisition running,
-                * 2 = acquisition running
-                */
-    int pixel_type;
-    int xoff;
-    int yoff;
-    int width;
-    int height;
+#define NEW(errs, type, number) \
+    ((type*)tao_calloc(errs, number, sizeof(type)))
 
-} tao_shared_camera_t;
-
-typedef struct tao_camera tao_camera_t;
-typedef struct tao_camera {
-    tao_shared_camera_t* shared; /**< Attached shared camera data. */
-    int nframes;                 /**< Maximum number of memorized frames. */
-    tao_shared_array_t** frames; /**< List of shared arrays. */
-} tao_camera_t;
-
-/* FIXME: The frame list must be stored somewhere, it can be in the shared
-   camera data but this is dangerous (and the addresses in this array are only
-   valid for the server who created the resources).  A possible fix is to have
-   two structures: one for the server (with its own NFRAMES), the other to be
-   shared.  This is what is drafted above but we need fucntion to manage this
-   structure. */
-#define NFRAMES 12
-static tao_shared_array_t* frame_list[NFRAMES];
+#define NEW_SHARED_OBJECT(errs, type, id, perms) \
+    ((type*)tao_create_shared_object(errs, id, sizeof(type), perms))
 
 #define ATTACH_SHARED_CAMERA(errs, ident) \
     ((tao_shared_camera_t*)tao_attach_shared_object(errs, ident, \
@@ -74,114 +35,73 @@ static tao_shared_array_t* frame_list[NFRAMES];
 #define UNLOCK_SHARED_CAMERA(errs, cam) \
     tao_unlock_mutex(errs, &(cam)->base.mutex)
 
-tao_shared_camera_t*
-tao_create_shared_camera(tao_error_t** errs, unsigned int perms)
+int
+tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam)
 {
-    size_t nbytes = sizeof(tao_shared_camera_t);
+    if (cam != NULL) {
+        if (cam->shared != NULL) {
+            tao_shared_object_t* obj = (tao_shared_object_t*)cam->shared;
+            cam->shared =  NULL;
+            tao_detach_shared_object(errs, obj);
+        }
+        if (cam->frames != NULL) {
+            for (int i = 0; i < cam->nframes; ++i) {
+                tao_shared_array_t* arr = cam->frames[i];
+                cam->frames[i] = NULL;
+                tao_detach_shared_array(errs, arr);
+            }
+            free(cam->frames);
+        }
+        free(cam);
+    }
+}
+
+tao_camera_t*
+tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
+{
+    tao_camera_t* cam;
+    tao_shared_camera_t* shared;
     tao_shared_object_t* obj;
-    obj = tao_create_shared_object(errs, TAO_SHARED_CAMERA, nbytes, perms);
-    if (obj == NULL) {
+
+    if (nframes < 2) {
+        tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
         return NULL;
     }
-    tao_shared_camera_t* cam = (tao_shared_camera_t*)obj;
-    cam->last_frame.ident = -1;
-    cam->last_frame.counter = -1;
-    cam->state = 0;
+    cam = NEW(errs, tao_camera_t, 1);
+    if (cam == NULL) {
+        return NULL;
+    }
     cam->perms = perms;
-    cam->pixel_type = TAO_FLOAT32;
-    cam->xoff = 0;
-    cam->yoff = 0;
-    cam->width = 1;
-    cam->height = 1;
+    cam->frames = NEW(errs, tao_shared_array_t*, nframes);
+    if (cam->frames == NULL) {
+        tao_finalize_camera(errs, cam);
+        return NULL;
+    }
+    cam->nframes = nframes;
+    shared = NEW_SHARED_OBJECT(errs, tao_shared_camera_t,
+                               TAO_SHARED_CAMERA, perms);
+    if (shared == NULL) {
+        tao_finalize_camera(errs, cam);
+        return NULL;
+    }
+    cam->shared = shared;
+    shared->last_frame.ident = -1;
+    shared->last_frame.counter = -1;
+    shared->state = 0;
+    shared->pixel_type = TAO_FLOAT32;
+    shared->xoff = 0;
+    shared->yoff = 0;
+    shared->width = 1;
+    shared->height = 1;
     return cam;
 }
-
-tao_shared_camera_t*
-tao_attach_shared_camera(tao_error_t** errs, int ident)
-{
-    return ATTACH_SHARED_CAMERA(errs, ident);
-}
-
-int
-tao_detach_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
-{
-    /* FIXME: cleanup if there are no references? */
-    return DETACH_SHARED_CAMERA(errs, cam);
-}
-
-int
-tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
-{
-    return LOCK_SHARED_CAMERA(errs, cam);
-}
-
-int
-tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
-{
-    return TRY_LOCK_SHARED_CAMERA(errs, cam);
-}
-
-int
-tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
-{
-    return UNLOCK_SHARED_CAMERA(errs, cam);
-}
-
-
-/**
- * @addtogroup SharedCameras
- *
- * The management of every new frame is done in 3 steps.
- *
- * - First, a shared array is located or created to store the resulting data,
- *   if possible an old frame data is recycled.
- *
- * - Second, the raw frame data is processed and stored in the selected shared
- *   array.
- *
- * - Third, the shared array is updated (its counter is incremented) and is
- *   marked as being readable.
- *
- * The first step is done by calling tao_fetch_next_frame() and the third
- * steps is done by calling tao_release_next_frame().  These two steps are
- * performed while the shared camera data are locked.
- *
- * @{
- */
-
-/**
- * Get shared array to store next camera image.
- *
- * @param errs   Address of a variable to track errors.
- * @param cam    Address of the shared camera data.
- *
- * @return The address of a shared array to store the processed data frame;
- * `NULL` in case of errors.
- */
-tao_shared_array_t*
-tao_fetch_next_frame(tao_error_t** errs, tao_camera_t*cam);
-
-/**
- * Get shared array to store next camera image.
- *
- * @param errs   Address of a variable to track errors.
- * @param cam    Address of the camera data.
- * @param arr    Address of the shared frame data.
- *
- * @return `0` on success; `1` in case of errors.
- */
-int
-tao_release_next_frame(tao_error_t** errs, tao_camera_t* cam,
-                       tao_shared_array_t* arr);
-
-/** @} */
 
 tao_shared_array_t*
 tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
 {
     tao_shared_array_t* arr;
     tao_shared_array_t** frame_list = cam->frames;
-    tao_shared_camera_t* shmcam = cam->shared;
+    tao_shared_camera_t* shared = cam->shared;
     int nframes = cam->nframes;
     int index1, index2, index3;
 
@@ -192,7 +112,7 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
     index1 = -1; /* first choice, a frame which can be recycled */
     index2 = -1; /* second choice, an empty slot */
     index3 = -1; /* third choice, the oldest frame */
-    if (LOCK_SHARED_CAMERA(errs, shmcam) != 0) {
+    if (LOCK_SHARED_CAMERA(errs, shared) != 0) {
         goto error;
     }
     for (int i = 0; i < nframes; ++i) {
@@ -204,12 +124,12 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
             }
             continue;
         }
-        if (arr->base.ident == shmcam->last_frame.ident) {
+        if (arr->base.ident == shared->last_frame.ident) {
             /* We do not want to overwrite the previous last frame. */
             continue;
         }
-        if (arr->eltype != shmcam->pixel_type || arr->ndims != 2 ||
-            arr->size[0] != shmcam->width || arr->size[1] != shmcam->height) {
+        if (arr->eltype != shared->pixel_type || arr->ndims != 2 ||
+            arr->size[0] != shared->width || arr->size[1] != shared->height) {
             /* This frame does not have the correct format, discard it. */
             frame_list[i] = NULL;
             if (tao_detach_shared_array(errs, arr) != 0) {
@@ -246,7 +166,7 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
         }
         index2 = index3;
     }
-    if (UNLOCK_SHARED_CAMERA(errs, shmcam) != 0) {
+    if (UNLOCK_SHARED_CAMERA(errs, shared) != 0) {
         /* FIXME: this is probably a fatal error */
         goto error;
     }
@@ -255,16 +175,16 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
     if (index1 < 0) {
         /* New image has ident ≥ 1, number = 0 and nrefs = 1 */
         frame_list[index2] = tao_create_2d_shared_array(errs,
-                                                        shmcam->pixel_type,
-                                                        shmcam->width,
-                                                        shmcam->height,
-                                                        shmcam->perms);
+                                                        shared->pixel_type,
+                                                        shared->width,
+                                                        shared->height,
+                                                        cam->perms);
         index1 = index2;
     }
     return frame_list[index1];
 
  unlock_and_error:
-    UNLOCK_SHARED_CAMERA(errs, shmcam);
+    UNLOCK_SHARED_CAMERA(errs, shared);
  error:
     return NULL;
 }
@@ -277,11 +197,11 @@ for (int i = 0; i < NPIXELS; ++i) {
 #endif
 
 int
-tao_release_next_frame(tao_error_t** errs, tao_camera_t* cam,
+tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
                        tao_shared_array_t* arr)
 {
-    tao_shared_camera_t* shmcam = cam->shared;
-    if (LOCK_SHARED_CAMERA(errs, shmcam) != 0) {
+    tao_shared_camera_t* shared = cam->shared;
+    if (LOCK_SHARED_CAMERA(errs, shared) != 0) {
         return -1;
     }
 
@@ -289,17 +209,89 @@ tao_release_next_frame(tao_error_t** errs, tao_camera_t* cam,
     /* Increment image number and update image. */
     /* FIXME: timestamp */
     /* FIXME: lock array or assumed it has been locked for the processing? */
-    arr->counter = ++shmcam->last_frame.counter;
+    arr->counter = ++shared->last_frame.counter;
     arr->nwriters = 0;
-    shmcam->last_frame.ident = arr->base.ident;
+    shared->last_frame.ident = arr->base.ident;
 
 #if 0
     /* FIXME: Signal that a new image is available to all waiting processes. */
-    signalNewImage(shmcam);
+    signalNewImage(shared);
 #endif
 
-    if (UNLOCK_SHARED_CAMERA(errs, shmcam) != 0) {
+    if (UNLOCK_SHARED_CAMERA(errs, shared) != 0) {
         return -1;
     }
     return 0;
+}
+
+tao_shared_array_t*
+tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam)
+{
+    tao_shared_array_t* arr;
+
+    if (TAO_ANY_ERRORS(errs)) {
+        return NULL;
+    }
+#if 1
+    if (cam->last_frame.ident < 0) {
+        return NULL;
+    }
+    return tao_attach_shared_array(errs, cam->last_frame.ident);
+#else
+    if (LOCK_SHARED_CAMERA(errs, cam) != 0) {
+        return NULL;
+    }
+    if (cam->last_frame.ident >= 0) {
+        arr = tao_attach_shared_array(errs, cam->last_frame.ident);
+    } else {
+        arr = NULL;
+    }
+    if (UNLOCK_SHARED_CAMERA(errs, cam) != 0) {
+        tao_detach_shared_array(errs, arr);
+        return NULL;
+    }
+    return arr;
+#endif
+}
+
+uint64_t
+tao_get_last_image_counter(tao_shared_camera_t* cam)
+{
+    return cam->last_frame.counter;
+}
+
+int
+tao_get_last_image_ident(tao_shared_camera_t* cam)
+{
+    return cam->last_frame.ident;
+}
+
+tao_shared_camera_t*
+tao_attach_shared_camera(tao_error_t** errs, int ident)
+{
+    return ATTACH_SHARED_CAMERA(errs, ident);
+}
+
+int
+tao_detach_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
+{
+    return DETACH_SHARED_CAMERA(errs, cam);
+}
+
+int
+tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
+{
+    return LOCK_SHARED_CAMERA(errs, cam);
+}
+
+int
+tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
+{
+    return TRY_LOCK_SHARED_CAMERA(errs, cam);
+}
+
+int
+tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
+{
+    return UNLOCK_SHARED_CAMERA(errs, cam);
 }
