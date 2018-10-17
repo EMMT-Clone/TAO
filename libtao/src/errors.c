@@ -162,7 +162,10 @@ const char*
 FUNC(int code)
 {
     switch (code) {
-
+        CASE(TAO_NOT_FOUND, "Item not found");
+        CASE(TAO_ALREADY_IN_USE, "Resource already in use");
+        CASE(TAO_UNWRITABLE, "Not writable");
+        CASE(TAO_UNREADABLE, "Not readable");
         CASE(TAO_UNCLOSED_STRING, "Unclosed string");
         CASE(TAO_SYSTEM_ERROR, "Unknown system error");
         CASE(TAO_OUT_OF_RANGE, "Out of range argument");

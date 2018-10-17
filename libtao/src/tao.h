@@ -132,7 +132,7 @@ extern void tao_set_message_level(tao_message_type_t level);
  *   There are basically two possibilities: errors can be reported with
  *   tao_report_errors() or errors can be simply ignored with the
  *   tao_discard_errors().  Calling any of these two functions does free the
- *   ressources associated with the memorized errors.
+ *   resources associated with the memorized errors.
  *
  * Note that, if the (small) amount of memory needed to store the error
  * information cannot be allocated, a fatal error is assumed: the current error
@@ -179,11 +179,15 @@ typedef enum tao_error_code {
     TAO_BAD_TYPE          = -10, /**< Invalid type */
     TAO_CANT_TRACK_ERROR  = -11, /**< Insufficient memory for tracking error */
     TAO_CORRUPTED         = -12, /**< Corrupted structure */
-    TAO_DESTROYED         = -13, /**< Ressource has been destroyed */
+    TAO_DESTROYED         = -13, /**< Resource has been destroyed */
     TAO_MISSING_SEPARATOR = -14, /**< Separator missing */
     TAO_OUT_OF_RANGE      = -15, /**< Out of range argument */
     TAO_SYSTEM_ERROR      = -16, /**< Unknown system error */
     TAO_UNCLOSED_STRING   = -17, /**< Unclosed string */
+    TAO_UNREADABLE        = -18, /**< Not readable */
+    TAO_UNWRITABLE        = -19, /**< Not writable */
+    TAO_ALREADY_IN_USE    = -20, /**< Resource already in use */
+    TAO_NOT_FOUND         = -21, /**< Item not found */
 } tao_error_code_t;
 
 /**
@@ -228,7 +232,7 @@ tao_push_system_error(tao_error_t** errs, const char* func);
  * This function pops information about the last error remaining in the list of
  * errors tracked by the variable at address @p errs.  The errors are popped in
  * reverse temporal order.  That is, the last occuring error is retrieved
- * first.  Ressources associated with the popped error are freed.
+ * first.  Resources associated with the popped error are freed.
  *
  * The following example demonstrates how to use tao_pop_error() to report
  * all errors that occured:
@@ -350,7 +354,7 @@ typedef struct tao_buffer {
  * Initialize a static i/o buffer.
  *
  * Use this function to initialize a static i/o buffer structure.  When no
- * longer needed, the internal ressources which may have been allocated must be
+ * longer needed, the internal resources which may have been allocated must be
  * released by calling tao_finalize_buffer().  The structure itself is assumed
  * static and will not be freed by tao_finalize_buffer() which will reset its
  * contents as if just initialized instead.
@@ -366,7 +370,7 @@ tao_initialize_static_buffer(tao_buffer_t* buf);
  * This function creates a new i/o buffer.  Both the container (the buffer
  * structure) and the contents (the data stored by the buffer) will be
  * dynamically allocated.  When no longer needed, the caller is responsible of
- * calling tao_finalize_buffer() to release all the ressources allocated for
+ * calling tao_finalize_buffer() to release all the resources allocated for
  * the buffer (that is, the container and the contents).
  *
  * @param errs   Address of a variable to track errors.
@@ -379,9 +383,9 @@ extern tao_buffer_t*
 tao_create_buffer(tao_error_t** errs, size_t size);
 
 /**
- * Destroy dynamic ressources of an i/o buffer.
+ * Destroy dynamic resources of an i/o buffer.
  *
- * This function frees any dynamic ressources used by the i/o buffer @p buf.
+ * This function frees any dynamic resources used by the i/o buffer @p buf.
  * If the buffer has been initialized by tao_initialize_static_buffer(), only
  * the contents of the buffer may be destroyed and the buffer is reset to have
  * an empty contents, just as done by tao_initialize_static_buffer(), and can
@@ -447,7 +451,7 @@ tao_clear_buffer(tao_buffer_t* buf);
 /**
  * Get the size of the contents of an i/o buffer.
  *
- * This fnuction yields the size of the contents (the pending data) of an i/o
+ * This function yields the size of the contents (the pending data) of an i/o
  * buffer.  Use tao_get_buffer_contents() to retrieve the address of the
  * contents of the buffer and tao_adjust_buffer_contents_size() to remove the
  * bytes you may have consumed.
@@ -674,7 +678,7 @@ tao_strlen(const char* str);
  * partially transmitted commands, their size must be part of the sent data or
  * they must be terminated by some given marker.  In order to make things
  * simple, it has been chosen that successive commands be separated by a single
- * line-feed character (`'\n'`, ASCII code '0x0A').  This also simplify the
+ * line-feed character (`'\n'`, ASCII code `0x0A`).  This also simplify the
  * writing of commands into scripts.
  *
  * String commands have to be parsed into words before being used.  Since any
@@ -687,12 +691,14 @@ tao_strlen(const char* str);
  *
  * 1- An end-of-line (EOL) sequence at the end of the command string is allowed
  *    and ignored.  To cope with different styles, an EOL can be any of the
- *    following sequences: a single carriage-return (CR) character, a single
- *    line-feed (LF) character or a sequence of the two charaters CR-LF.
+ *    following sequences: a single carriage-return (CR, ASCII code `0x0D`)
+ *    character, a single line-feed (LF, ASCII code `0x0A`) character or a
+ *    sequence of the two characters CR-LF.
  *
  * 2- Leading and trailing spaces in a command string are ignored (trailing
  *    spaces may occur before the EOL sequence if any but not after).  Space
- *    charaters are ordinary spaces `' `' or tabulations `'\t'`.
+ *    characters are ordinary spaces `' '` (ASCII code `0x20`) or tabulations
+ *    `'\t'` (ASCII code `0x09`).
  *
  * 3- Words are separated by one or more space characters.  A word is either a
  *    sequence of contiguous ordinary characters (non-space, non-quote,
@@ -720,7 +726,7 @@ tao_strlen(const char* str);
  *   - `\\` yields a backslash character.
  *
  * Thus quoted strings can have embedded spaces.  To have a zero-length word, a
- * quoted string must be used.
+ * quoted string like `''` or `""` must be used.
  *
  * The following errors may occur:
  *
@@ -767,6 +773,7 @@ tao_strlen(const char* str);
 extern int
 tao_split_command(tao_error_t** errs, const char*** list,
                   const char* cmd, long len);
+
 /**
  * Pack words into a command-line.
  *
@@ -797,7 +804,6 @@ tao_split_command(tao_error_t** errs, const char*** list,
 extern int
 tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
                const char* argv[], int argc);
-
 
 /** @} */
 
