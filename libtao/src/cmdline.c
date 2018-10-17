@@ -62,7 +62,7 @@ tao_split_command(tao_error_t** errs, const char*** list,
                 break;
             }
         }
-        while (first <= last) {
+        while (first < last) {
             int c = cmd[last];
             if (IS_SPACE(c)) {
                 --last;
@@ -84,7 +84,7 @@ tao_split_command(tao_error_t** errs, const char*** list,
      */
     long maxwords = (length + 1)/2; /* the maximum number of words */
     long arrsize = sizeof(void*)*(maxwords + 1); /* the maximum size of the
-                                                    * array of pointers */
+                                                  * array of pointers */
     long fullsize = arrsize + length + 1; /* the size to allocate */
 
     /*
@@ -393,4 +393,41 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
      * command.
      */
     return tao_adjust_buffer_contents_size(errs, dest, off);
+}
+
+int
+tao_parse_int(const char* str, int* ptr)
+{
+    char* end;
+    long lval = strtol(str, &end, 0);
+    int ival = lval;
+    if (*end != '\0' || *str == '\0' || ival != lval) {
+        return -1;
+    }
+    *ptr = ival;
+    return 0;
+}
+
+int
+tao_parse_long(const char* str, long* ptr)
+{
+    char* end;
+    long lval = strtol(str, &end, 0);
+    if (*end != '\0' || *str == '\0') {
+        return -1;
+    }
+    *ptr = lval;
+    return 0;
+}
+
+int
+tao_parse_double(const char* str, double* ptr)
+{
+    char* end;
+    double dval = strtod(str, &end);
+    if (*end != '\0' || *str == '\0') {
+        return -1;
+    }
+    *ptr = dval;
+    return 0;
 }

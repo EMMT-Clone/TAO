@@ -805,6 +805,48 @@ extern int
 tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
                const char* argv[], int argc);
 
+/**
+ * Read an `int` value in a word.
+ *
+ * This function is intended to parse an integer value from a word as obtained
+ * by splitting commands with tao_split_command().  To be valid, the word must
+ * contains single integer in a human redable form and which fits in an `int`.
+ *
+ * @param str    Input word to parse.
+ * @param ptr    Address to write parsed value.
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int tao_parse_int(const char* str, int* ptr);
+
+/**
+ * Read a `long` value in a word.
+ *
+ * This function is intended to parse an integer value from a word as obtained
+ * by splitting commands with tao_split_command().  To be valid, the word must
+ * contains single integer in a human redable form and which fits in a `long`.
+ *
+ * @param str    Input word to parse.
+ * @param ptr    Address to write parsed value.
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int tao_parse_long(const char* str, long* ptr);
+
+/**
+ * Read a `double` value in a word.
+ *
+ * This function is intended to parse a floating point value from a word as
+ * obtained by splitting commands with tao_split_command().  To be valid, the
+ * word must contains single floating value in a human redable form.
+ *
+ * @param str    Input word to parse.
+ * @param ptr    Address to write parsed value.
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int tao_parse_double(const char* str, double* ptr);
+
 /** @} */
 
 /**
