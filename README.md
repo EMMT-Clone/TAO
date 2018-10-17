@@ -9,22 +9,24 @@ cd "$TAO_SRC_DIR"
 ./bootstrap
 ```
 
-where `$TAO_SRC_DIR` is the directory of the TAO source files.
+where `$TAO_SRC_DIR` is the directory of the TAO source files.  To build TAO
+runtime library into its source directory:
 
 
 ```sh
-cd "$TAO_SRC_DIR"
+cd "$TAO_SRC_DIR"/libtao
 ./configure ...
 make
 make install
 ```
 
-To build TAO into a specific build directory, say `$BUILD_DIR`, just do:
+To build TAO runtime library into a specific build directory, say `$BUILD_DIR`,
+just do:
 
 ```sh
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
-"$TAO_SRC_DIR"/configure ...
+"$TAO_SRC_DIR"/libtao/configure ...
 make
 make install
 ```
