@@ -42,7 +42,7 @@ chosen by the creator.
   be no longer in use and can be safely destroyed.  In particular, once the
   number of references become zero, it can not be incremented.  For debugging
   purposes, the number of references is a signed integer (even though the
-  previous rules implies that the number references can never be negative).
+  previous rules implies that the number of references can never be negative).
 
 - The field `ident` is a numerical identifier of the object.  All shared object
   have a unique identifier (at a given time).  The identifier may have the
