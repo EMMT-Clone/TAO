@@ -2101,8 +2101,8 @@ tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
  * associated with the image.
  *
  * @warning Since the last image may change (because acquisition is running),
- * the caller must have locked the shared camera.  For efficiency reasons, this
- * function does not perform error checking.
+ * the caller is assumed to have locked the shared camera.  For efficiency
+ * reasons, this function does not perform error checking.
  *
  * @param errs   Address of a variable to track errors.
  * @param cam    Address of a shared camera attached to the address space of

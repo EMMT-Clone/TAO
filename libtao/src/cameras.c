@@ -225,13 +225,8 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
 tao_shared_array_t*
 tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam)
 {
-    if (TAO_ANY_ERRORS(errs)) {
-        return NULL;
-    }
-    if (cam->last_frame.ident < 0) {
-        return NULL;
-    }
-    return tao_attach_shared_array(errs, cam->last_frame.ident);
+    return (cam->last_frame.ident < 0 ? NULL :
+            tao_attach_shared_array(errs, cam->last_frame.ident));
 }
 
 uint64_t
