@@ -16,7 +16,8 @@
 #include <stdarg.h>
 #include <pthread.h>
 
-#include "tao.h"
+#include "config.h"
+#include "tao-private.h"
 
 /*--------------------------------------------------------------------------*/
 /* ERROR HANDLER */

@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include "config.h"
 #include "tao-private.h"
 
 #define FAILURE  -1

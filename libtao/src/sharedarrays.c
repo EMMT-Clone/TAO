@@ -12,8 +12,9 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
-#include "tao-private.h"
+#include "config.h"
 #include "macros.h"
+#include "tao-private.h"
 
 /*
  * Alignment of data for vectorization depends on the chosen compilation

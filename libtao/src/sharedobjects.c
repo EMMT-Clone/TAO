@@ -17,8 +17,9 @@
 #include <sys/shm.h>
 #include <string.h>
 
-#include "tao-private.h"
+#include "config.h"
 #include "macros.h"
+#include "tao-private.h"
 
 /* Shared objects */
 

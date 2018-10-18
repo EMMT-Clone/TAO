@@ -19,6 +19,7 @@
 #include <string.h>
 #include <locale.h>
 
+#include "config.h"
 #include "tao-private.h"
 
 #define USE_STRERROR 0 /* FIXME: should be in config.h */

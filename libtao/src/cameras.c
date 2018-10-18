@@ -11,8 +11,9 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
-#include "tao-private.h"
+#include "config.h"
 #include "macros.h"
+#include "tao-private.h"
 
 #define NEW(errs, type, number) \
     ((type*)tao_calloc(errs, number, sizeof(type)))
@@ -125,9 +126,6 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
     int index1 = -1; /* first choice, a frame which can be recycled */
     int index2 = -1; /* second choice, an empty slot */
     int index3 = -1; /* third choice, the oldest frame */
-    if (LOCK_SHARED_CAMERA(errs, shared) != 0) {
-        goto error;
-    }
     for (int i = 0; i < nframes; ++i) {
         arr = frame_list[i];
         if (arr == NULL) {
@@ -146,8 +144,7 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
             /* This frame does not have the correct format, discard it. */
             frame_list[i] = NULL;
             if (tao_detach_shared_array(errs, arr) != 0) {
-                /* FIXME: this is probably a fatal error */
-                goto unlock_and_error;
+                return NULL;
             }
             if (index2 == -1) {
                 index2 = i;
@@ -174,14 +171,9 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
         /* Detach the oldest frame. */
         tao_shared_array_t* tmp = frame_list[index3];
         if (tao_detach_shared_array(errs, tmp) != 0) {
-            /* FIXME: this is probably a fatal error */
-            goto unlock_and_error;
+            return NULL;
         }
         index2 = index3;
-    }
-    if (UNLOCK_SHARED_CAMERA(errs, shared) != 0) {
-        /* FIXME: this is probably a fatal error */
-        goto error;
     }
 
     /* If no image can be recycled, allocate a new one. */
@@ -195,11 +187,6 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
         index1 = index2;
     }
     return frame_list[index1];
-
- unlock_and_error:
-    UNLOCK_SHARED_CAMERA(errs, shared);
- error:
-    return NULL;
 }
 
 int
@@ -212,27 +199,17 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
         return -1;
     }
 
-    tao_shared_camera_t* shared = cam->shared;
-    if (LOCK_SHARED_CAMERA(errs, shared) != 0) {
-        return -1;
-    }
-
-    /* FIXME: check information (pixel size, etc.) */
     /* Increment image number and update image. */
-    /* FIXME: timestamp */
-    /* FIXME: lock array or assumed it has been locked for the processing? */
+    /* FIXME: check information (pixel size, etc.) */
+    /* FIXME: lock array or assume it has been locked for the processing? */
+    tao_shared_camera_t* shared = cam->shared;
     arr->counter = ++shared->last_frame.counter;
     arr->nwriters = 0;
     shared->last_frame.ident = arr->base.ident;
-
 #if 0
     /* FIXME: Signal that a new image is available to all waiting processes. */
     signalNewImage(shared);
 #endif
-
-    if (UNLOCK_SHARED_CAMERA(errs, shared) != 0) {
-        return -1;
-    }
     return 0;
 }
 

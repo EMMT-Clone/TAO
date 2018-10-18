@@ -20,7 +20,6 @@
 #endif
 
 #include "tao.h"
-#include "config.h"
 
 #define TAO_ASSERT(expr, code)                                          \
     do {                                                                \

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#include "config.h"
 #include "tao-private.h"
 
 /*---------------------------------------------------------------------------*/
@@ -117,7 +118,7 @@ tao_get_current_time(tao_error_t** errs, tao_time_t* dest)
         }                                       \
     } while (0)
 
-void
+tao_time_t*
 tao_normalize_time(tao_time_t* ts)
 {
     int64_t s  = ts->s;
@@ -125,9 +126,10 @@ tao_normalize_time(tao_time_t* ts)
     NORMALIZE_TIME(s, ns);
     ts->s = s;
     ts->ns = ns;
+    return ts;
 }
 
-void
+tao_time_t*
 tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b)
 {
     int64_t s  = a->s  + b->s;
@@ -135,9 +137,10 @@ tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b)
     NORMALIZE_TIME(s, ns);
     dest->s = s;
     dest->ns = ns;
+    return dest;
 }
 
-void
+tao_time_t*
 tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b)
 {
     int64_t s  = a->s  - b->s;
@@ -145,6 +148,7 @@ tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b)
     NORMALIZE_TIME(s, ns);
     dest->s = s;
     dest->ns = ns;
+    return dest;
 }
 
 double

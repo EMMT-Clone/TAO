@@ -13,6 +13,7 @@
 
 #include <errno.h>
 
+#include "config.h"
 #include "tao-private.h"
 
 /* See https://stackoverflow.com/questions/20325146 for configuring mutexes

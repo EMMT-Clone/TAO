@@ -985,8 +985,10 @@ tao_get_current_time(tao_error_t** errs, tao_time_t* dest);
  * nanoseconds is nonnegative and strictly less than 1,000,000,000.
  *
  * @param ts     Address of time-stamp to normalize.
+ *
+ * @return The address @a ts.
  */
-extern void
+extern tao_time_t*
 tao_normalize_time(tao_time_t* ts);
 
 /**
@@ -1002,8 +1004,10 @@ tao_normalize_time(tao_time_t* ts);
  * @param dest   Address to store the result.
  * @param a      Address of first time value.
  * @param b      Address of second time value.
+ *
+ * @return The address @a dest.
  */
-extern void
+extern tao_time_t*
 tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
 
 /**
@@ -1019,8 +1023,10 @@ tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
  * @param dest   Address to store the result.
  * @param a      Address of first time value.
  * @param b      Address of second time value.
+ *
+ * @return The address @a dest.
  */
-extern void
+extern tao_time_t*
 tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
 
 /**
@@ -1881,9 +1887,11 @@ tao_unlock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
  * - Third, the shared array is updated (its counter is incremented) and is
  *   marked as being readable.
  *
- * The first step is done by calling tao_fetch_next_frame() and the third
- * steps is done by calling tao_publish_next_frame().  These two steps are
- * performed while the shared camera data are locked.
+ * The first step is done by calling tao_fetch_next_frame() and the third step
+ * is done by calling tao_publish_next_frame().  These two functions must be
+ * called while the shared camera data have been locked by the caller.  During
+ * the pre-processing of the acquired image (2nd step) the shared data should
+ * be unlocked and re-locked to call tao_publish_next_frame().
  *
  * @{
  */
@@ -1931,6 +1939,8 @@ tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam);
  * new pro-processed image.  If possible, an old shared array from the list
  * owned by the server is recycled.
  *
+ * @warning The caller is supposed to have locked the shared camera data.
+ *
  * @param errs   Address of a variable to track errors.
  * @param cam    Address of the shared camera data.
  *
@@ -1942,6 +1952,8 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam);
 
 /**
  * Make a new image available to the clients of a frame grabber server.
+ *
+ * @warning The caller is supposed to have locked the shared camera data.
  *
  * @param errs   Address of a variable to track errors.
  * @param cam    Address of the camera data.
