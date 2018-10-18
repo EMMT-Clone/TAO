@@ -38,22 +38,28 @@
 int
 tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam)
 {
+    int status = 0;
     if (cam != NULL) {
         if (cam->shared != NULL) {
             tao_shared_object_t* obj = (tao_shared_object_t*)cam->shared;
             cam->shared =  NULL;
-            tao_detach_shared_object(errs, obj);
+            if (tao_detach_shared_object(errs, obj) != 0) {
+                status = -1;
+            }
         }
         if (cam->frames != NULL) {
             for (int i = 0; i < cam->nframes; ++i) {
                 tao_shared_array_t* arr = cam->frames[i];
                 cam->frames[i] = NULL;
-                tao_detach_shared_array(errs, arr);
+                if (tao_detach_shared_array(errs, arr)!= 0) {
+                    status = -1;
+                }
             }
             free(cam->frames);
         }
         free(cam);
     }
+    return status;
 }
 
 tao_camera_t*
@@ -61,7 +67,6 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
 {
     tao_camera_t* cam;
     tao_shared_camera_t* shared;
-    tao_shared_object_t* obj;
 
     if (nframes < 2) {
         tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
@@ -189,13 +194,6 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
     return NULL;
 }
 
-#if 0
-/* Perform pre-processing. */
-for (int i = 0; i < NPIXELS; ++i) {
-    img->data[i] = raw->data[i];
- }
-#endif
-
 int
 tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
                        tao_shared_array_t* arr)
@@ -227,31 +225,13 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
 tao_shared_array_t*
 tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam)
 {
-    tao_shared_array_t* arr;
-
     if (TAO_ANY_ERRORS(errs)) {
         return NULL;
     }
-#if 1
     if (cam->last_frame.ident < 0) {
         return NULL;
     }
     return tao_attach_shared_array(errs, cam->last_frame.ident);
-#else
-    if (LOCK_SHARED_CAMERA(errs, cam) != 0) {
-        return NULL;
-    }
-    if (cam->last_frame.ident >= 0) {
-        arr = tao_attach_shared_array(errs, cam->last_frame.ident);
-    } else {
-        arr = NULL;
-    }
-    if (UNLOCK_SHARED_CAMERA(errs, cam) != 0) {
-        tao_detach_shared_array(errs, arr);
-        return NULL;
-    }
-    return arr;
-#endif
 }
 
 uint64_t
