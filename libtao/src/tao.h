@@ -1614,7 +1614,7 @@ tao_detach_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
  * @see tao_get_shared_object_ident.
  */
 extern int
-tao_get_array_ident(const tao_shared_array_t* arr);
+tao_get_shared_array_ident(const tao_shared_array_t* arr);
 
 /**
  * Get the type of elements of a shared array.
@@ -1625,7 +1625,7 @@ tao_get_array_ident(const tao_shared_array_t* arr);
  * @return One of the `tao_element_type_t` values.
  */
 extern int
-tao_get_array_eltype(const tao_shared_array_t* arr);
+tao_get_shared_array_eltype(const tao_shared_array_t* arr);
 
 /**
  * Get the number of elements of a shared array.
@@ -1636,7 +1636,7 @@ tao_get_array_eltype(const tao_shared_array_t* arr);
  * @return The number of elements in the array.
  */
 extern size_t
-tao_get_array_length(const tao_shared_array_t* arr);
+tao_get_shared_array_length(const tao_shared_array_t* arr);
 
 /**
  * Get the number of dimensions of a shared array.
@@ -1647,7 +1647,7 @@ tao_get_array_length(const tao_shared_array_t* arr);
  * @return The number of dimensions of the array.
  */
 extern int
-tao_get_array_ndims(const tao_shared_array_t* arr);
+tao_get_shared_array_ndims(const tao_shared_array_t* arr);
 
 /**
  * Get the length of a dimension of a shared array.
@@ -1659,7 +1659,7 @@ tao_get_array_ndims(const tao_shared_array_t* arr);
  * @return The number of elements along the given dimension.
  */
 extern size_t
-tao_get_array_size(const tao_shared_array_t* arr, int d);
+tao_get_shared_array_size(const tao_shared_array_t* arr, int d);
 
 /**
  * Get the address of the first element of a shared array.
@@ -1670,7 +1670,7 @@ tao_get_array_size(const tao_shared_array_t* arr, int d);
  * @return The address of the first element of the array.
  */
 extern void*
-tao_get_array_data(const tao_shared_array_t* arr);
+tao_get_shared_array_data(const tao_shared_array_t* arr);
 
 /**
  * Get number of readers for a shared array.
@@ -1687,7 +1687,7 @@ tao_get_array_data(const tao_shared_array_t* arr);
  * @see tao_lock_shared_array.
  */
 extern int
-tao_get_array_nreaders(const tao_shared_array_t* arr);
+tao_get_shared_array_nreaders(const tao_shared_array_t* arr);
 
 /**
  * Adjust number of readers for a shared array.
@@ -1706,7 +1706,7 @@ tao_get_array_nreaders(const tao_shared_array_t* arr);
  * @see tao_lock_shared_array.
  */
 extern int
-tao_adjust_array_nreaders(tao_shared_array_t* arr, int adj);
+tao_adjust_shared_array_nreaders(tao_shared_array_t* arr, int adj);
 
 /**
  * Get number of writers for a shared array.
@@ -1723,7 +1723,7 @@ tao_adjust_array_nreaders(tao_shared_array_t* arr, int adj);
  * @see tao_lock_shared_array.
  */
 extern int
-tao_get_array_nwriters(const tao_shared_array_t* arr);
+tao_get_shared_array_nwriters(const tao_shared_array_t* arr);
 
 /**
  * Adjust number of writers for a shared array.
@@ -1742,7 +1742,7 @@ tao_get_array_nwriters(const tao_shared_array_t* arr);
  * @see tao_lock_shared_array.
  */
 extern int
-tao_adjust_array_nwriters(tao_shared_array_t* arr, int adj);
+tao_adjust_shared_array_nwriters(tao_shared_array_t* arr, int adj);
 
 /**
  * Get the value of a shared array counter.
@@ -1759,7 +1759,7 @@ tao_adjust_array_nwriters(tao_shared_array_t* arr, int adj);
  * @see tao_lock_shared_array.
  */
 extern int64_t
-tao_get_array_counter(const tao_shared_array_t* arr);
+tao_get_shared_array_counter(const tao_shared_array_t* arr);
 
 /**
  * Set the value of a shared array counter.
@@ -1775,7 +1775,7 @@ tao_get_array_counter(const tao_shared_array_t* arr);
  * @see tao_lock_shared_array.
  */
 extern void
-tao_set_array_counter(tao_shared_array_t* arr, int64_t cnt);
+tao_set_shared_array_counter(tao_shared_array_t* arr, int64_t cnt);
 
 /**
  * Get the time-stamp of a shared array counter.
@@ -1799,8 +1799,8 @@ tao_set_array_counter(tao_shared_array_t* arr, int64_t cnt);
  * @see tao_lock_shared_array.
  */
 extern void
-tao_get_array_timestamp(const tao_shared_array_t* arr,
-                        int64_t* ts_sec, int64_t* ts_nsec);
+tao_get_shared_array_timestamp(const tao_shared_array_t* arr,
+                               int64_t* ts_sec, int64_t* ts_nsec);
 
 /**
  * Set the time-stamp of a shared array counter.
@@ -1817,8 +1817,8 @@ tao_get_array_timestamp(const tao_shared_array_t* arr,
  * @see tao_lock_shared_array.
  */
 extern void
-tao_set_array_timestamp(tao_shared_array_t* arr,
-                        int64_t ts_sec, int64_t ts_nsec);
+tao_set_shared_array_timestamp(tao_shared_array_t* arr,
+                               int64_t ts_sec, int64_t ts_nsec);
 
 /**
  * Lock a shared array.

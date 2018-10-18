@@ -33,88 +33,88 @@ tao_get_element_size(int eltype)
 }
 
 int
-tao_get_array_ident(const tao_shared_array_t* arr)
+tao_get_shared_array_ident(const tao_shared_array_t* arr)
 {
     return arr->base.ident;
 }
 
 int
-tao_get_array_eltype(const tao_shared_array_t* arr)
+tao_get_shared_array_eltype(const tao_shared_array_t* arr)
 {
     return arr->eltype;
 }
 
 size_t
-tao_get_array_length(const tao_shared_array_t* arr)
+tao_get_shared_array_length(const tao_shared_array_t* arr)
 {
     return arr->nelem;
 }
 
 int
-tao_get_array_ndims(const tao_shared_array_t* arr)
+tao_get_shared_array_ndims(const tao_shared_array_t* arr)
 {
     return arr->ndims;
 }
 
 size_t
-tao_get_array_size(const tao_shared_array_t* arr, int d)
+tao_get_shared_array_size(const tao_shared_array_t* arr, int d)
 {
     return (d < 1 ? 0 : (d > TAO_MAX_NDIMS ? 1 : arr->size[d-1]));
 }
 
 void*
-tao_get_array_data(const tao_shared_array_t* arr)
+tao_get_shared_array_data(const tao_shared_array_t* arr)
 {
     return (void*)&arr->data[0];
 }
 
 int
-tao_get_array_nreaders(const tao_shared_array_t* arr)
+tao_get_shared_array_nreaders(const tao_shared_array_t* arr)
 {
     return arr->nreaders;
 }
 
 int
-tao_adjust_array_nreaders(tao_shared_array_t* arr, int adj)
+tao_adjust_shared_array_nreaders(tao_shared_array_t* arr, int adj)
 {
     return (arr->nreaders += adj);
 }
 
 int
-tao_get_array_nwriters(const tao_shared_array_t* arr)
+tao_get_shared_array_nwriters(const tao_shared_array_t* arr)
 {
     return arr->nwriters;
 }
 
 int
-tao_adjust_array_nwriters(tao_shared_array_t* arr, int adj)
+tao_adjust_shared_array_nwriters(tao_shared_array_t* arr, int adj)
 {
     return (arr->nwriters += adj);
 }
 
 int64_t
-tao_get_array_counter(const tao_shared_array_t* arr)
+tao_get_shared_array_counter(const tao_shared_array_t* arr)
 {
     return arr->counter;
 }
 
 void
-tao_set_array_counter(tao_shared_array_t* arr, int64_t cnt)
+tao_set_shared_array_counter(tao_shared_array_t* arr, int64_t cnt)
 {
     arr->counter = cnt;
 }
 
 void
-tao_get_array_timestamp(const tao_shared_array_t* arr,
-                        int64_t* ts_sec, int64_t* ts_nsec)
+tao_get_shared_array_timestamp(const tao_shared_array_t* arr,
+                               int64_t* ts_sec, int64_t* ts_nsec)
 {
     *ts_sec = arr->ts_sec;
     *ts_nsec = arr->ts_nsec;
 }
 
 void
-tao_set_array_timestamp(tao_shared_array_t* arr,
-                        int64_t ts_sec, int64_t ts_nsec)
+tao_set_shared_array_timestamp(tao_shared_array_t* arr,
+                               int64_t ts_sec, int64_t ts_nsec)
 {
     arr->ts_sec = ts_sec;
     arr->ts_nsec = ts_nsec;

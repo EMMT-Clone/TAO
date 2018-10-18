@@ -78,17 +78,17 @@ function attach(::Type{SharedArray}, ident::Integer)
     ptr = ccall((:tao_attach_shared_array, taolib), Ptr{Cvoid},
                 (Ref{Errors}, Cint), errs, ident)
     _check(ptr != C_NULL, errs)
-    eltype = ccall((:tao_get_array_eltype, taolib), Cint,
+    eltype = ccall((:tao_get_shared_array_eltype, taolib), Cint,
                    (Ptr{Cvoid},), ptr)
     1 ≤ eltype ≤ length(SHARED_ARRAY_TYPES) ||
         _detach_on_error(ptr, "Bad element type")
-    N = convert(Int, ccall((:tao_get_array_ndims, taolib), Cint,
+    N = convert(Int, ccall((:tao_get_shared_array_ndims, taolib), Cint,
                            (Ptr{Cvoid},), ptr))
     1 ≤ N ≤ SHARED_ARRAY_MAX_NDIMS ||
         _detach_on_error(ptr, "Bad number of dimensions")
     dims = Array{Int}(undef, N)
     for d in 1:N
-        dims[d] = ccall((:tao_get_array_size, taolib), Csize_t,
+        dims[d] = ccall((:tao_get_shared_array_size, taolib), Csize_t,
                         (Ptr{Cvoid}, Cint), ptr, d)
         dims[d] ≥ 1 || _detach_on_error(ptr, "Bad dimension $d")
     end
@@ -116,40 +116,41 @@ end
 
 function _wrap(::Type{SharedArray{T,N}}, ptr::Ptr{Cvoid},
                dims::NTuple{N,Int}) where {T,N}
-    data = ccall((:tao_get_array_data, taolib), Ptr{T}, (Ptr{Cvoid},), ptr)
+    data = ccall((:tao_get_shared_array_data, taolib), Ptr{T},
+                 (Ptr{Cvoid},), ptr)
     arr = unsafe_wrap(Array, data, dims; own = false)
     obj = SharedArray{T,N}(ptr, arr)
     return finalizer(_destroy, obj)
 end
 
 get_nreaders(obj::SharedArray) =
-    ccall((:tao_get_array_nreaders, taolib), Cint,
+    ccall((:tao_get_shared_array_nreaders, taolib), Cint,
           (Ptr{Cvoid},), obj)
 
 adjust_nreaders!(obj::SharedArray, adj::Integer) =
-    ccall((:tao_adjust_array_nreaders, taolib), Cint,
+    ccall((:tao_adjust_shared_array_nreaders, taolib), Cint,
           (Ptr{Cvoid}, Cint), obj, adj)
 
 get_nwriters(obj::SharedArray) =
-    ccall((:tao_get_array_nwriters, taolib), Cint,
+    ccall((:tao_get_shared_array_nwriters, taolib), Cint,
           (Ptr{Cvoid},), obj)
 
 adjust_nwriters!(obj::SharedArray, adj::Integer) =
-    ccall((:tao_adjust_array_nwriters, taolib), Cint,
+    ccall((:tao_adjust_shared_array_nwriters, taolib), Cint,
           (Ptr{Cvoid}, Cint), obj, adj)
 
 get_counter(obj::SharedArray) =
-    ccall((:tao_get_array_counter, taolib), Int64,
+    ccall((:tao_get_shared_array_counter, taolib), Int64,
           (Ptr{Cvoid},), obj)
 
 set_counter!(obj::SharedArray, cnt::Integer) =
-    ccall((:tao_set_array_counter, taolib), Cvoid,
+    ccall((:tao_set_shared_array_counter, taolib), Cvoid,
           (Ptr{Cvoid}, Int64), obj, cnt)
 
 function get_timestamp(obj::SharedArray)
     ts_sec = Ref{Int64}()
     ts_nsec = Ref{Int64}()
-    ccall((:tao_get_array_timestamp, taolib), Cvoid,
+    ccall((:tao_get_shared_array_timestamp, taolib), Cvoid,
           (Ptr{Cvoid}, Ptr{Int64}, Ptr{Int64}),
           obj, ts_sec, ts_nsec)
     return TimeStamp(ts_sec[], ts_nsec[])
@@ -159,5 +160,5 @@ set_timestamp!(obj::SharedArray, secs::Real) =
     set_timestamp!(obj, TimeStamp(secs))
 
 set_timestamp!(obj::SharedArray, ts::TimeStamp) =
-    ccall((:tao_set_array_timestamp, taolib), Cvoid,
+    ccall((:tao_set_shared_array_timestamp, taolib), Cvoid,
           (Ptr{Cvoid}, Int64, Int64), obj, ts.sec, ts.nsec)
