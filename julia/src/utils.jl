@@ -63,18 +63,18 @@ function bcastdims(A::NTuple{Na,Int}, B::NTuple{Nb,Int}) where {Na,Nb}
     end
     dims = Array{Int}(undef, Nb)
     for d in 1:Na
-        A[d] ≥ 1 || @error "invalid dimension $(A[d])"
-        B[d] ≥ 1 || @error "invalid dimension $(B[d])"
+        A[d] ≥ 1 || error("invalid dimension $(A[d])")
+        B[d] ≥ 1 || error("invalid dimension $(B[d])")
         if A[d] == B[d] || B[d] == 1
            dims[d] = A[d]
         elseif A[d] == 1
             dims[d] = B[d]
         else
-            @error "incompatible dimensions $(A[d]) and $(B[d])"
+            error("incompatible dimensions $(A[d]) and $(B[d])")
         end
     end
     for i in Na+1:Nb
-        B[d] ≥ 1 || @error "invalid dimension $(B[d])"
+        B[d] ≥ 1 || error("invalid dimension $(B[d])")
         dims[d] = B[d]
     end
     return (dims...,)

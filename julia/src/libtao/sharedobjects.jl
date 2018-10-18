@@ -74,14 +74,13 @@ function _destroy(obj::AnySharedObject)
     end
 end
 
-# Extend `unsafe_convert` method so as to check that shared object has not been
-# detached.  Note that the `unsafe_convert` method is used by `ccall`, it is
-# said to be *unsafe* because there is no guaranties that the returned address
-# will remain valid.
-function Base.unsafe_convert(::Type{Ptr{Cvoid}}, obj::AnySharedObject)
-    obj.ptr != C_NULL || @error "Detached shared object"
-    return obj.ptr
-end
+# Extend `unsafe_convert` to return the correct pointer when a shared object is
+# passed to `ccall`.  This could also be the opportunity to check for the
+# validity of the pointer but it turns out that it was faster (and simpler) to
+# have it in the C library.  Note that the `unsafe_convert` method is used by
+# `ccall`, it is said to be *unsafe* because there is no guaranties that the
+# returned address will remain valid.
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, obj::AnySharedObject) = obj.ptr
 
 function lock(obj::AnySharedObject)
     errs = Errors()

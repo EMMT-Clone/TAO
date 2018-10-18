@@ -45,15 +45,14 @@ Base.IndexStyle(::Type{<:SharedArray}) = IndexLinear()
 Base.iterate(obj::SharedArray) = iterate(obj.arr)
 Base.iterate(obj::SharedArray, state) = iterate(obj.arr, state)
 
-# Extend `unsafe_convert` to check for the validity of the pointer when
-# a shared array is passed to `ccall`.
+# Extend `unsafe_convert` to return the correct pointer when a shared array is
+# passed to `ccall`.  This could also be the opportunity to check for the
+# validity of the pointer but it turns out that it was faster (and simpler) to
+# have it in the C library.
 Base.unsafe_convert(::Type{Ptr{T}}, obj::SharedArray{T,N}) where {T,N} =
     Ptr{T}(unsafe_convert(Ptr{Cvoid}, obj))
-function Base.unsafe_convert(::Type{Ptr{Cvoid}},
-                             obj::SharedArray{T,N}) where {T,N}
-    obj.ptr != C_NULL || @error "Detached shared array"
-    return obj.ptr
-end
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, obj::SharedArray{T,N}) where {T,N} =
+    obj.ptr
 
 function create(::Type{SharedArray{T}}, dims::Integer...; kwds...) where {T}
     N = length(dims)
@@ -111,7 +110,7 @@ end
 function _detach_on_error(ptr::Ptr{Cvoid}, msg::AbstractString)
     errs = detach(ptr::Ptr{Cvoid})
     any_errors(errs) && discard_errors(errs)
-    @error msg
+    error(msg)
 end
 
 function _wrap(::Type{SharedArray{T,N}}, ptr::Ptr{Cvoid},

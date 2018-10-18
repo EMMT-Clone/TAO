@@ -143,7 +143,7 @@ get_ident(obj::AnySharedObject, args...; kwds...) =
 
 function _clib_error(func::String, arg)
     if !_clib_loaded[]
-        @error "TAO C-library is not yet loaded, call `TAO.loadclib()` before"
+        error("TAO C-library is not yet loaded, call `TAO.loadclib()` before")
     else
         str = isa(arg, DataType) ? "$arg" : "$(typeof(arg))"
         throw(ArgumentError("invalid arguments in TAO.$func($str, ...)"))

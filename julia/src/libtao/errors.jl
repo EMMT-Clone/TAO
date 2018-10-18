@@ -23,7 +23,7 @@ function _check(success::Bool, errs::Errors)
             throw(TaoError(pop_errors(errs)))
         end
     elseif ! success
-        @error "failure without error information"
+        error("failure without error information")
     end
 end
 
