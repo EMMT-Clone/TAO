@@ -13,6 +13,13 @@
 
 #include "tao-private.h"
 
+/*
+ * Hekpers for branch prediction (See
+ * http://blog.man7.org/2012/10/how-much-do-builtinexpect-likely-and.html).
+ */
+#define likely(expr)      __builtin_expect(!!(expr), 1)
+#define unlikely(expr)    __builtin_expect(!!(expr), 0)
+
 #define NEW(errs, type, number) \
     ((type*)tao_calloc(errs, number, sizeof(type)))
 
@@ -24,7 +31,7 @@
                                                     TAO_SHARED_CAMERA))
 
 #define DETACH_SHARED_CAMERA(errs, cam) \
-    tao_detach_shared_object(errs, (tao_shared_object_t*)(cam))
+    tao_detach_shared_object(errs, &(cam)->base)
 
 #define LOCK_SHARED_CAMERA(errs, cam)             \
     tao_lock_mutex(errs, &(cam)->base.mutex)
@@ -94,10 +101,18 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
     shared->last_frame.counter = -1;
     shared->state = 0;
     shared->pixel_type = TAO_FLOAT32;
+    shared->depth = 8;
+    shared->fullwidth = 384;
+    shared->fullheight = 288;
     shared->xoff = 0;
     shared->yoff = 0;
     shared->width = 1;
     shared->height = 1;
+    shared->exposure = 0.001; /* 1 ms */
+    shared->rate = 25.0; /* 25 Hz */
+    shared->gain = 100.0;
+    shared->bias = 500.0;
+    shared->gamma = 1.0;
     return cam;
 }
 
@@ -229,22 +244,45 @@ tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam)
             tao_attach_shared_array(errs, cam->last_frame.ident));
 }
 
+int
+tao_get_shared_camera_ident(const tao_shared_camera_t* cam)
+{
+    return (likely(cam != NULL) ? cam->base.ident : -1);
+}
+
+#define GETTER(type, member, def)                                       \
+    type                                                                \
+    tao_get_shared_camera_##member(const tao_shared_camera_t* cam)      \
+    {                                                                   \
+        return (likely(cam != NULL) ? cam->member : (def));             \
+    }
+GETTER(int, state, -1)
+GETTER(int, pixel_type, -1)
+GETTER(int, depth, 0)
+GETTER(int, fullwidth, 0)
+GETTER(int, fullheight, 0)
+GETTER(int, xoff, 0)
+GETTER(int, yoff, 0)
+GETTER(int, width, 0)
+GETTER(int, height, 0)
+GETTER(double, bias, 0.0)
+GETTER(double, gain, 0.0)
+GETTER(double, rate, 0.0)
+GETTER(double, exposure, 0.0)
+GETTER(double, gamma, 0.0)
+#undef GETTER
+
+
 uint64_t
-tao_get_last_image_counter(tao_shared_camera_t* cam)
+tao_get_last_image_counter(const tao_shared_camera_t* cam)
 {
-    return cam->last_frame.counter;
+    return (likely(cam != NULL) ? cam->last_frame.counter : -1);
 }
 
 int
-tao_get_last_image_ident(tao_shared_camera_t* cam)
+tao_get_last_image_ident(const tao_shared_camera_t* cam)
 {
-    return cam->last_frame.ident;
-}
-
-int
-tao_get_shared_camera_ident(tao_shared_camera_t* cam)
-{
-    return cam->base.ident;
+    return (likely(cam != NULL) ? cam->last_frame.ident : -1);
 }
 
 tao_shared_camera_t*

@@ -71,4 +71,65 @@ struct tao_shared_array {
     int64_t ts_nsec;              /**< Time stamp (nanoseconds part) */
 };
 
+/**
+ * Shared camera data.
+ *
+ * This structure describes the shared data storing the global resources of a
+ * camera.  After querying the shared memory identifier to the server (the
+ * frame grabber), clients can attach this shared data part with
+ * tao_attach_shared_camera().  When a client no longer needs this shared
+ * data, it shall call tao_detach_shared_camera().
+ *
+ * This structure **must** be considered as read-only by the clients and
+ * information provided by this structure is only valid as long as the client
+ * locks this shared structure by calling tao_lock_shared_camera() and until
+ * the client unlock the structure by calling tao_lock_shared_camera().  Beware
+ * to not call tao_detach_shared_camera() while the shared data is locked.
+ */
+struct tao_shared_camera {
+    tao_shared_object_t base; /**< Shared object backing storage of the
+                                   shared frame grabber */
+    int state;       /**< State of the camera: 0 if device not yet open, 1
+                          if device open but no acquisition is running, 2 if
+                          acquisition is running. */
+    int pixel_type;  /**< Pixel type. */
+    int depth;       /**< Bits per pixel in the raw images. */
+    int fullwidth;   /**< Maximum image width for the detector. */
+    int fullheight;  /**< Maximum image height for the detector. */
+    int xoff;        /**< Horizontal offset of the acquired images with respect
+                          to the left border of the detector. */
+    int yoff;        /**< Vertical offset of the acquired images with respect
+                          to the bottom border of the detector. */
+    int width;       /**< Number of pixels per line of the acquired images. */
+    int height;      /**< Number of lines of pixels in the acquired images. */
+    double bias;     /**< Detector bias. */
+    double gain;     /**< Detector gain. */
+    double rate;     /**< Acquisition rate in frames per second. */
+    double exposure; /**< Exposure time in seconds. */
+    double gamma;    /**< Gamma correction. */
+    struct {
+        int32_t ident;   /**< Identifier of the shared array backing the
+                              storage of the last image, -1 means unused or
+                              invalid. */
+        int64_t counter; /**< Counter value of the last image.  It is a unique,
+                              monotically increasing number, starting at 1 (0
+                              means unused or invalid). */
+    } last_frame; /**< Information relative to the last acquired image. */
+};
+
+/**
+ * Camera structure for the server.
+ *
+ * The server have access to the camera data that is shared with its clients
+ * plus a list of shared arrays used to store processed frame data as new
+ * frames are acquired. The size of this list is at most @a nframes and its
+ * contents is recycled if possible.
+ */
+struct tao_camera {
+    tao_shared_camera_t* shared; /**< Attached shared camera data. */
+    unsigned perms;              /**< Access permissions for the shared data. */
+    int nframes;                 /**< Maximum number of memorized frames. */
+    tao_shared_array_t** frames; /**< List of shared arrays. */
+};
+
 #endif /* _TAO_PRIVATE_H_ */

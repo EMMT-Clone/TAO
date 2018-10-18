@@ -54,6 +54,18 @@ end
 
 """
 
+Type `TAO.SharedCamera` is used to represent shared camera data in Julia.
+
+"""
+mutable struct SharedCamera <: AbstractSharedObject
+    ptr::Ptr{Cvoid}
+    # Provide a unique inner constructor which forces starting with a NULL
+    # pointer and no finalizer.
+    SharedCamera() = new(C_NULL)
+end
+
+"""
+
 Union `AnySharedObject` is defined to represent any TAO shared objects because
 TAO shared arrays inherit from `DenseArray`, not from `AbstractSharedObject`.
 

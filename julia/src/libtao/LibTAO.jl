@@ -14,11 +14,31 @@
 module LibTAO
 
 # Extends some methods in parent TAO module.
-import ...TAO: AbstractSharedObject, AnySharedObject, SharedObject, SharedArray, TimeStamp,
-    SHARED_ANY, SHARED_MAGIC, SHARED_OBJECT, SHARED_ARRAY, SHARED_CAMERA,
-    SHARED_ARRAY_MAX_NDIMS, SHARED_ARRAY_TYPES, SharedArrayTypes, SHARED_ARRAY_ELTYPES,
-    create, attach, detach, lock, trylock, unlock,
-    get_type, get_ident, get_size
+import ...TAO:
+    AbstractSharedObject,
+    AnySharedObject,
+    SHARED_ANY,
+    SHARED_ARRAY,
+    SHARED_ARRAY_ELTYPES,
+    SHARED_ARRAY_MAX_NDIMS,
+    SHARED_ARRAY_TYPES,
+    SHARED_CAMERA,
+    SHARED_MAGIC,
+    SHARED_OBJECT,
+    SharedArray,
+    SharedArrayTypes,
+    SharedCamera,
+    SharedObject,
+    TimeStamp,
+    attach,
+    create,
+    detach,
+    get_ident,
+    get_size,
+    get_type,
+    lock,
+    trylock,
+    unlock
 
 # Constant `taolib` is defined in another file which is built at installation
 # time.
@@ -28,6 +48,7 @@ include("types.jl")
 include("errors.jl")
 include("sharedobjects.jl")
 include("sharedarrays.jl")
+include("sharedcameras.jl")
 
 # FIXME: dangerous!!!
 function _push_error(errs::Errors, func::String, code::Integer)

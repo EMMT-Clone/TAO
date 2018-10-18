@@ -1889,68 +1889,14 @@ tao_unlock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
  */
 
 /**
- * Shared camera data.
- *
- * This structure describes the shared data storing the global resources of a
- * camera.  After querying the shared memory identifier to the server (the
- * frame grabber), clients can attach this shared data part with
- * tao_attach_shared_camera().  When a client no longer needs this shared
- * data, it shall call tao_detach_shared_camera().
- *
- * Information in this structure should be considered as read-only by the
- * clients and is only valid as long as the client locks this shared structure
- * by calling tao_lock_shared_camera() and until the client unlock
- * the structure by calling tao_lock_shared_camera().  Beware to not call
- * tao_detach_shared_camera() while the shared data is locked.
+ * Opaque shared camera data.
  */
-typedef struct tao_shared_camera {
-    tao_shared_object_t base; /**< Shared object backing storage of the
-                                   shared frame grabber */
-    int state;       /**< State of the camera: 0 if device not yet open, 1
-                          if device open but no acquisition is running, 2 if
-                          acquisition is running. */
-    int pixel_type;  /**< Pixel type. */
-    int xoff;        /**< Horizontal offset of the acquired images with respect
-                          to the left border of the detector. */
-    int yoff;        /**< Vertical offset of the acquired images with respect
-                          to the bottom border of the detector. */
-    int width;       /**< Number of pixels per line of the acquired images. */
-    int height;      /**< Number of lines of pixels in the acquired images. */
-    int fullwidth;   /**< Maximum image width for the detector. */
-    int fullheight;  /**< Maximum image height for the detector. */
-    double bias;     /**< Detector bias. */
-    double gain;     /**< Detector gain. */
-    double rate;     /**< Acquisition rate in frames per second. */
-    double exposure; /**< Exposure time in seconds. */
-    struct {
-        int32_t ident;   /**< Identifier of the shared array backing the
-                              storage of the last image, -1 means unused or
-                              invalid. */
-        int64_t counter; /**< Counter value of the last image.  It is a unique,
-                              monotically increasing number, starting at 1 (0
-                              means unused or invalid). */
-    } last_frame; /**< Information relative to the last acquired image. */
-} tao_shared_camera_t;
+typedef struct tao_shared_camera tao_shared_camera_t;
 
 /**
  * Opaque camera structure for the server.
  */
 typedef struct tao_camera tao_camera_t;
-
-/**
- * Camera structure for the server.
- *
- * The server have access to the camera data that is shared with its clients
- * plus a list of shared arrays used to store processed frame data as new
- * frames are acquired. The size of this list is at most @a nframes and its
- * contents is recycled if possible.
- */
-typedef struct tao_camera {
-    tao_shared_camera_t* shared; /**< Attached shared camera data. */
-    unsigned perms;              /**< Access permissions for the shared data. */
-    int nframes;                 /**< Maximum number of memorized frames. */
-    tao_shared_array_t** frames; /**< List of shared arrays. */
-} tao_camera_t;
 
 /**
  * Create a camera structure for a frame grabber server.
@@ -2059,10 +2005,11 @@ tao_detach_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
  *
  * @return The identifier of the shared camera data.  This value can be used
  *         by another process to attach to its address space the shared camera.
+ *         `-1` is returned if @a cam is `NULL`.
  *
  * @see tao_attach_shared_camera.
  */
-extern int tao_get_shared_camera_ident(tao_shared_camera_t* cam);
+extern int tao_get_shared_camera_ident(const tao_shared_camera_t* cam);
 
 /**
  * Lock a shared camera.
@@ -2174,6 +2121,157 @@ extern tao_shared_array_t*
 tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam);
 
 /**
+ * Get the current state of the camera.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return `-1` if @a cam is `NULL`; otherwise, `0` if device not yet open, `1`
+ *         if device open but no acquisition is running, `2` if acquisition is
+ *         running.
+ */
+extern int tao_get_shared_camera_state(const tao_shared_camera_t* cam);
+
+/**
+ * Get the pixel type for the captured images after pre-processing.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The pixel type for the captured images after pre-processing, `-1`
+ *         if @a cam is `NULL`.
+ */
+extern int tao_get_shared_camera_pixel_type(const tao_shared_camera_t* cam);
+
+/**
+ * Get the depth of the raw images.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The number of bits per pixel in the raw captured images,
+ *         `0` if @a cam is `NULL`.
+ */
+extern int tao_get_shared_camera_depth(const tao_shared_camera_t* cam);
+
+/**
+ * Get the width of the detector.
+ *
+ * This function yields the number of pixels per line of the detector which is
+ * the maximum width for captured iamges.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The number of pixels per line of the detector, `0` if @a cam is
+ *         `NULL`.
+ */
+extern int tao_get_shared_camera_fullwidth(const tao_shared_camera_t* cam);
+
+/**
+ * Get the height of the detector.
+ *
+ * This function yields the number of lines of pixels of the detector which is
+ * the maximum height for captured iamges.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The number of lines of pixels of the detector, `0` if @a cam is
+ *         `NULL`.
+ */
+extern int tao_get_shared_camera_fullheight(const tao_shared_camera_t* cam);
+
+/**
+ * Get the horizontal offset of captured images.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The horizontal offset in physical pixels of the region of interest
+ *         set for the captured images, `0` if @a cam is `NULL`.
+ */
+extern int tao_get_shared_camera_xoff(const tao_shared_camera_t* cam);
+
+/**
+ * Get the vertical offset of captured images.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The vertical offset in physical pixels of the region of interest
+ *         set for the captured images, `0` if @a cam is `NULL`.
+ */
+extern int tao_get_shared_camera_yoff(const tao_shared_camera_t* cam);
+
+/**
+ * Get the width of the captured images.
+ *
+ * This function yields the number of macro-pixels per line of the captured
+ * images.  If no sub-sampling nor re-binning of physical pixels is used a
+ * macro-pixel corresponds to a physical pixel.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The number of macro-pixels per line of the captured images, `0` if
+ *         @a cam is `NULL`.
+ */
+extern int tao_get_shared_camera_width(const tao_shared_camera_t* cam);
+
+/**
+ * Get the height of the captured images.
+ *
+ * This function yields the number of lines of macro-pixels in the captured
+ * images.  If no sub-sampling nor re-binning of physical pixels is used a
+ * macro-pixel corresponds to a physical pixel.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The number of lines of macro-pixels in the captured images, `0` if
+ *         @a cam is `NULL`.
+ */
+extern int tao_get_shared_camera_height(const tao_shared_camera_t* cam);
+
+/**
+ * Get the detector bias.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The detector bias, `0` if @a cam is `NULL`.
+ */
+extern double tao_get_shared_camera_bias(const tao_shared_camera_t* cam);
+
+/**
+ * Get the detector gain.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The detector gain, `0` if @a cam is `NULL`.
+ */
+extern double tao_get_shared_camera_gain(const tao_shared_camera_t* cam);
+
+/**
+ * Get the frame rate.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The number of frame per seconds, `0` if @a cam is `NULL`.
+ */
+extern double tao_get_shared_camera_rate(const tao_shared_camera_t* cam);
+
+/**
+ * Get the duration of the exposure.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The exposure time in seconds for the captured images, `0` if @a cam
+ *         is `NULL`.
+ */
+extern double tao_get_shared_camera_exposure(const tao_shared_camera_t* cam);
+
+/**
+ * Get the gamma correction factor.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The gamma correction factor, `0` if @a cam is `NULL`.
+ */
+extern double tao_get_shared_camera_gamma(const tao_shared_camera_t* cam);
+
+/**
  * Get the counter value of the last acquired image.
  *
  * @param cam    Pointer to a shared camera attached to the address space of
@@ -2183,11 +2281,12 @@ tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam);
  * the caller must have locked the shared camera.  For efficiency reasons, this
  * function does not perform error checking.
  *
- * @return The value of the counter of the last acquired image, `0` if none.
+ * @return The value of the counter of the last acquired image, `0` if none
+ *         or if @a cam is `NULL`.
  *
  * @see tao_lock_shared_camera.
  */
-extern uint64_t tao_get_last_image_counter(tao_shared_camera_t* cam);
+extern uint64_t tao_get_last_image_counter(const tao_shared_camera_t* cam);
 
 /**
  * Get the identifier of the last acquired image.
@@ -2199,11 +2298,12 @@ extern uint64_t tao_get_last_image_counter(tao_shared_camera_t* cam);
  * the caller must have locked the shared camera.  For efficiency reasons, this
  * function does not perform error checking.
  *
- * @return The identifier of the last acquired image, `-1` if none.
+ * @return The identifier of the last acquired image, `-1` if none or
+ *         if @a cam is `NULL`.
  *
  * @see tao_lock_shared_camera.
  */
-extern int tao_get_last_image_ident(tao_shared_camera_t* cam);
+extern int tao_get_last_image_ident(const tao_shared_camera_t* cam);
 
 /** @} */
 
