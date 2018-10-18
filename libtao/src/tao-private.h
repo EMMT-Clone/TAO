@@ -31,15 +31,6 @@
     } while (0)
 
 /**
- * Check whether any errors occured.
- *
- * @param errs   Address of variable to track errors.
- *
- * @return A boolean result.
- */
-#define TAO_ANY_ERRORS(errs) ((errs) != NULL && *(errs) != TAO_NO_ERRORS)
-
-/**
  * Get the offset of a member in a structure.
  *
  * @param type    Structure type.

@@ -127,13 +127,14 @@ extern void tao_set_message_level(tao_message_type_t level);
  *   be set to `TAO_NO_ERRORS` to indicate that there are no errors yet.  To
  *   check whether an error has occured, the caller just have to check whether
  *   the variable is not equal to `TAO_NO_ERRORS` after calling a TAO function.
- *   (Some TAO functions may return a result which may take a specific value,
- *   say `NULL` or `-1`, when an error occured.)  It is the caller
- *   responsibility to ensure that errors are eventually taken into account.
- *   There are basically two possibilities: errors can be reported with
- *   tao_report_errors() or errors can be simply ignored with the
- *   tao_discard_errors().  Calling any of these two functions does free the
- *   resources associated with the memorized errors.
+ *   (Some TAO functions may also return a specific value, say `NULL` or `-1`,
+ *   when an error occured.)  The macro TAO_ANY_ERRORS() can also be used to
+ *   check whether any error occured.  It is the caller responsibility to
+ *   ensure that errors are eventually taken into account.  There are basically
+ *   two possibilities: errors can be reported with tao_report_errors() or
+ *   errors can be simply ignored with the tao_discard_errors().  Calling any
+ *   of these two functions does free the resources associated with the
+ *   memorized errors.
  *
  * Note that, if the (small) amount of memory needed to store the error
  * information cannot be allocated, a fatal error is assumed: the current error
@@ -157,6 +158,15 @@ typedef struct tao_error tao_error_t;
  * Initial value of pointer for tracking error information.
  */
 #define TAO_NO_ERRORS ((tao_error_t*)0)
+
+/**
+ * Check whether any errors occured.
+ *
+ * @param errs   Address of variable to track errors.
+ *
+ * @return A boolean result.
+ */
+#define TAO_ANY_ERRORS(errs) ((errs) != NULL && *(errs) != TAO_NO_ERRORS)
 
 /**
  * Error codes.
