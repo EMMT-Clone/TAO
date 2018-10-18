@@ -45,15 +45,6 @@ Base.IndexStyle(::Type{<:SharedArray}) = IndexLinear()
 Base.iterate(obj::SharedArray) = iterate(obj.arr)
 Base.iterate(obj::SharedArray, state) = iterate(obj.arr, state)
 
-# Extend `unsafe_convert` to return the correct pointer when a shared array is
-# passed to `ccall`.  This could also be the opportunity to check for the
-# validity of the pointer but it turns out that it was faster (and simpler) to
-# have it in the C library.
-Base.unsafe_convert(::Type{Ptr{T}}, obj::SharedArray{T,N}) where {T,N} =
-    Ptr{T}(unsafe_convert(Ptr{Cvoid}, obj))
-Base.unsafe_convert(::Type{Ptr{Cvoid}}, obj::SharedArray{T,N}) where {T,N} =
-    obj.ptr
-
 function create(::Type{SharedArray{T}}, dims::Integer...; kwds...) where {T}
     N = length(dims)
     return create(SharedArray{T,N}, convert(NTuple{N,Int}, dims); kwds...)
@@ -98,7 +89,7 @@ end
 function detach(obj::SharedArray{T,N}) where {T,N}
     if obj.ptr != C_NULL
         # Detaching a TAO shared array makes the associated Julia array invalid
-        # so we replace it with an array of the coorect type but with all
+        # so we replace it with an array of the correct type but with all
         # dimensions equal to zero.
         ptr = obj.ptr
         obj.arr = Array{T,N}(undef, ntuple(i -> 0, N))

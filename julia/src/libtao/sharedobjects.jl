@@ -80,35 +80,39 @@ end
 # have it in the C library.  Note that the `unsafe_convert` method is used by
 # `ccall`, it is said to be *unsafe* because there is no guaranties that the
 # returned address will remain valid.
-Base.unsafe_convert(::Type{Ptr{Cvoid}}, obj::AnySharedObject) = obj.ptr
-
-function lock(obj::AnySharedObject)
-    errs = Errors()
-    code = ccall((:tao_lock_shared_object, taolib), Cint,
-                 (Ref{Errors}, Ptr{Cvoid},), errs, obj)
-    _check(code != -1, errs)
+for T in SHARED_OBJECT_TYPES
+    @eval Base.unsafe_convert(::Type{Ptr{Cvoid}}, obj::$T) = obj.ptr
 end
 
-function trylock(obj::AnySharedObject)
-    errs = Errors()
-    code = ccall((:tao_try_lock_shared_object, taolib), Cint,
+for T in SHARED_OBJECT_TYPES
+    @eval begin
+        function lock(obj::$T)
+            errs = Errors()
+            code = ccall((:tao_lock_shared_object, taolib), Cint,
+                         (Ref{Errors}, Ptr{Cvoid},), errs, obj)
+            _check(code != -1, errs)
+        end
+        function trylock(obj::$T)
+            errs = Errors()
+            code = ccall((:tao_try_lock_shared_object, taolib), Cint,
+                         (Ref{Errors}, Ptr{Cvoid},), errs, obj)
+            _check(code != -1, errs)
+            return (code != 0)
+        end
+        function unlock(obj::$T)
+            errs = Errors()
+            code = ccall((:tao_unlock_shared_object, taolib), Cint,
                  (Ref{Errors}, Ptr{Cvoid},), errs, obj)
-    _check(code != -1, errs)
-    return (code != 0)
+            _check(code != -1, errs)
+        end
+    end
 end
 
-function unlock(obj::AnySharedObject)
-    errs = Errors()
-    code = ccall((:tao_unlock_shared_object, taolib), Cint,
-                 (Ref{Errors}, Ptr{Cvoid},), errs, obj)
-    _check(code != -1, errs)
+for T in SHARED_OBJECT_TYPES,
+    (m, R) in ((:type, Cint),
+               (:size, Csize_t),
+               (:ident, Cint))
+    cf = string("tao_get_shared_object_", m)
+    jf = Symbol("get_", m)
+    @eval $jf(obj::$T) = ccall(($cf, taolib), $R, (Ptr{Cvoid},), obj)
 end
-
-get_type(obj::AnySharedObject) =
-    ccall((:tao_get_shared_object_type, taolib), Cint, (Ptr{Cvoid},), obj)
-
-get_size(obj::AnySharedObject) =
-    ccall((:tao_get_shared_object_size, taolib), Csize_t, (Ptr{Cvoid},), obj)
-
-get_ident(obj::AnySharedObject) =
-    ccall((:tao_get_shared_object_ident, taolib), Cint, (Ptr{Cvoid},), obj)

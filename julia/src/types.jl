@@ -72,6 +72,8 @@ TAO shared arrays inherit from `DenseArray`, not from `AbstractSharedObject`.
 """
 const AnySharedObject = Union{AbstractSharedObject,SharedArray}
 
+const SHARED_OBJECT_TYPES = (AbstractSharedObject, SharedArray, SharedCamera)
+
 struct TimeStamp
     sec::Int64
     nsec::Int64

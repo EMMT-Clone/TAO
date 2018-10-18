@@ -25,6 +25,7 @@ import ...TAO:
     SHARED_CAMERA,
     SHARED_MAGIC,
     SHARED_OBJECT,
+    SHARED_OBJECT_TYPES,
     SharedArray,
     SharedArrayTypes,
     SharedCamera,
