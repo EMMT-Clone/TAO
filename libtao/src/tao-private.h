@@ -55,21 +55,20 @@
 struct tao_shared_array {
     tao_shared_object_t base;     /**< Shared object backing storage of the
                                        shared array */
-    tao_element_type_t  eltype;   /**< Type of the elements of the shared
-                                       array */
+    size_t offset;                /**< Offset of data part in bytes and
+                                       relative to the base address of the
+                                       object */
     size_t nelem;                 /**< Number of elements */
     uint32_t ndims;               /**< Number of dimensions */
     uint32_t size[TAO_MAX_NDIMS]; /**< Length of each dimension (dimensions
                                        beyong `ndims` are assumed to be `1`) */
+    tao_element_type_t  eltype;   /**< Type of the elements of the shared
+                                       array */
     int32_t nwriters;             /**< Number of writers */
     int32_t nreaders;             /**< Number of readers */
     int64_t counter;              /**< Counter (used for acquired images) */
     int64_t ts_sec;               /**< Time stamp (seconds part) */
     int64_t ts_nsec;              /**< Time stamp (nanoseconds part) */
-    uint64_t data[1];             /**< Shared array data (actual size is large
-                                       enough to store all pixels, type is to
-                                       force correct alignment whatever the
-                                       actual element type) */
 };
 
 #endif /* _TAO_PRIVATE_H_ */

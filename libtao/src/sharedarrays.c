@@ -14,6 +14,35 @@
 
 #include "tao-private.h"
 
+/*
+ * Alignment of data for vectorization depends on the chosen compilation
+ * settings.  The following table summarizes the value of macro
+ * `__BIGGEST_ALIGNMENT__` with different settings:
+ *
+ * ---------------------------------------
+ * Alignment (bytes)   Compilation Options
+ * ---------------------------------------
+ *      16             -ffast-math -msse
+ *      16             -ffast-math -msse2
+ *      16             -ffast-math -msse3
+ *      16             -ffast-math -msse4
+ *      16             -ffast-math -mavx
+ *      32             -ffast-math -mavx2
+ * ---------------------------------------
+ *
+ * The address of attached shared memory is a multiple of memory page size
+ * (PAGE_SIZE which is 4096 on the Linux machine I tested) and so much
+ * larger than ALIGNMENT (defined below).  So, in principle, it is sufficient
+ * to align the shared array data to a multiple of ALIGNMENT relative to the
+ * address of the attached shared memory to have correct alignment for all
+ * processes.
+ */
+#define ALIGNMENT 32
+#if defined(__BIGGEST_ALIGNMENT__) && __BIGGEST_ALIGNMENT__ > ALIGNMENT
+#  undef ALIGNMENT
+#  define ALIGNMENT __BIGGEST_ALIGNMENT__
+#endif
+
 size_t
 tao_get_element_size(int eltype)
 {
@@ -65,7 +94,7 @@ tao_get_shared_array_size(const tao_shared_array_t* arr, int d)
 void*
 tao_get_shared_array_data(const tao_shared_array_t* arr)
 {
-    return (void*)&arr->data[0];
+    return (void*)((uint8_t*)arr + arr->offset);
 }
 
 int
@@ -181,14 +210,15 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
             }
         }
     }
-    size_t nbytes = TAO_OFFSET_OF(tao_shared_array_t, data) + nelem*elsize;
+    size_t offset = TAO_ROUND_UP(sizeof(tao_shared_array_t), ALIGNMENT);
+    size_t nbytes = offset + nelem*elsize;
     tao_shared_object_t* obj = tao_create_shared_object(errs, TAO_SHARED_ARRAY,
                                                         nbytes, perms);
     if (obj == NULL) {
         return NULL;
     }
     tao_shared_array_t* arr = (tao_shared_array_t*)obj;
-    arr->eltype = eltype;
+    arr->offset = offset;
     arr->nelem = nelem;
     arr->ndims = ndims;
     for (int d = 0; d < ndims; ++d) {
@@ -197,6 +227,7 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
     for (int d = ndims; d < TAO_MAX_NDIMS; ++d) {
         arr->size[d] = 1;
     }
+    arr->eltype = eltype;
     arr->nwriters = 0;
     arr->nreaders = 0;
     arr->counter = 0;
