@@ -266,8 +266,9 @@ tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr);
 /**
  * Report all tracked errors.
  *
- * This function prints the errors in the given list in reverse order of
- * occurence and delete the contents of the error list.
+ * This function prints to the standard error stream the errors in the given
+ * list in reverse order of occurence and delete the contents of the error
+ * list.
  *
  * @param errs   Address of a variable to track errors.
  */
