@@ -206,6 +206,12 @@ tao_detach_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 {
     int status = 0;
 
+    /* Check arguments. */
+    if (obj == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+
     /* Decrease the reference count of the object and detach the shared memory
        segment from the address space of the calling process. */
     if (tao_lock_shared_object(errs, obj) == -1) {
