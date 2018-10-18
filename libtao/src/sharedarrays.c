@@ -166,12 +166,20 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
     }
     size_t nelem = 1;
     for (int d = 0; d < ndims; ++d) {
-        /* FIXME: check for overflows */
         if (size[d] <= 0) {
             tao_push_error(errs, __func__, TAO_BAD_SIZE);
             return NULL;
         }
-        nelem *= size[d];
+        if (size[d] > 1) {
+            /* Count number of elements and check for overflows. */
+            size_t prev = nelem;
+            uint32_t dim = size[d];
+            nelem *= size[d];
+            if (dim != size[d] || nelem <= prev) {
+                tao_push_error(errs, __func__, TAO_BAD_SIZE);
+                return NULL;
+            }
+        }
     }
     size_t nbytes = TAO_OFFSET_OF(tao_shared_array_t, data) + nelem*elsize;
     tao_shared_object_t* obj = tao_create_shared_object(errs, TAO_SHARED_ARRAY,
