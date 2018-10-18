@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include "tao-private.h"
+#include "macros.h"
 
 /* Shared objects */
 
@@ -249,35 +250,47 @@ tao_detach_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 size_t
 tao_get_shared_object_size(const tao_shared_object_t* obj)
 {
-    return obj->size;
+    return (likely(obj != NULL) ? obj->size : 0);
 }
 
 int
 tao_get_shared_object_type(const tao_shared_object_t* obj)
 {
-    return obj->type;
+    return (likely(obj != NULL) ? obj->type : -1);
 }
 
 int
 tao_get_shared_object_ident(const tao_shared_object_t* obj)
 {
-    return obj->ident;
+    return (likely(obj != NULL) ? obj->ident : -1);
 }
 
 int
 tao_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 {
+    if (unlikely(obj == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
     return tao_lock_mutex(errs, &obj->mutex);
 }
 
 int
 tao_try_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 {
+    if (unlikely(obj == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
     return tao_try_lock_mutex(errs, &obj->mutex);
 }
 
 int
 tao_unlock_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 {
+    if (unlikely(obj == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
     return tao_unlock_mutex(errs, &obj->mutex);
 }

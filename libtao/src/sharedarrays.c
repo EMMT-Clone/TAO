@@ -13,6 +13,7 @@
  */
 
 #include "tao-private.h"
+#include "macros.h"
 
 /*
  * Alignment of data for vectorization depends on the chosen compilation
@@ -64,89 +65,102 @@ tao_get_element_size(int eltype)
 int
 tao_get_shared_array_ident(const tao_shared_array_t* arr)
 {
-    return arr->base.ident;
+    return (likely(arr != NULL) ? arr->base.ident : -1);
 }
 
 int
 tao_get_shared_array_eltype(const tao_shared_array_t* arr)
 {
-    return arr->eltype;
+    return (likely(arr != NULL) ? arr->eltype : -1);
 }
 
 size_t
 tao_get_shared_array_length(const tao_shared_array_t* arr)
 {
-    return arr->nelem;
+    return (likely(arr != NULL) ? arr->nelem : 0);
 }
 
 int
 tao_get_shared_array_ndims(const tao_shared_array_t* arr)
 {
-    return arr->ndims;
+    return (likely(arr != NULL) ? arr->ndims : 0);
 }
 
 size_t
 tao_get_shared_array_size(const tao_shared_array_t* arr, int d)
 {
-    return (d < 1 ? 0 : (d > TAO_MAX_NDIMS ? 1 : arr->size[d-1]));
+    return (likely(arr != NULL) ?
+            (unlikely(d < 1) ? 0 :
+             (unlikely(d > TAO_MAX_NDIMS) ? 1 :
+              arr->size[d-1])) : 0);
 }
 
 void*
 tao_get_shared_array_data(const tao_shared_array_t* arr)
 {
-    return (void*)((uint8_t*)arr + arr->offset);
+    return (likely(arr != NULL) ?
+            (void*)((uint8_t*)arr + arr->offset) : (void*)0);
 }
 
 int
 tao_get_shared_array_nreaders(const tao_shared_array_t* arr)
 {
-    return arr->nreaders;
+    return (likely(arr != NULL) ? arr->nreaders : 0);
 }
 
 int
 tao_adjust_shared_array_nreaders(tao_shared_array_t* arr, int adj)
 {
-    return (arr->nreaders += adj);
+    return (likely(arr != NULL) ? (arr->nreaders += adj) : 0);
 }
 
 int
 tao_get_shared_array_nwriters(const tao_shared_array_t* arr)
 {
-    return arr->nwriters;
+    return (likely(arr != NULL) ? arr->nwriters : 0);
 }
 
 int
 tao_adjust_shared_array_nwriters(tao_shared_array_t* arr, int adj)
 {
-    return (arr->nwriters += adj);
+    return (likely(arr != NULL) ? (arr->nwriters += adj) : 0);
 }
 
 int64_t
 tao_get_shared_array_counter(const tao_shared_array_t* arr)
 {
-    return arr->counter;
+    return (likely(arr != NULL) ? arr->counter : -1);
 }
 
 void
 tao_set_shared_array_counter(tao_shared_array_t* arr, int64_t cnt)
 {
-    arr->counter = cnt;
+    if (likely(arr != NULL)) {
+        arr->counter = cnt;
+    }
 }
 
 void
 tao_get_shared_array_timestamp(const tao_shared_array_t* arr,
                                int64_t* ts_sec, int64_t* ts_nsec)
 {
-    *ts_sec = arr->ts_sec;
-    *ts_nsec = arr->ts_nsec;
+    if (likely(arr != NULL)) {
+        *ts_sec = arr->ts_sec;
+        *ts_nsec = arr->ts_nsec;
+    } else {
+        *ts_sec = -1;
+        *ts_nsec = 0;
+    }
 }
 
 void
 tao_set_shared_array_timestamp(tao_shared_array_t* arr,
                                int64_t ts_sec, int64_t ts_nsec)
 {
-    arr->ts_sec = ts_sec;
-    arr->ts_nsec = ts_nsec;
+    if (likely(arr != NULL)) {
+        arr->ts_sec = ts_sec;
+        arr->ts_nsec = ts_nsec;
+    }
 }
 
 tao_shared_array_t*
@@ -252,23 +266,36 @@ tao_attach_shared_array(tao_error_t** errs, int ident)
 int
 tao_detach_shared_array(tao_error_t** errs, tao_shared_array_t* arr)
 {
+    /* No needs to check address. */
     return tao_detach_shared_object(errs, (tao_shared_object_t*)arr);
 }
 
 int
 tao_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr)
 {
+    if (unlikely(arr == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
     return tao_lock_mutex(errs, &arr->base.mutex);
 }
 
 int
 tao_try_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr)
 {
+    if (unlikely(arr == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
     return tao_try_lock_mutex(errs, &arr->base.mutex);
 }
 
 int
 tao_unlock_shared_array(tao_error_t** errs, tao_shared_array_t* arr)
 {
+    if (unlikely(arr == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
     return tao_unlock_mutex(errs, &arr->base.mutex);
 }
