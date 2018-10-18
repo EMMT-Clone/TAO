@@ -40,7 +40,7 @@ tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam)
 {
     int status = 0;
     if (cam != NULL) {
-        if (cam->shared != NULL) {
+       if (cam->shared != NULL) {
             tao_shared_object_t* obj = (tao_shared_object_t*)cam->shared;
             cam->shared =  NULL;
             if (tao_detach_shared_object(errs, obj) != 0) {
@@ -51,7 +51,7 @@ tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam)
             for (int i = 0; i < cam->nframes; ++i) {
                 tao_shared_array_t* arr = cam->frames[i];
                 cam->frames[i] = NULL;
-                if (tao_detach_shared_array(errs, arr)!= 0) {
+                if (arr != NULL && tao_detach_shared_array(errs, arr) != 0) {
                     status = -1;
                 }
             }
