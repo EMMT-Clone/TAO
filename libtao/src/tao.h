@@ -2209,6 +2209,72 @@ extern int tao_get_last_image_ident(tao_shared_camera_t* cam);
 
 /** @} */
 
+/*---------------------------------------------------------------------------*/
+
+/**
+ *  @addtogroup RealTimeProcessing
+ *
+ * @{
+ */
+
+/**
+ * Apply image pre-processing.
+ *
+ * The following formula is applied for each pixel index `i` to compute the
+ * pixel value and its weight:
+ *
+ * ```
+ * d[i] = (r[i] - b[i])*a[i];
+ * w[i] = u[i]/(max(d[i],0) + v[i]);
+ * ```
+ * @param d     Ouput image data.
+ * @param w     Ouput image weights.
+ * @param r     Input raw image data.
+ * @param n     Number of pixels.
+ * @param a     Gain correction term.
+ * @param b     Bias correction term.
+ * @param u     Numerator for weights.
+ * @param v     Denominator for weights.
+ *
+ * If @a w is non `NULL` but @a u or @ v is `NULL`, all weights are set to `1`.
+ * If @a w is `NULL`, no weights are computed.
+ */
+extern void
+tao_preprocess_image_u8_to_f32(float* d, float* w, const uint8_t* r, int n,
+                               const float* a, const float* b,
+                               const float* u, const float* v);
+
+/**
+ * Apply image pre-processing.
+ *
+ * @see tao_preprocess_image_u8_to_f32.
+ */
+extern void
+tao_preprocess_image_u8_to_f64(double* d, double* w, const uint8_t* r, int n,
+                               const double* a, const double* b,
+                               const double* u, const double* v);
+
+/**
+ * Apply image pre-processing.
+ *
+ * @see tao_preprocess_image_u8_to_f32.
+ */
+extern void
+tao_preprocess_image_u16_to_f32(float* d, float* w, const uint16_t* r, int n,
+                                const float* a, const float* b,
+                                const float* u, const float* v);
+
+/**
+ * Apply image pre-processing.
+ *
+ * @see tao_preprocess_image_u8_to_f32.
+ */
+extern void
+tao_preprocess_image_u16_to_f64(double* d, double* w, const uint16_t* r, int n,
+                                const double* a, const double* b,
+                                const double* u, const double* v);
+/** @} */
+
 _TAO_END_DECLS
 
 #endif /* _TAO_H_ */

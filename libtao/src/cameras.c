@@ -276,3 +276,36 @@ tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 {
     return UNLOCK_SHARED_CAMERA(errs, cam);
 }
+
+#define CODE(FUNC, INP, OUT)                                            \
+    void FUNC(OUT* d, OUT* w, const INP* r, int n,                      \
+              const OUT* a, const OUT* b, const OUT* u, const OUT* v)   \
+    {                                                                   \
+        const OUT zero = 0;                                             \
+        const OUT one = 1;                                              \
+        if (w != NULL) {                                                \
+            if (u != NULL && v != NULL) {                               \
+                for (int i = 0; i < n; ++i) {                           \
+                    OUT x = ((OUT)r[i] - b[i])*a[i];                    \
+                    d[i] = x;                                           \
+                    w[i] = u[i]/((x > zero ? x : zero) + v[i]);         \
+                }                                                       \
+            } else {                                                    \
+                for (int i = 0; i < n; ++i) {                           \
+                    d[i] = ((OUT)r[i] - b[i])*a[i];                     \
+                    w[i] = one;                                         \
+                }                                                       \
+            }                                                           \
+        } else {                                                        \
+            for (int i = 0; i < n; ++i) {                               \
+                d[i] = ((OUT)r[i] - b[i])*a[i];                         \
+            }                                                           \
+        }                                                               \
+    }
+
+CODE(tao_preprocess_image_u8_to_f32, uint8_t, float)
+CODE(tao_preprocess_image_u8_to_f64, uint8_t, double)
+CODE(tao_preprocess_image_u16_to_f32, uint16_t, float)
+CODE(tao_preprocess_image_u16_to_f64, uint16_t, double)
+
+#undef CODE
