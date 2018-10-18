@@ -2024,6 +2024,8 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
  *
  * @return The address of the shared camera in the address space of the caller;
  * `NULL` on failure.
+ *
+ * @see tao_detach_shared_camera, tao_get_shared_camera_ident.
  */
 extern tao_shared_camera_t*
 tao_attach_shared_camera(tao_error_t** errs, int ident);
@@ -2043,9 +2045,24 @@ tao_attach_shared_camera(tao_error_t** errs, int ident);
  *               the caller.
  *
  * @return `0` on success; `-1` on error.
+ *
+ * @see tao_attach_shared_camera.
  */
 extern int
 tao_detach_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+
+/**
+ * Get the identifier of shared camera data.
+ *
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller and locked by the caller.
+ *
+ * @return The identifier of the shared camera data.  This value can be used
+ *         by another process to attach to its address space the shared camera.
+ *
+ * @see tao_attach_shared_camera.
+ */
+extern int tao_get_shared_camera_ident(tao_shared_camera_t* cam);
 
 /**
  * Lock a shared camera.

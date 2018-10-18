@@ -241,6 +241,12 @@ tao_get_last_image_ident(tao_shared_camera_t* cam)
     return cam->last_frame.ident;
 }
 
+int
+tao_get_shared_camera_ident(tao_shared_camera_t* cam)
+{
+    return cam->base.ident;
+}
+
 tao_shared_camera_t*
 tao_attach_shared_camera(tao_error_t** errs, int ident)
 {
