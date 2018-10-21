@@ -11,6 +11,9 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
+#include <math.h>
+#include <errno.h>
+
 #include "config.h"
 #include "macros.h"
 #include "tao-private.h"
@@ -362,3 +365,100 @@ CODE(tao_preprocess_image_u16_to_f32, uint16_t, float)
 CODE(tao_preprocess_image_u16_to_f64, uint16_t, double)
 
 #undef CODE
+
+int
+tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx)
+{
+    if (unlikely(cam == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+        tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
+        return -1;
+    }
+    if (sem_wait(&cam->sem[idx - 1]) != 0) {
+        tao_push_system_error(errs, "sem_wait");
+        return -1;
+    }
+    return 0;
+}
+
+int
+tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx)
+{
+    if (unlikely(cam == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+        tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
+        return -1;
+    }
+    if (sem_trywait(&cam->sem[idx - 1]) != 0) {
+        int code = errno;
+        if (code == EAGAIN) {
+            return 0;
+        }
+        tao_push_error(errs, "sem_trywait", code);
+        return -1;
+    }
+    return 1;
+}
+
+int
+tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
+                     double secs)
+{
+    if (unlikely(cam == NULL)) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+        tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
+        return -1;
+    }
+    if (! isnan(secs) || secs < 0) {
+        tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
+        return -1;
+    }
+    if (secs < 1e-9) {
+        /* For a very short timeout, we just call `sem_trywait`. */
+        if (sem_trywait(&cam->sem[idx - 1]) != 0) {
+            int code = errno;
+            if (code == EAGAIN) {
+                /* Pretend this was due to a timed-out. */
+                code = ETIMEDOUT;
+                return 0;
+            }
+            tao_push_error(errs, "sem_trywait", code);
+            return -1;
+        }
+    } else if (secs > 31.7e6) {
+        /* For a very long timeout (the above limit is about one year), we just
+           call `sem_wait`. */
+        if (sem_wait(&cam->sem[idx - 1]) != 0) {
+            tao_push_system_error(errs, "sem_wait");
+            return -1;
+        }
+    } else {
+        struct timespec ts;
+        long s = floor(secs);
+        long ns = lround((secs - s)*1e9);
+        if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
+            tao_push_system_error(errs, "clock_gettime");
+            return -1;
+        }
+        ts.tv_sec += s;
+        ts.tv_nsec += ns;
+        if (sem_timedwait(&cam->sem[idx - 1], &ts) != 0) {
+            int code = errno;
+            if (code == ETIMEDOUT) {
+                return 0;
+            }
+            tao_push_error(errs, "sem_timedwait", code);
+            return -1;
+        }
+    }
+    return 1;
+}

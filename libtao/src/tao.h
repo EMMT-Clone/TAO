@@ -2285,6 +2285,79 @@ extern double tao_get_shared_camera_exposure(const tao_shared_camera_t* cam);
 extern double tao_get_shared_camera_gamma(const tao_shared_camera_t* cam);
 
 /**
+ * Wait for next acquired image.
+ *
+ * This function waits for a new image to be available from a given camera.  If
+ * a new image is already available, the function returns immediately;
+ * otherwise the call blocks until a new image becomes available or a signal
+ * handler interrupts the call.
+ *
+ * @warning Each process waiting for a new image should use a different
+ * semaphore index.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller.
+ * @param idx    Index (starting at 1) of semaphore to use.
+ *
+ * @return `0` on success; `-1` on error.
+ */
+extern int
+tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
+
+/**
+ * Attempt to wait for next acquired image.
+ *
+ * This function checks whether a new image is immediately available from a
+ * given camera.  Compared to tao_wait_image(), this function never blocks and
+ * return immediately.  After this function returns `1`, this function can only
+ * return `1` again after the next new image (on the same camera and index @a
+ * idx).
+ *
+ * @warning Each process waiting for a new image should use a different
+ * semaphore index.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller.
+ * @param idx    Index (starting at 1) of semaphore to use.
+ *
+ * @return `1` if a new image is available; `0` if no image is currently
+ * available; `-1` in case of error.
+ */
+extern int
+tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
+
+/**
+ * Attempt to wait for next acquired image.
+ *
+ * This function behaves like tao_wait_image() but blocks no longer than some
+ * given duration.  After this function returns `1`, this function can only
+ * return `1` again after the next new image (on the same camera and index
+ * @a idx).
+ *
+ * @warning Each process waiting for a new image should use a different
+ * semaphore index.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cam    Pointer to a shared camera attached to the address space of
+ *               the caller.
+ * @param idx    Index (starting at 1) of semaphore to use.
+ * @param secs   Maximum time to wait (in seconds).  If this amount of time is
+ *               too small (less than a nanosecond), the effect is the same as
+ *               calling tao_try_wait_image().  If the amount of time is too
+ *               large (more than one year), the effect is the same as calling
+ *               tao_wait_image().
+ *
+ * @return `1` if a new image is available before the specified number of
+ * seconds; `0` if timed-out occured before a new image becomes available; `-1`
+ * in case of error.
+ */
+extern int
+tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam,
+                     int idx, double secs);
+
+/**
  * Get the counter value of the last acquired image.
  *
  * @param cam    Pointer to a shared camera attached to the address space of
