@@ -249,11 +249,15 @@ static void report_error(tao_error_t** errs, XPA xpa)
  * routines belown `argc` is the number of arguments to print.
  */
 
+/* FIXME: indicate set/get command */
+
 static void syntax_error(XPA xpa, char* buf, const char* prefix,
                          int argc, const char** argv, const char* suffix)
 {
     size_t len = strlen(prefix);
-    strcpy(buf, prefix);
+    if (buf != prefix) {
+        strcpy(buf, prefix);
+    }
     for (int i = 0; i < argc && argv[i] != NULL; ++i) {
         if (i > 0) {
             buf[len] = ' ';
@@ -266,31 +270,61 @@ static void syntax_error(XPA xpa, char* buf, const char* prefix,
     XPAError(xpa, buf);
 }
 
-static void too_few_arguments(XPA xpa, char* buf, int argc, const char** argv)
+static void too_few_arguments(XPA xpa, char* buf, const char* cmd,
+                              int argc, const char** argv)
 {
-    syntax_error(xpa, buf, "missing argument(s) in `", argc, argv,
-                 " ...` command");
+    sprintf(buf, "missing argument(s) in %s `", cmd);
+    syntax_error(xpa, buf, buf, argc, argv, " ...` command");
 }
 
-static void too_many_arguments(XPA xpa, char* buf, int argc, const char** argv)
+static void too_many_arguments(XPA xpa, char* buf, const char* cmd,
+                               int argc, const char** argv)
 {
-    syntax_error(xpa, buf, "unexpected argument(s) after `", argc, argv,
-                 " ...` command");
+    sprintf(buf, "unexpected argument(s) after %s `", cmd);
+    syntax_error(xpa, buf, buf, argc, argv, " ...` command");
 }
 
-static void invalid_arguments(XPA xpa, char* buf, int argc, const char** argv)
+static void invalid_arguments(XPA xpa, char* buf, const char* cmd,
+                              int argc, const char** argv)
 {
-    syntax_error(xpa, buf, "invalid argument(s) in `", argc, argv,
-                 " ...` command");
+    sprintf(buf, "invalid argument(s) in %s `", cmd);
+    syntax_error(xpa, buf, buf, argc, argv, " ...` command");
 }
 
 /*---------------------------------------------------------------------------*/
 
+#define CHECK_MIN_ARGC(nprt, nmin)                              \
+    do {                                                        \
+        if (argc < nmin) {                                      \
+            too_few_arguments(xpa, buffer, CMD, nprt, argv);    \
+            goto error;                                         \
+        }                                                       \
+    } while (0)
+#define CHECK_ARGC(nprt, nmin, nmax)                            \
+    do {                                                        \
+        if (argc < nmin) {                                      \
+            too_few_arguments(xpa, buffer, CMD, nprt, argv);    \
+            goto error;                                         \
+        }                                                       \
+        if (argc > nmax) {                                      \
+            too_many_arguments(xpa, buffer, CMD, nprt, argv);   \
+            goto error;                                         \
+        }                                                       \
+    } while (0)
+
+#define INVALID_ARGUMENTS(n)                            \
+    do {                                                \
+        invalid_arguments(xpa, buffer, CMD, n, argv);   \
+        goto error;                                     \
+    } while (0)
+
+/* Callback to answer an XPAGet request. */
+#define CMD "get"
 static int send_callback(void* send_data, void* call_data,
                          char* command, char** bufptr, size_t* lenptr)
 {
     XPA xpa = (XPA)call_data;
-    static char answer[1024];
+    static char buffer[1024]; /* FIXME: share the same buffer? */
     tao_error_t* errs = NULL;
     int argc, i, status = 0, nargs;
     size_t len;
@@ -309,33 +343,115 @@ static int send_callback(void* send_data, void* call_data,
         }
     }
 
-#define CHECK_MIN_ARGC(nprt, nmin)                              \
-    do {                                                        \
-        if (argc < nmin) {                                      \
-            too_few_arguments(xpa, answer, nprt, argv);         \
-            goto error;                                         \
-        }                                                       \
-    } while (0)
-#define CHECK_ARGC(nprt, nmin, nmax)                            \
-    do {                                                        \
-        if (argc < nmin) {                                      \
-            too_few_arguments(xpa, answer, nprt, argv);         \
-            goto error;                                         \
-        }                                                       \
-        if (argc > nmax) {                                      \
-            too_many_arguments(xpa, answer, nprt, argv);        \
-            goto error;                                         \
-        }                                                       \
-    } while (0)
+    /* Start with an empty answer. */
+    buffer[0] = '\0';
+    if (argc < 1) {
+        goto done;
+    }
+    int c = argv[0][0];
+    if (c == 'b' && strcmp(argv[0], "bias") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%.1f", cam->shared->bias);
+    } else if (c == 'd' && strcmp(argv[0], "debug") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        strcpy(buffer, (debug ? "on" : "off"));
+    } else if (c == 'e' && strcmp(argv[0], "exposure") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%.6f", cam->shared->exposure);
+    } else if (c == 'f' && strcmp(argv[0], "fullheight") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d", cam->shared->fullheight);
+    } else if (c == 'f' && strcmp(argv[0], "fullwidth") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d", cam->shared->fullwidth);
+    } else if (c == 'g' && strcmp(argv[0], "gamma") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%.3f", cam->shared->gamma);
+    } else if (c == 'g' && strcmp(argv[0], "gain") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%.1f", cam->shared->gain);
+    } else if (c == 'h' && strcmp(argv[0], "height") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d", cam->shared->height);
+    } else if (c == 'r' && strcmp(argv[0], "rate") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%.3f", cam->shared->rate);
+    } else if (c == 'r' && strcmp(argv[0], "roi") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d %d %d %d",
+                cam->shared->xoff, cam->shared->yoff,
+                cam->shared->width, cam->shared->height);
+    } else if (c == 's' && strcmp(argv[0], "shmid") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d", tao_get_shared_camera_ident(cam->shared));
+    } else if (c == 's' && strcmp(argv[0], "state") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d", cam->shared->state);
+    } else if (c == 'w' && strcmp(argv[0], "width") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d", cam->shared->width);
+    } else if (c == 'x' && strcmp(argv[0], "xoff") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d", cam->shared->xoff);
+    } else if (c == 'y' && strcmp(argv[0], "yoff") == 0) {
+        CHECK_ARGC(1, 1, 1);
+        sprintf(buffer, "%d", cam->shared->yoff);
+    } else {
+        XPAError(xpa, "unknown parameter for get `...` command");
+        goto error;
+    }
 
-#define INVALID_ARGUMENTS(n)                            \
-    do {                                                \
-        invalid_arguments(xpa, answer, n, argv);        \
-        goto error;                                     \
-    } while (0)
+ done:
+    len = strlen(buffer);
+    if (len > 0) {
+        /* Append a newline for more readable output when xapset/xpaget are
+         * used from the command line. */
+        buffer[len] = '\n';
+        buffer[len+1] = '\0';
+    }
+    *bufptr = buffer;
+    *lenptr = len + 1;
+ cleanup:
+    if (argv != NULL) {
+        free(argv);
+    }
+    return status;
+
+ error:
+    status = -1;
+    goto cleanup;
+}
+
+
+/* Callback to answer an XPASet request. */
+#undef CMD
+#define CMD "set"
+static int recv_callback(void* recv_data, void* call_data,
+                         char* command, char* buf, size_t len)
+{
+    XPA xpa = (XPA)call_data;
+    static char buffer[1024]; /* FIXME: share the same buffer? */
+    tao_error_t* errs = NULL;
+    int argc, i, status = 0, nargs;
+    const char** argv;
+
+    if (debug) {
+        fprintf(stderr, "recv: %s [%ld byte(s)]\n", command, (long)len);
+    }
+    argc = split_command(xpa, command, &argv);
+    if (argc < 0) {
+        return -1;
+    }
+    if (debug) {
+        for (int i = 0; i < argc; ++i) {
+            fprintf(stderr, "recv: [%d] >>%s<<\n", i, argv[i]);
+        }
+    }
+
+    /* FIXME: most commands take on data, check this */
 
     /* Start with an empty answer. */
-    answer[0] = '\0';
+    buffer[0] = '\0';
     if (argc < 1) {
         goto done;
     }
@@ -349,57 +465,52 @@ static int send_callback(void* send_data, void* call_data,
             XPAError(xpa, "no acquisition is running");
             goto error;
         }
-    } else if (c == 'g' && strcmp(argv[0], "get") == 0) {
-        CHECK_MIN_ARGC(1, 2);
-        c = argv[1][0];
-        if (c == 'b' && strcmp(argv[1], "bias") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%.1f", cam->shared->bias);
-        } else if (c == 'd' && strcmp(argv[1], "debug") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            strcpy(answer, (debug ? "on" : "off"));
-        } else if (c == 'e' && strcmp(argv[1], "exposure") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%.6f", cam->shared->exposure);
-        } else if (c == 'f' && strcmp(argv[1], "fullheight") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d", cam->shared->fullheight);
-        } else if (c == 'f' && strcmp(argv[1], "fullwidth") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d", cam->shared->fullwidth);
-        } else if (c == 'g' && strcmp(argv[1], "gain") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%.1f", cam->shared->gain);
-        } else if (c == 'h' && strcmp(argv[1], "height") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d", cam->shared->height);
-        } else if (c == 'r' && strcmp(argv[1], "rate") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%.3f", cam->shared->rate);
-        } else if (c == 'r' && strcmp(argv[1], "roi") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d %d %d %d",
-                    cam->shared->xoff, cam->shared->yoff,
-                    cam->shared->width, cam->shared->height);
-        } else if (c == 's' && strcmp(argv[1], "shmid") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d", tao_get_shared_camera_ident(cam->shared));
-        } else if (c == 's' && strcmp(argv[1], "state") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d", cam->shared->state);
-        } else if (c == 'w' && strcmp(argv[1], "width") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d", cam->shared->width);
-        } else if (c == 'x' && strcmp(argv[1], "xoff") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d", cam->shared->xoff);
-        } else if (c == 'y' && strcmp(argv[1], "yoff") == 0) {
-            CHECK_ARGC(2, 2, 2);
-            sprintf(answer, "%d", cam->shared->yoff);
-        } else {
-            XPAError(xpa, "unknown parameter for `get ...` command");
+    } else if (c == 'b' && strcmp(argv[0], "bias") == 0) {
+        double bias;
+        CHECK_ARGC(1, 2, 2);
+        if (tao_parse_double(argv[1], &bias) != 0) {
+            XPAError(xpa, "bad value for `bias`");
             goto error;
         }
+        if (cam->shared->state >= 2) {
+            XPAError(xpa, "cannot change `bias` during an acquisition");
+            goto error;
+        }
+        cam->shared->bias = bias;
+    } else if (c == 'd' && strcmp(argv[0], "debug") == 0) {
+        CHECK_ARGC(1, 2, 2);
+        if (strcmp(argv[1], "on") == 0) {
+            debug = 1;
+        } else if (strcmp(argv[1], "off") == 0) {
+            debug = 0;
+        } else {
+            INVALID_ARGUMENTS(1);
+        }
+    } else if (c == 'g' && strcmp(argv[0], "gain") == 0) {
+        double gain;
+        CHECK_ARGC(1, 2, 2);
+        if (tao_parse_double(argv[1], &gain) != 0 || gain <= 0) {
+            XPAError(xpa, "bad value for `gain`");
+            goto error;
+        }
+        if (cam->shared->state >= 2) {
+            XPAError(xpa, "cannot change `gain` during an acquisition");
+            goto error;
+        }
+        cam->shared->gain = gain;
+    } else if (c == 'g' && strcmp(argv[0], "gamma") == 0) {
+        double gamma;
+        CHECK_ARGC(1, 2, 2);
+        if (tao_parse_double(argv[1], &gamma) != 0 || gamma <= 0 ||
+            gamma > 2) {
+            XPAError(xpa, "bad value for `gamma`");
+            goto error;
+        }
+        if (cam->shared->state >= 2) {
+            XPAError(xpa, "cannot change `gamma` during an acquisition");
+            goto error;
+        }
+        cam->shared->gamma = gamma;
     } else if (c == 'p' && strcmp(argv[0], "ping") == 0) {
         tao_time_t ts;
         CHECK_ARGC(1, 1, 1);
@@ -407,7 +518,7 @@ static int send_callback(void* send_data, void* call_data,
             report_error(&errs, xpa);
             goto error;
         }
-        tao_sprintf_time(answer, &ts);
+        tao_sprintf_time(buffer, &ts);
     } else if (c == 'p' && strcmp(argv[0], "produce") == 0) {
         CHECK_ARGC(1, 1, 1);
         produce_image(0x3256ae07);
@@ -422,63 +533,47 @@ static int send_callback(void* send_data, void* call_data,
             cam->shared->state = 0;
         }
         quit = 1;
-    } else if (c == 's' && strcmp(argv[0], "set") == 0) {
-        CHECK_MIN_ARGC(1, 2);
-        c = argv[1][0];
-        if (c == 'd' && strcmp(argv[1], "debug") == 0) {
-            CHECK_ARGC(2, 3, 3);
-            if (strcmp(argv[2], "on") == 0) {
-                debug = 1;
-            } else if (strcmp(argv[2], "off") == 0) {
-                debug = 0;
-            } else {
-                INVALID_ARGUMENTS(1);
-            }
-        } else if (c == 'r' && strcmp(argv[1], "roi") == 0) {
-            int xoff, yoff, width, height;
-            CHECK_ARGC(2, 6, 6);
-            if (tao_parse_int(argv[2], &xoff) != 0 || xoff < 0 ||
-                xoff >= FULLWIDTH) {
-                XPAError(xpa, "bad for `xoff` in `set roi ...` command");
-                goto error;
-            }
-            if (tao_parse_int(argv[3], &yoff) != 0 || yoff < 0 ||
-                yoff >= FULLHEIGHT) {
-                XPAError(xpa, "bad for `yoff` in `set roi ...` command");
-                goto error;
-            }
-            if (tao_parse_int(argv[4], &width) != 0 || width < 1 ||
-                width > FULLWIDTH) {
-                XPAError(xpa, "bad for `width` in `set roi ...` command");
-                goto error;
-            }
-            if (tao_parse_int(argv[5], &height) != 0 || height < 1 ||
-                height > FULLHEIGHT) {
-                XPAError(xpa, "bad for `height` in `set roi ...` command");
-                goto error;
-            }
-            if (xoff + width > FULLWIDTH) {
-                XPAError(xpa, "`xoff + width` too large in `set roi ...` "
-                         "command");
-                goto error;
-            }
-            if (yoff + height > FULLHEIGHT) {
-                XPAError(xpa, "`yoff + height` too large in `set roi ...` "
-                         "command");
-                goto error;
-            }
-            if (cam->shared->state >= 2) {
-                XPAError(xpa, "cannot change ROI during an acquisition");
-                goto error;
-            }
-            cam->shared->xoff = xoff;
-            cam->shared->yoff = yoff;
-            cam->shared->width = width;
-            cam->shared->height = height;
-        } else {
-            XPAError(xpa, "unknown parameter for `set ...` command");
+    } else if (c == 'r' && strcmp(argv[0], "roi") == 0) {
+        int xoff, yoff, width, height;
+        CHECK_ARGC(1, 5, 5);
+        if (tao_parse_int(argv[1], &xoff) != 0 || xoff < 0 ||
+            xoff >= FULLWIDTH) {
+            XPAError(xpa, "bad value for `xoff` in set `roi ...` command");
             goto error;
         }
+        if (tao_parse_int(argv[2], &yoff) != 0 || yoff < 0 ||
+            yoff >= FULLHEIGHT) {
+            XPAError(xpa, "bad value for `yoff` in set `roi ...` command");
+            goto error;
+        }
+        if (tao_parse_int(argv[3], &width) != 0 || width < 1 ||
+            width > FULLWIDTH) {
+            XPAError(xpa, "bad value for `width` in set `roi ...` command");
+            goto error;
+        }
+        if (tao_parse_int(argv[4], &height) != 0 || height < 1 ||
+            height > FULLHEIGHT) {
+            XPAError(xpa, "bad value for `height` in set `roi ...` command");
+            goto error;
+        }
+        if (xoff + width > FULLWIDTH) {
+            XPAError(xpa, "`xoff + width` too large in set `roi ...` "
+                     "command");
+            goto error;
+        }
+        if (yoff + height > FULLHEIGHT) {
+            XPAError(xpa, "`yoff + height` too large in set `roi ...` "
+                     "command");
+            goto error;
+        }
+        if (cam->shared->state >= 2) {
+            XPAError(xpa, "cannot change ROI during an acquisition");
+            goto error;
+        }
+        cam->shared->xoff = xoff;
+        cam->shared->yoff = yoff;
+        cam->shared->width = width;
+        cam->shared->height = height;
     } else if (c == 's' && strcmp(argv[0], "start") == 0) {
         int nbufs;
         CHECK_ARGC(1, 1, 2);
@@ -507,21 +602,12 @@ static int send_callback(void* send_data, void* call_data,
             goto error;
         }
     } else {
-        XPAError(xpa, "unknown command");
+        XPAError(xpa, "unknown set command or parameter");
         goto error;
     }
 
+    /* FIXME: XPA set commands expect no answer. */
  done:
-    len = strlen(answer);
-    if (len > 0) {
-        /* Append a newline for more readable output when xapset/xpaget are
-         * used from the command line. */
-        answer[len] = '\n';
-        answer[len+1] = '\0';
-    }
-    *bufptr = answer;
-    *lenptr = len + 1;
- cleanup:
     if (argv != NULL) {
         free(argv);
     }
@@ -529,16 +615,15 @@ static int send_callback(void* send_data, void* call_data,
 
  error:
     status = -1;
-    goto cleanup;
+    goto done;
 }
 
-static int recv_callback(void* recv_data, void* call_data,
-                         char* command, char* buf, size_t len)
-{
-    XPA xpa = (XPA)call_data;
-    fprintf(stderr, "recv: %s [%ld byte(s)]\n", command, (long)len);
-    return 0;
-}
+#undef CHECK_MIN_ARGC
+#undef CHECK_ARGC
+#undef INVALID_ARGUMENTS
+#undef CMD
+
+/*---------------------------------------------------------------------------*/
 
 int main(int argc, char* argv[])
 {
