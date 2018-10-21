@@ -228,10 +228,21 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
     arr->counter = ++shared->last_frame.counter;
     arr->nwriters = 0;
     shared->last_frame.ident = arr->base.ident;
-#if 0
-    /* FIXME: Signal that a new image is available to all waiting processes. */
-    signalNewImage(shared);
-#endif
+
+    /* Signal that a new image is available. */
+    for (int i = 0; i < TAO_SHARED_CAMERA_SEMAPHORES; ++i) {
+        int val;
+        if (sem_getvalue(&shared->sem[i], &val) != 0) {
+            tao_push_system_error(errs, "sem_getvalue");
+            return -1;
+        }
+        if (val == 0) {
+            if (sem_post(&shared->sem[i]) != 0) {
+                tao_push_system_error(errs, "sem_post");
+                return -1;
+            }
+        }
+    }
     return 0;
 }
 
