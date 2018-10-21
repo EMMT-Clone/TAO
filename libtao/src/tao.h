@@ -1316,7 +1316,8 @@ tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
  *               `TAO_SHARED_ANY` to accept any shared object type.
  *
  * @return The address of the shared object in the address space of the caller;
- * `NULL` on failure.
+ * `NULL` on failure.  Even tough the arguments are correct, an error may arise
+ * if the object has been destroyed before attachment completes.
  */
 extern tao_shared_object_t*
 tao_attach_shared_object(tao_error_t** errs, int ident, int type);

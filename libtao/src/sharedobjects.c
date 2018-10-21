@@ -16,6 +16,8 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <string.h>
+#include <errno.h>
+#include <time.h>
 
 #include "config.h"
 #include "macros.h"
@@ -95,7 +97,7 @@ tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
         return NULL;
     }
 
-    /* Get identifier of shared memory segment. */
+    /* Create a new segment of shared memory and get its identifier. */
     int flags = (perms & PERMS_MASK) | (S_IRUSR|S_IWUSR|IPC_CREAT|IPC_EXCL);
     int ident = shmget(IPC_PRIVATE, size, flags);
     if (ident == -1) {
@@ -103,7 +105,7 @@ tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
         return NULL;
     }
 
-    /* Attach shared memory segment to the address space of the caller. */
+    /* Attach the shared memory segment to the address space of the caller. */
     void *ptr = shmat(ident, NULL, 0);
     if (ptr == (void*)-1) {
         tao_push_system_error(errs, "shmat");
@@ -147,7 +149,9 @@ tao_attach_shared_object(tao_error_t** errs, int ident, int type)
         return NULL;
     }
 
-    /* Attach shared memory segment to the address space of the caller. */
+    /* Attach shared memory segment to the address space of the caller.
+       An error here means that either the identifier is wrong or that the
+       object has been destroyed. */
     void* ptr = shmat(ident, NULL, 0);
     if (ptr == (void*)-1) {
         tao_push_system_error(errs, "shmat");
@@ -175,18 +179,26 @@ tao_attach_shared_object(tao_error_t** errs, int ident, int type)
         tao_push_error(errs, __func__, TAO_BAD_TYPE);
         goto err;
     }
-    if (obj->nrefs <= 0) {
-        /* We must refuse to re-use an object that has been marked for being no
-           longer used and thus is about to be destroyed.  This must be done
-           before locking the object because, if the object is being destroyed,
-           destroying its associated mutex would fail if it is locked. */
-        tao_push_error(errs, __func__, TAO_DESTROYED);
-        goto err;
-    }
 
-    /* Increment the reference count of the shared object and return it. */
-    if (tao_lock_shared_object(errs, obj) == -1) {
-        goto err;
+    /* We must refuse to re-use an object that has been marked for being no
+       longer used and thus is about to be destroyed.  This must be done before
+       locking the object because, if the object is being destroyed, destroying
+       its associated mutex would fail if it is locked.  The check is repeated
+       just after locking the object.  See comments in
+       tao_detach_shared_object for explanations. */
+    if (obj->nrefs <= 0) {
+        goto destroyed;
+    }
+    if (pthread_mutex_lock(&obj->mutex) != 0) {
+        /* Assume that locking failed because the object has been destroyed in
+           the mean time. */
+        goto destroyed;
+    }
+    if (obj->nrefs <= 0) {
+        /* Unlock object immediately and report that object has been destroyed.
+           Unlocking should not cause any errors here. */
+        pthread_mutex_unlock(&obj->mutex);
+        goto destroyed;
     }
     ++obj->nrefs;
     if (tao_unlock_shared_object(errs, obj) == -1) {
@@ -201,6 +213,11 @@ tao_attach_shared_object(tao_error_t** errs, int ident, int type)
         tao_push_system_error(errs, "shmdt");
     }
     return NULL;
+
+    /* Object has been destroyed. */
+ destroyed:
+    tao_push_error(errs, __func__, TAO_DESTROYED);
+    goto err;
 }
 
 int
@@ -230,10 +247,48 @@ tao_detach_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
        before detaching the object from the address space of the calling
        process. */
     if (nrefs == 0) {
-        /* Destroy the shared mutex. */
-        if (tao_destroy_mutex(errs, &obj->mutex) == -1) {
-            status = -1;
+        /* Destroy the shared mutex.  One issue arises from the fact that the
+           mutex must be unocked while being destroyed (see
+           `pthread_mutex_destroy(3)`).  The mutex must be unlocked just before
+           being destroyed to minimize the risk that another process locks the
+           mutex in the mean time.  To reduce the risk, when a shared object is
+           attached, we check its reference count before locking it and report
+           that object is about to be destroyed if the reference count is less
+           or equal zero.  Then we lock the mutex and re-check its reference
+           count and if it is less or equal zero, we immediately unlock the
+           mutex and report that object is about to be destroyed.  But the risk
+           still exists that `pthread_mutex_destroy(3)` is called when the
+           mutex is locked and returns `EBUSY`.  In that case, we wait a bit to
+           let the other process unlock the mutex and re-call
+           `pthread_mutex_destroy(3)`.  This is repeated untill success. */
+        long nsec = 2000; /* wait 2µs if first attempt fails */
+        while (1) {
+            int code = pthread_mutex_destroy(&obj->mutex);
+            if (code == 0) {
+                /* Success. */
+                break;
+            } else if (code == EBUSY) {
+                struct timespec ts;
+                if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
+                    tao_push_system_error(errs, "clock_gettime");
+                    status = -1;
+                    break;
+                }
+                ts.tv_nsec += nsec;
+                if (nanosleep(&ts, NULL) != 0) {
+                    tao_push_system_error(errs, "nanosleep");
+                    status = -1;
+                    break;
+                }
+                nsec += nsec; /* double next waiting duration */
+            } else {
+                /* Failure. */
+                tao_push_error(errs, "pthread_mutex_destroy", code);
+                status = -1;
+                break;
+            }
         }
+        /* FIXME: Destroy other resources (semaphores, etc.). */
     }
 
     /* Detach the shared memory segment from the address space of the calling
