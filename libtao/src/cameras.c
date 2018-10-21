@@ -37,7 +37,7 @@ tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam)
     if (cam != NULL) {
        if (cam->shared != NULL) {
             tao_shared_object_t* obj = (tao_shared_object_t*)cam->shared;
-            cam->shared =  NULL;
+            cam->shared = NULL;
             if (tao_detach_shared_object(errs, obj) != 0) {
                 status = -1;
             }
@@ -83,6 +83,25 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
     if (shared == NULL) {
         tao_finalize_camera(errs, cam);
         return NULL;
+    }
+    for (int i = 0; i < TAO_SHARED_CAMERA_SEMAPHORES; ++i) {
+        if (sem_init(&shared->sem[i], TRUE, 0) != 0) {
+            /* The only possible error here is that the system does not support
+               process-shared semaphores.  This could be treated as a fatal
+               error because this feature is a requirement in TAO.  We
+               nevertheless be nice and gently report the error.  However, to
+               avoid that tao_detach_shared_object calls sem_destroy, we first
+               undo what has been done and pretend that the shared camera is a
+               basic object. */
+            tao_push_system_error(errs, "sem_init");
+            while (--i >= 0) {
+                (void)sem_destroy(&shared->sem[i]);
+            }
+            shared->base.type = TAO_SHARED_OBJECT;
+            tao_detach_shared_object(errs, (tao_shared_object_t*)shared);
+            tao_finalize_camera(errs, cam);
+            return NULL;
+        }
     }
     cam->shared = shared;
     shared->last_frame.ident = -1;

@@ -19,6 +19,7 @@
 #   define inline static
 #endif
 
+#include <semaphore.h>
 #include "tao.h"
 
 #define TAO_ASSERT(expr, code)                                          \
@@ -71,6 +72,11 @@ struct tao_shared_array {
 };
 
 /**
+ * Number of semaphores associated with a camera.
+ */
+#define TAO_SHARED_CAMERA_SEMAPHORES 5
+
+/**
  * Shared camera data.
  *
  * This structure describes the shared data storing the global resources of a
@@ -88,6 +94,9 @@ struct tao_shared_array {
 struct tao_shared_camera {
     tao_shared_object_t base; /**< Shared object backing storage of the
                                    shared frame grabber */
+    sem_t sem[TAO_SHARED_CAMERA_SEMAPHORES];
+                     /**< Semaphores used to signal clients that a new image
+                          have just been acquired. */
     int state;       /**< State of the camera: 0 if device not yet open, 1
                           if device open but no acquisition is running, 2 if
                           acquisition is running. */

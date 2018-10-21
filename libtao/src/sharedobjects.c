@@ -288,7 +288,18 @@ tao_detach_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
                 break;
             }
         }
-        /* FIXME: Destroy other resources (semaphores, etc.). */
+
+        /* Destroy other resources (semaphores, etc.). */
+        if (obj->type == TAO_SHARED_CAMERA) {
+            /* Note that destroying a semaphore that other processes or threads
+               are currently blocked on (in sem_wait(3)) produces undefined
+               behavior.  This should not be the case because when the object
+               is destroyed no process should be using any of its resources. */
+            tao_shared_camera_t* cam = (tao_shared_camera_t*)obj;
+            for (int i = 0; i < TAO_SHARED_CAMERA_SEMAPHORES; ++i) {
+                (void)sem_destroy(&cam->sem[i]);
+            }
+        }
     }
 
     /* Detach the shared memory segment from the address space of the calling
