@@ -222,7 +222,7 @@ tao_snprintf_time(char* str, size_t size, const tao_time_t* ts)
             str[0] = '\0';
         }
     }
-    return len + 1;
+    return len;
 }
 
 void

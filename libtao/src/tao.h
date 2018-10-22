@@ -1072,15 +1072,17 @@ tao_sprintf_time(char* str, const tao_time_t* ts);
  *
  * If the destination @a str is non-`NULL`, this function writes as much as
  * possible of the resulting string in @a str but no more than `size` bytes and
- * with a terminating null.  In any cases, the minimum number of bytes needed
- * to store the complete result (including the terminating null) is returned.
+ * with a terminating null.  In any cases, the length of the string
+ * corresponding to the complete result (excluding the terminating null) is
+ * returned.
  *
  * @param str    Destination string (nothing is written there if `NULL`).
  * @param size   Number of bytes available in the destination string.
  * @param ts     Time stamp.
  *
  * @return The number of bytes needed to store the complete formatted string
- * (including the terminating null).
+ * (excluding the terminating null).  Thus, a return value of @a size or more
+ * means that the output was truncated.
  */
 extern size_t
 tao_snprintf_time(char* str, size_t size, const tao_time_t* ts);
