@@ -1577,7 +1577,6 @@ tao_create_3d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
                            size_t dim1, size_t dim2, size_t dim3,
                            unsigned int perms);
 
-
 /**
  * Attach an existing shared array to the address space of the caller.
  *

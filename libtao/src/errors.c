@@ -24,7 +24,7 @@
 
 #define USE_STRERROR 0 /* FIXME: should be in config.h */
 
-static const char* blank_prefix = "     - ";
+static const char* blank_prefix = "       ";
 static const char* error_prefix = "{ERROR}";
 static const char* fatal_prefix = "{FATAL}";
 
