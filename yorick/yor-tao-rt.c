@@ -472,22 +472,32 @@ Y_tao_create_shared_object(int argc)
 void
 Y_tao_wait_image(int argc)
 {
-    int sem = 5; /* index of semaphore to use */
     tao_shared_camera_t* cam;
     tao_error_t* errs = TAO_NO_ERRORS;
-    int ans, ident, iarg;
+    int ans, ident, iarg, sem;
 
     /* Check number of arguments. */
-    if (argc < 1 || argc > 2) {
-        y_error("expecting 1 or 2 arguments");
+    if (argc < 2 || argc > 3) {
+        y_error("expecting 2 or 3 arguments");
     }
 
     /* Parse first argument. */
     iarg = argc - 1;
     cam = get_shared_camera(iarg);
 
-    /* Parse second argument and wait for next image. */
+    /* Parse second argument. */
     iarg = argc - 2;
+    sem = ygets_l(iarg);
+    if (sem <= 0) {
+        /* Apply Yorick indexing rules. */
+        sem += TAO_SHARED_CAMERA_SEMAPHORES;
+    }
+    if (sem < 1 || sem > TAO_SHARED_CAMERA_SEMAPHORES) {
+        y_error("out of range semaphore number");
+    }
+
+    /* Parse third (optional) argument and wait for next image. */
+    iarg = argc - 3;
     if (iarg < 0 || yarg_nil(iarg)) {
         if (tao_wait_image(&errs, cam, sem) == 0) {
             ans = 1;
@@ -696,6 +706,7 @@ Y__tao_init(int argc)
     DEF_LONG_CONST(TAO_SHARED_OBJECT);
     DEF_LONG_CONST(TAO_SHARED_ARRAY);
     DEF_LONG_CONST(TAO_SHARED_CAMERA);
+    DEF_LONG_CONST(TAO_SHARED_CAMERA_SEMAPHORES);
     DEF_LONG_CONST(TAO_INT8);
     DEF_LONG_CONST(TAO_UINT8);
     DEF_LONG_CONST(TAO_INT16);

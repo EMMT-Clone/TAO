@@ -166,16 +166,26 @@ extern tao_get_timestamp;
    SEE ALSO: tao_wait_image, tao_get_data, tao_get_monotonic_time.
  */
 
+local TAO_SHARED_CAMERA_SEMAPHORES;
 extern tao_wait_image;
-/* DOCUMENT arr = tao_wait_image(cam);
-         or arr = tao_wait_image(cam, secs);
+/* DOCUMENT arr = tao_wait_image(cam, sem);
+         or arr = tao_wait_image(cam, sem, secs);
 
-     The function `tao_wait_image` waits for a new image to be available from
-     TAO shared camera `cam`.  Optional argument `secs` is the maximum amount
-     of time to wait (in seconds).  If no new image is acquired during the
-     allowed time, an empty result is returned, otherwise a TAO shared array
-     is returned with the image data.  If `secs` is unspecified (not
-     recommended), the call blocks until a new image becomes available.
+     The function `tao_wait_image` waits on semaphore number `sem` for a new
+     image to be available from TAO shared camera `cam`.  Optional argument
+     `secs` is the maximum amount of time to wait (in seconds).  If no new
+     image is acquired during the allowed time, an empty result is returned,
+     otherwise a TAO shared array is returned with the image data.  If `secs`
+     is unspecified (not recommended), the call blocks until a new image
+     becomes available.
+
+     It is assumed by the frame grabber that at most one process is waiting on
+     each semaphore, the chosen semaphore number must thus be chosen in
+     agreement with the choice made by other processes.  The first semaphore
+     number is 1 and Yorick indexing rules are applied for the parameter `sem`
+     (that is, `sem = 0` is the last semaphore, `sem = -1` is the penultimate
+     one, etc.).  Global variable `TAO_SHARED_CAMERA_SEMAPHORES` gives the
+     number of semaphores associated with a shared camera.
 
    SEE ALSO: tao_create_shared_array, tao_attach_shared_object.
  */
