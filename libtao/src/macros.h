@@ -21,7 +21,7 @@
  * Helpers for branch prediction (See
  * http://blog.man7.org/2012/10/how-much-do-builtinexpect-likely-and.html).
  */
-#define likely(expr)      __builtin_expect(!(expr), FALSE)
-#define unlikely(expr)    __builtin_expect(!(expr), TRUE)
+#define likely(expr)      __builtin_expect(!!(expr), 1)
+#define unlikely(expr)    __builtin_expect(!!(expr), 0)
 
 #endif /* _TAO_MACROS_H_ */
