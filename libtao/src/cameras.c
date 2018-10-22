@@ -429,7 +429,7 @@ tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
         tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
         return -1;
     }
-    if (! isnan(secs) || secs < 0) {
+    if (isnan(secs) || secs < 0) {
         tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
