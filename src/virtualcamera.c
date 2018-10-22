@@ -203,8 +203,8 @@ static void report_error(tao_error_t** errs, XPA xpa)
 {
     const char* func;
     int code, flag = 1;
-    char* bufptr;
-    long bufsiz, minsiz;
+    char* buf;
+    long siz, len;
 
     /* Write error message. */
     tao_clear_buffer(&srvbuf);
@@ -221,25 +221,25 @@ static void report_error(tao_error_t** errs, XPA xpa)
              * the size of the buffer as needed.  A fatal error results in case
              * of failure here.
              */
-            bufsiz = tao_get_buffer_unused_part(&srvbuf, (void**)&bufptr);
-            minsiz = snprintf(bufptr, bufsiz, "%s%s in function `%s` [%s]\n",
-                              (flag ? "" : "; "), reason, func, error);
-            if (minsiz <= bufsiz) {
-                tao_adjust_buffer_contents_size(NULL, &srvbuf, minsiz - 1);
+            siz = tao_get_buffer_unused_part(&srvbuf, (void**)&buf);
+            len = snprintf(buf, siz, "%s%s in function `%s` [%s]\n",
+                           (flag ? "" : "; "), reason, func, error);
+            if (len < siz) {
+                tao_adjust_buffer_contents_size(NULL, &srvbuf, len);
                 break;
             }
-            tao_resize_buffer(NULL, &srvbuf, minsiz);
+            tao_resize_buffer(NULL, &srvbuf, len + 1);
         }
         flag = 0;
     }
     if (flag) {
-        bufsiz = tao_get_buffer_contents(&srvbuf, (void**)&bufptr);
+        siz = tao_get_buffer_contents(&srvbuf, (void**)&buf);
     } else {
         /* There were no errors! */
-        bufptr = "no errors!";
-        bufsiz = strlen(bufptr) + 1;
+        buf = "no errors!";
+        siz = strlen(buf) + 1;
     }
-    XPAError(xpa, bufptr);
+    XPAError(xpa, buf);
 }
 
 
