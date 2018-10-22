@@ -87,6 +87,8 @@ extern tao_attach_shared_object;
          arr.ndims      number of dimensions of shared array;
          arr.dims       dimensions (as with `dimsof`) of shared array;
          arr.data       data (as a Yorick array) of shared array;
+         arr.nreaders   number of readers on this array;
+         arr.nwriters   number of writers on this array;
          arr.counter    counter of shared array;
          arr.timestamp  time-stamp of shared array (a pair of integers,
                         `[s,ns]`, with the number of seconds and nanoseconds);

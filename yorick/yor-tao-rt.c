@@ -283,6 +283,9 @@ extract_shared_object(void* addr, char* name)
             } else if (c == 'n' && strcmp(name, "nreaders") == 0) {
                 ypush_long(tao_get_shared_array_nreaders(arr));
                 return;
+            } else if (c == 'n' && strcmp(name, "nwriters") == 0) {
+                ypush_long(tao_get_shared_array_nwriters(arr));
+                return;
             } else if (c == 't' && strcmp(name, "timestamp") == 0) {
                 push_array_timestamp(arr);
                 return;
