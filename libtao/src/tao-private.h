@@ -72,11 +72,6 @@ struct tao_shared_array {
 };
 
 /**
- * Number of semaphores associated with a camera.
- */
-#define TAO_SHARED_CAMERA_SEMAPHORES 5
-
-/**
  * Shared camera data.
  *
  * This structure describes the shared data storing the global resources of a

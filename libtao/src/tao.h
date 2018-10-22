@@ -1899,6 +1899,11 @@ tao_unlock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
  */
 
 /**
+ * Number of semaphores associated with a camera.
+ */
+#define TAO_SHARED_CAMERA_SEMAPHORES 5
+
+/**
  * Opaque shared camera data.
  */
 typedef struct tao_shared_camera tao_shared_camera_t;
