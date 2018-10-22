@@ -280,6 +280,9 @@ extract_shared_object(void* addr, char* name)
             } else if (c == 'n' && strcmp(name, "ndims") == 0) {
                 ypush_long(tao_get_shared_array_ndims(arr));
                 return;
+            } else if (c == 'n' && strcmp(name, "nreaders") == 0) {
+                ypush_long(tao_get_shared_array_nreaders(arr));
+                return;
             } else if (c == 't' && strcmp(name, "timestamp") == 0) {
                 push_array_timestamp(arr);
                 return;
@@ -569,12 +572,24 @@ Y_tao_get_monotonic_time(int argc)
 void
 Y_tao_lock(int argc)
 {
-    tao_error_t* errs = TAO_NO_ERRORS;
+    tao_error_t* errs;
+    tao_shared_object_t* obj;
     int code;
+
+    /* Check arguments. */
     if (argc != 1) {
         y_error("expecting exactly one argument");
     }
-    code = tao_lock_shared_object(&errs, get_shared_object(0));
+    obj = get_shared_object(0);
+
+    /* Check that there are no pending signals before locking. */
+    if (p_signalling) {
+        p_abort();
+    }
+
+    /* Lock object. */
+    errs = TAO_NO_ERRORS;
+    code = tao_lock_shared_object(&errs, obj);
     if (errs != TAO_NO_ERRORS) {
         report_errors(&errs);
     }
@@ -584,12 +599,19 @@ Y_tao_lock(int argc)
 void
 Y_tao_unlock(int argc)
 {
-    tao_error_t* errs = TAO_NO_ERRORS;
+    tao_error_t* errs;
+    tao_shared_object_t* obj;
     int code;
+
+    /* Check arguments. */
     if (argc != 1) {
         y_error("expecting exactly one argument");
     }
-    code = tao_unlock_shared_object(&errs, get_shared_object(0));
+    obj = get_shared_object(0);
+
+    /* Unlock object. */
+    errs = TAO_NO_ERRORS;
+    code = tao_unlock_shared_object(&errs, obj);
     if (errs != TAO_NO_ERRORS) {
         report_errors(&errs);
     }
@@ -599,12 +621,24 @@ Y_tao_unlock(int argc)
 void
 Y_tao_try_lock(int argc)
 {
-    tao_error_t* errs = TAO_NO_ERRORS;
+    tao_error_t* errs;
+    tao_shared_object_t* obj;
     int code;
+
+    /* Check arguments. */
     if (argc != 1) {
         y_error("expecting exactly one argument");
     }
-    code = tao_try_lock_shared_object(&errs, get_shared_object(0));
+    obj = get_shared_object(0);
+
+    /* Check that there are no pending signals before locking. */
+    if (p_signalling) {
+        p_abort();
+    }
+
+    /* Try to lock object. */
+    errs = TAO_NO_ERRORS;
+    code = tao_try_lock_shared_object(&errs, obj);
     if (errs != TAO_NO_ERRORS) {
         report_errors(&errs);
     }
