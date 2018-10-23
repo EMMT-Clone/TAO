@@ -445,7 +445,7 @@ tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
             tao_push_error(errs, "sem_trywait", code);
             return -1;
         }
-    } else if (secs > 31.7e6) {
+    } else if (secs > TAO_YEAR) {
         /* For a very long timeout (the above limit is about one year), we just
            call `sem_wait`. */
         if (sem_wait(&cam->sem[idx - 1]) != 0) {
@@ -454,14 +454,15 @@ tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
         }
     } else {
         struct timespec ts;
-        long s = floor(secs);
-        long ns = lround((secs - s)*1e9);
+        double s = floor(secs);
+        long incr_s = (long)s;
+        long incr_ns = lround((secs - s)*1e9);
         if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
             tao_push_system_error(errs, "clock_gettime");
             return -1;
         }
-        ts.tv_sec += s;
-        ts.tv_nsec += ns;
+        ts.tv_sec += incr_s;
+        ts.tv_nsec += incr_ns;
         if (sem_timedwait(&cam->sem[idx - 1], &ts) != 0) {
             int code = errno;
             if (code == ETIMEDOUT) {

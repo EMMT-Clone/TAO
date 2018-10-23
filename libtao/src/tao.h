@@ -941,6 +941,46 @@ tao_free(void* ptr);
  */
 
 /**
+ * One nanosecond in SI units (seconds).
+ */
+#define TAO_NANOSECOND (1e-9*TAO_SECOND)
+
+/**
+ * One microsecond in SI units (seconds).
+ */
+#define TAO_MICROSECOND (1e-6*TAO_SECOND)
+
+/**
+ * One microsecond in SI units (seconds).
+ */
+#define TAO_MILLISECOND (1e-3*TAO_SECOND)
+
+/**
+ * One second in SI units (seconds).
+ */
+#define TAO_SECOND (1.0)
+
+/**
+ * One minute in SI units (seconds).
+ */
+#define TAO_MINUTE (60*TAO_SECOND)
+
+/**
+ * One hour in SI units (seconds).
+ */
+#define TAO_HOUR (60*TAO_MINUTE)
+
+/**
+ * One day in SI units (seconds).
+ */
+#define TAO_DAY (24*TAO_HOUR)
+
+/**
+ * One year in SI units (seconds).
+ */
+#define TAO_YEAR (365.25*TAO_DAY)
+
+/**
  * Structure to store time with a nanosecond resolution.
  */
 typedef struct tao_time {
@@ -968,7 +1008,9 @@ tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest);
 /**
  * Get the current time.
  *
- * This function yields the current time since a specified starting point.
+ * This function yields the current time since the
+ * [Epoch](https://en.wikipedia.org/wiki/Unix_time), that is 00:00:00 UTC, 1
+ * January 1970.
  *
  * @param errs   Address of a variable to track errors.
  * @param dest   Address to store the time.
