@@ -137,11 +137,21 @@ extern tao_attach_shared_object;
  */
 
 extern tao_get_data;
+extern tao_set_data;
 /* DOCUMENT arr = tao_get_data(obj);
          or tao_set_data, obj, arr;
 
      The function `tao_get_data` yields the contents of a TAO shared array
-     `obj` as a Yorick array.
+     `obj` as a Yorick array.  Calling this function is equivalent to:
+
+         obj.data
+
+     The function `tao_set_data` copies the elements of Yorick array `arr`
+     into TAO shared array `obj`.  The two arrays must have the same
+     dimensions but may have different element types (they are automatically
+     converted).  If called as a function, `tao_set_data` returns its first
+     argument.
+
 
    SEE ALSO: tao_create_shared_array, tao_attach_shared_object.
  */

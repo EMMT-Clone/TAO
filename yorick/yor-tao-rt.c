@@ -163,6 +163,124 @@ static void push_array_timestamp(tao_shared_array_t* arr)
     ans[1] = ts_nsec;
 }
 
+typedef float  float32_t;
+typedef double float64_t;
+typedef void copy_func(void* dst, const void* src, long n);
+
+#define COPY(sfx, dst_type, src_type)                           \
+    static void copy_##sfx(void* dst, const void* src, long n)  \
+    {                                                           \
+        long i;                                                 \
+        dst_type* _dst = dst;                                   \
+        const src_type* _src = src;                             \
+        for (i = 0; i < n; ++i) {                               \
+            _dst[i] = _src[i];                                  \
+        }                                                       \
+    }
+
+COPY(  char_i8,     int8_t, char)
+COPY( short_i8,     int8_t, short)
+COPY(   int_i8,     int8_t, int)
+COPY(  long_i8,     int8_t, long)
+COPY( float_i8,     int8_t, float)
+COPY(double_i8,     int8_t, double)
+
+COPY(  char_u8,    uint8_t, char)
+COPY( short_u8,    uint8_t, short)
+COPY(   int_u8,    uint8_t, int)
+COPY(  long_u8,    uint8_t, long)
+COPY( float_u8,    uint8_t, float)
+COPY(double_u8,    uint8_t, double)
+
+COPY(  char_i16,   int16_t, char)
+COPY( short_i16,   int16_t, short)
+COPY(   int_i16,   int16_t, int)
+COPY(  long_i16,   int16_t, long)
+COPY( float_i16,   int16_t, float)
+COPY(double_i16,   int16_t, double)
+
+COPY(  char_u16,  uint16_t, char)
+COPY( short_u16,  uint16_t, short)
+COPY(   int_u16,  uint16_t, int)
+COPY(  long_u16,  uint16_t, long)
+COPY( float_u16,  uint16_t, float)
+COPY(double_u16,  uint16_t, double)
+
+COPY(  char_i32,   int32_t, char)
+COPY( short_i32,   int32_t, short)
+COPY(   int_i32,   int32_t, int)
+COPY(  long_i32,   int32_t, long)
+COPY( float_i32,   int32_t, float)
+COPY(double_i32,   int32_t, double)
+
+COPY(  char_u32,  uint32_t, char)
+COPY( short_u32,  uint32_t, short)
+COPY(   int_u32,  uint32_t, int)
+COPY(  long_u32,  uint32_t, long)
+COPY( float_u32,  uint32_t, float)
+COPY(double_u32,  uint32_t, double)
+
+COPY(  char_i64,   int64_t, char)
+COPY( short_i64,   int64_t, short)
+COPY(   int_i64,   int64_t, int)
+COPY(  long_i64,   int64_t, long)
+COPY( float_i64,   int64_t, float)
+COPY(double_i64,   int64_t, double)
+
+COPY(  char_u64,  uint64_t, char)
+COPY( short_u64,  uint64_t, short)
+COPY(   int_u64,  uint64_t, int)
+COPY(  long_u64,  uint64_t, long)
+COPY( float_u64,  uint64_t, float)
+COPY(double_u64,  uint64_t, double)
+
+COPY(  char_f32, float32_t, char)
+COPY( short_f32, float32_t, short)
+COPY(   int_f32, float32_t, int)
+COPY(  long_f32, float32_t, long)
+COPY( float_f32, float32_t, float)
+COPY(double_f32, float32_t, double)
+
+COPY(  char_f64, float64_t, char)
+COPY( short_f64, float64_t, short)
+COPY(   int_f64, float64_t, int)
+COPY(  long_f64, float64_t, long)
+COPY( float_f64, float64_t, float)
+COPY(double_f64, float64_t, double)
+#undef COPY
+
+static copy_func* copy_funcs[] = {
+    copy_char_i8, copy_short_i8, copy_int_i8, copy_long_i8,
+    copy_float_i8, copy_double_i8,
+
+    copy_char_u8, copy_short_u8, copy_int_u8, copy_long_u8,
+    copy_float_u8, copy_double_u8,
+
+    copy_char_i16, copy_short_i16, copy_int_i16, copy_long_i16,
+    copy_float_i16, copy_double_i16,
+
+    copy_char_u16, copy_short_u16, copy_int_u16, copy_long_u16,
+    copy_float_u16, copy_double_u16,
+
+    copy_char_i32, copy_short_i32, copy_int_i32, copy_long_i32,
+    copy_float_i32, copy_double_i32,
+
+    copy_char_u32, copy_short_u32, copy_int_u32, copy_long_u32,
+    copy_float_u32, copy_double_u32,
+
+    copy_char_i64, copy_short_i64, copy_int_i64, copy_long_i64,
+    copy_float_i64, copy_double_i64,
+
+    copy_char_u64, copy_short_u64, copy_int_u64, copy_long_u64,
+    copy_float_u64, copy_double_u64,
+
+    copy_char_f32, copy_short_f32, copy_int_f32, copy_long_f32,
+    copy_float_f32, copy_double_f32,
+
+    copy_char_f64, copy_short_f64, copy_int_f64, copy_long_f64,
+    copy_float_f64, copy_double_f64,
+};
+
 /*---------------------------------------------------------------------------*/
 /* SHARED OBJECTS */
 
@@ -657,6 +775,44 @@ Y_tao_get_data(int argc)
     push_array_data(get_shared_array(0));
 }
 
+void
+Y_tao_set_data(int argc)
+{
+    long dims[Y_DIMSIZE];
+    tao_shared_array_t* arr;
+    const void* src;
+    void* dst;
+    int typeid, eltype, d, ndims, idx;
+    long ntot;
+
+    if (argc != 2) {
+        y_error("expecting exactly 2 arguments");
+    }
+    arr = get_shared_array(argc - 1);
+    eltype = tao_get_shared_array_eltype(arr);
+    if (eltype < TAO_INT8 || eltype > TAO_FLOAT64) {
+        y_error("unsupported shared array element type");
+    }
+    src = ygeta_any(argc - 2, &ntot, dims, &typeid);
+    if (typeid < Y_CHAR || typeid > Y_DOUBLE) {
+        y_error("unsupported array element type");
+    }
+    ndims = tao_get_shared_array_ndims(arr);
+    if (dims[0] != ndims) {
+        y_error("not same number of dimensions");
+    }
+    for (d = 1; d <= ndims; ++d) {
+        size_t dim = tao_get_shared_array_size(arr, d);
+        if (dims[d] != dim) {
+            y_error("not same number of dimensions");
+        }
+    }
+    dst = tao_get_shared_array_data(arr);
+    idx = (typeid - Y_CHAR) + (Y_DOUBLE - Y_CHAR + 1)*(eltype - TAO_INT8);
+    copy_funcs[idx](dst, src, ntot);
+    yarg_drop(1);
+}
+
 /*
  * Calling a built-in function is slightly faster than extracting an object
  * member:
@@ -720,6 +876,8 @@ void
 Y__tao_init(int argc)
 {
     int i;
+
+    /* Initialize tables for type equivalences. */
     for (i = TAO_INT8; i <= TAO_FLOAT64; ++i) {
         tao_to_yorick_types[i - TAO_INT8] = -1;
     }
@@ -733,6 +891,7 @@ Y__tao_init(int argc)
     initialize_type(sizeof(float),  Y_FLOAT,  1);
     initialize_type(sizeof(double), Y_DOUBLE, 1);
 
+    /* Define some constants. */
 #define DEF_LONG_CONST(id)                      \
     do {                                        \
         ypush_long(id);                         \
@@ -755,6 +914,14 @@ Y__tao_init(int argc)
     DEF_LONG_CONST(TAO_FLOAT32);
     DEF_LONG_CONST(TAO_FLOAT64);
 #undef DEF_LONG_CONST
+
+    /* Check some assertions. */
+    if (sizeof(float32_t) != 4) {
+        y_error("sizeof(float32_t) != 4");
+    }
+    if (sizeof(float64_t) != 8) {
+        y_error("sizeof(float64_t) != 8");
+    }
     ypush_nil();
 }
 
