@@ -1,3 +1,15 @@
+# A framework for real-time software
+
+TAO was initially designed as a software framework to carry the real-time
+processing needed by adaptive optics (AO) systems.
+
+TAO exploits the [XPA](https://github.com/ericmandel/xpa) messaging system for
+the communication between clients and servers of the infrastruture.  For fast
+exchanges of data, TAO uses [shared objects](./docs/sharedobjects.md) whose
+contents is stored in shared memory.  For fast synchronization, TAO uses
+semaphores.
+
+
 ## Installation
 
 You'll need a C compiler supporting [C99
