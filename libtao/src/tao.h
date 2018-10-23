@@ -201,6 +201,69 @@ typedef enum tao_error_code {
     TAO_NOT_FOUND         = -21, /**< Item not found */
 } tao_error_code_t;
 
+
+/**
+ * Callback to retrieve error details.
+ *
+ * Such a callback is called to retrieve details about an error not due to a
+ * call of a C library function nor to a TAO library function.
+ *
+ * @param code     Error code.
+ * @param reason   Address of string pointer to store the *reason* of the error.
+ * @param info     Address of string pointer to store the textual equivalent of
+ *                 the error code.
+ *
+ * If any of the above details can be provided, the callback shall set the
+ * @p reason and/or @p info pointers with the address of a static string.
+ *
+ * The provided information is used to print an error message of the form:
+ *
+ * > $prefix $reason in `$func` [$info]
+ *
+ * where `$prefix` is usually the string `"{ERROR}"`, `$reason` is the string
+ * provided by the callback (or `"Some error occured"` if `NULL`), `$func` is
+ * the name of function which raised the error and `$info` is the string
+ * provided by the callback (or the textual value of error code if `NULL`).
+ *
+ * The following example shows such a callback:
+ *
+ * @code{.c}
+ * void get_error_details(int code, const char** reason, const char** info)
+ * {
+ *     *reason = "Some frame grabber error occured";
+ *     *info = NULL; // textual value of error code will be used
+ * }
+ * @endcode
+ */
+typedef void tao_error_getter_t(int code, const char** reason,
+                                const char** info);
+
+/**
+ * Register an error due to a foreign function call.
+ *
+ * This function is called to register the information related to the occurence
+ * of an error.  This information consist in the name of the function @p func
+ * where the error occured and the numerical identifier @p code of the error.
+ * If @p errs is non-`NULL`, it is assumed to be that of the variable provided
+ * by the caller to track errors and the error information is added there;
+ * othwerise (that is, if @p errs is `NULL`), the error is immediately reported
+ * and the process is aborted.  If argument @p proc is `NULL`, it is assumed
+ * that the error code follows the convention in TAO library (nonnegative codes
+ * are for system errors while strictly negative codes are for errors in TAO
+ * functions); otherwise, @p proc is the callback which will be called to
+ * retrieve error details from the error code.
+ *
+ * @warning @p func and @p info must be a static strings.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param func   Name of the function where the error occured.
+ * @param code   Error identifier.
+ * @param proc   Callback to retrieve information (can be `NULL`).
+ */
+extern void
+tao_push_other_error(tao_error_t** errs, const char* func, int code,
+                     tao_error_getter_t* proc);
+
 /**
  * Register an error due to a function call.
  *
@@ -211,6 +274,8 @@ typedef enum tao_error_code {
  * by the caller to track errors and the error information is added there;
  * othwerise (that is, if @p errs is `NULL`), the error is immediately reported
  * and the process is aborted.
+ *
+ * @warning @p func must be a static string.
  *
  * @param errs   Address of a variable to track errors.
  * @param func   Name of the function where the error occured.
@@ -240,10 +305,10 @@ tao_push_system_error(tao_error_t** errs, const char* func);
 /**
  * Pop last tracked error.
  *
- * This function pops information about the last error remaining in the list of
- * errors tracked by the variable at address @p errs.  The errors are popped in
- * reverse temporal order.  That is, the last occuring error is retrieved
- * first.  Resources associated with the popped error are freed.
+ * This function pops information about the most recent error remaining in the
+ * list of errors tracked by the variable at address @p errs.  The errors are
+ * popped in reverse temporal order.  That is, the last occuring error is
+ * retrieved first.  Resources associated with the popped error are freed.
  *
  * The following example demonstrates how to use tao_pop_error() to report
  * all errors that occured:
@@ -253,7 +318,7 @@ tao_push_system_error(tao_error_t** errs, const char* func);
  * {
  *     int code;
  *     const char* func;
- *     while (tao_pop_error(errs, &func, &code)) {
+ *     while (tao_pop_error(errs, &func, &code, NULL)) {
  *         fprintf(stderr, "error %d in %s\n", code, func);
  *     }
  * }
@@ -261,17 +326,21 @@ tao_push_system_error(tao_error_t** errs, const char* func);
  *
  * @param errs      Address of a variable to track errors.
  * @param funcptr   Address of a variable to store the name of the function
- *                  where the last remaining error occured.  Can be `NULL` to
+ *                  where the most recent remaining error.  Can be `NULL` to
  *                  not retrieve this information.
- * @param codeptr   Address of a variable to store the code of the last
- *                  remaining error.  Can be `NULL` to not retrieve this
- *                  information.
+ * @param codeptr   Address of a variable to store the code of the most
+ *                  recent remaining error.  Can be `NULL` to not retrieve
+ *                  this information.
+ * @param procptr   Address of a variable to store the callback to retrieve
+ *                  details about the most recent remaining error.  Can be
+ *                  `NULL` to not retrieve this information.
  *
  * @return A boolean value (that is, `0` or `1`) indicating whether there was
  * some error information to retrieve.
  */
 extern int
-tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr);
+tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,
+              tao_error_getter_t** procptr);
 
 /**
  * Report all tracked errors.

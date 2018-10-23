@@ -30,16 +30,51 @@ static const char* fatal_prefix = "{FATAL}";
 
 /* Private structure used to store error information. */
 struct tao_error {
-    const char*  func; /**< Name of function where error occured */
-    int          code; /**< Numerical identifier of the error */
-    tao_error_t* prev; /**< Previous error */
+    const char*         func; /**< Name of function where error occured */
+    tao_error_getter_t* proc; /**< Callback to retrieve error details */
+    int                 code; /**< Numerical identifier of the error */
+    tao_error_t*        prev; /**< Previous error */
 };
 
 static void
-report_error(const char* prefix, const char* func, int code)
+report_error(const char* prefix, const char* func, int code,
+             tao_error_getter_t* proc)
 {
+    char buffer[20];
+    const char* reason = NULL;
+    const char* info = NULL;
+
+    if (proc != NULL) {
+        /* Use callback to retrieve error details. */
+        reason = NULL;
+        info = NULL;
+        proc(code, &reason, &info);
+    } else {
+        /* Assume a system error or a TAO error. */
+        reason = tao_get_error_reason(code);
+        info = tao_get_error_name(code);
+        if (info != NULL) {
+            if (code > 0) {
+                if (strcmp(info, "UNKNOWN_SYSTEM_ERROR") == 0) {
+                    info = NULL;
+                }
+            } else if (code < 0) {
+                if (strcmp(info, "UNKNOWN_ERROR") == 0) {
+                    info = NULL;
+                }
+            }
+        }
+    }
+    if (reason == NULL) {
+        reason = "Some error occured";
+    }
+    if (info == NULL) {
+        /* Use the numerical value of the error code. */
+        sprintf(buffer, "%d", code);
+        info = buffer;
+    }
     fprintf(stderr, "%s %s in function `%s` [%s]\n", prefix,
-            tao_get_error_reason(code), func, tao_get_error_name(code));
+            reason, func, info);
 }
 
 static void
@@ -49,7 +84,7 @@ report_errors(const char* prefix, tao_error_t** errs)
         tao_error_t* err;
         while ((err = *errs) != TAO_NO_ERRORS) {
             *errs = err->prev;
-            report_error(prefix, err->func, err->code);
+            report_error(prefix, err->func, err->code, err->proc);
             free((void*)err);
             prefix = blank_prefix;
         }
@@ -57,35 +92,37 @@ report_errors(const char* prefix, tao_error_t** errs)
 }
 
 static void
-panic(const char* func, int code)
+panic(const char* func, int code, tao_error_getter_t* proc)
 {
     if (func != NULL) {
-        report_error(fatal_prefix, func, code);
+        report_error(fatal_prefix, func, code, proc);
     }
     abort();
 }
 
 void
-tao_push_error(tao_error_t** errs, const char* func, int code)
+tao_push_other_error(tao_error_t** errs, const char* func, int code,
+                     tao_error_getter_t* proc)
 {
     if (errs == NULL) {
         /* There is no means to track errors.  Immediately report the error and
            abort the process. */
-        panic(func, code);
+        panic(func, code, proc);
     } else {
         /* Insert a new error in the list of tracked errors. */
         tao_error_t* err = (tao_error_t*)malloc(sizeof(tao_error_t));
         if (err == NULL) {
             /* Insufficient memory for tracking the error.  Report all errors
                so far including the last one and panic. */
-            report_error(fatal_prefix, __func__, TAO_CANT_TRACK_ERROR);
-            report_error(blank_prefix, func, code);
+            report_error(fatal_prefix, __func__, TAO_CANT_TRACK_ERROR, NULL);
+            report_error(blank_prefix, func, code, proc);
             report_errors(blank_prefix, errs);
-            panic(NULL, 0);
+            panic(NULL, 0, NULL);
         } else {
             /* Instanciate error information and insert it in the chained list
                of tracked errors. */
             err->func = func;
+            err->proc = proc;
             err->code = code;
             err->prev = *errs;
             *errs = err;
@@ -94,14 +131,21 @@ tao_push_error(tao_error_t** errs, const char* func, int code)
 }
 
 void
+tao_push_error(tao_error_t** errs, const char* func, int code)
+{
+    tao_push_other_error(errs, func, code, NULL);
+}
+
+void
 tao_push_system_error(tao_error_t** errs, const char* func)
 {
     int code = errno;
-    tao_push_error(errs, func, (code > 0 ? code : TAO_SYSTEM_ERROR));
+    tao_push_other_error(errs, func, (code > 0 ? code : TAO_SYSTEM_ERROR), NULL);
 }
 
 int
-tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr)
+tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,
+              tao_error_getter_t** procptr)
 {
     if (errs == NULL || *errs == TAO_NO_ERRORS) {
         return 0;
@@ -113,6 +157,9 @@ tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr)
         }
         if (codeptr != NULL) {
             *codeptr = err->code;
+        }
+        if (procptr != NULL) {
+            *procptr = err->proc;
         }
         free((void*)err);
         return 1;
