@@ -80,10 +80,14 @@ end
 ```
 
 Shared arrays have different kinds of contents, some attributes are immutable
-and can be read at any time without locking the array.
+and can be read at any time without locking the array.  The attributes of a
+shared array are summarized in the following table (the *Member* column should
+be considered as pseudo-code):
 
 | Member      | Modifiable | Description                |
 |:----------- |:---------- |:-------------------------- |
+| `ident`     | no         | Shared object identifier   |
+| `type`      | no         | Shared object type         |
 | `eltype`    | no         | Type of array elements     |
 | `ndims`     | no         | Number of dimensions       |
 | `size[d]`   | no         | Length of dimension `d`    |
