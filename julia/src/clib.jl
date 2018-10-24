@@ -162,7 +162,7 @@ provided by TAO.
 """
 function loadclib()
     if !_clib_loaded[]
-       @eval include(_clib_source)
+        @eval include(_clib_source)
         _clib_loaded[] = true
     end
     return nothing
