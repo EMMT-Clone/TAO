@@ -156,8 +156,8 @@ static void produce_image(unsigned bits)
         }
         tao_subtract_times(&dt, &t1, &t0);
         tao_sprintf_time(buf, &dt);
-        fprintf(stderr, "%d×%d image generated in %s seconds\n",
-            width, height, buf);
+        fprintf(stderr, "%d×%d image (ident=%d) generated in %s seconds\n",
+                width, height, tao_get_shared_array_ident(arr), buf);
     }
 
     /* Re-lock the shared camera data and publish image. */
@@ -199,21 +199,59 @@ static void close_command() {}
 /*---------------------------------------------------------------------------*/
 /* ERROR MESSAGES */
 
+static void
+tao_get_error_details(char* buffer, int code, const char** reason,
+                      const char** info, tao_error_getter_t* proc)
+{
+    if (proc != NULL) {
+        /* Use callback to retrieve error details. */
+        *reason = NULL;
+        *info = NULL;
+        proc(code, reason, info);
+    } else {
+        /* Assume a system error or a TAO error. */
+        *reason = tao_get_error_reason(code);
+        *info = tao_get_error_name(code);
+        if (*info != NULL) {
+            if (code > 0) {
+                if (strcmp(*info, "UNKNOWN_SYSTEM_ERROR") == 0) {
+                    *info = NULL;
+                }
+            } else if (code < 0) {
+                if (strcmp(*info, "UNKNOWN_ERROR") == 0) {
+                    *info = NULL;
+                }
+            }
+        }
+    }
+    if (*reason == NULL) {
+        *reason = "Some error occured";
+    }
+    if (*info == NULL) {
+        /* Use the numerical value of the error code. */
+        sprintf(buffer, "%d", code);
+        *info = buffer;
+    }
+}
+
 static void report_error(tao_error_t** errs, XPA xpa)
 {
     const char* func;
+    const char* reason;
+    const char* info;
+    tao_error_getter_t* proc;
     int code, flag = 1;
     char* buf;
     long siz, len;
+    char infobuf[20];
 
     /* Write error message. */
     tao_clear_buffer(&srvbuf);
-    while (tao_pop_error(errs, &func, &code)) {
-        const char* reason = tao_get_error_reason(code);
-        const char* error = tao_get_error_name(code);
+    while (tao_pop_error(errs, &func, &code, &proc)) {
+        tao_get_error_details(infobuf, code, &reason, &info, proc);
         if (debug) {
             fprintf(stderr, "%s %s in function `%s` [%s]\n",
-                    (flag ? "{ERROR}" : "       "), reason, func, error);
+                    (flag ? "{ERROR}" : "       "), reason, func, info);
         }
         while (1) {
             /*
@@ -223,7 +261,7 @@ static void report_error(tao_error_t** errs, XPA xpa)
              */
             siz = tao_get_buffer_unused_part(&srvbuf, (void**)&buf);
             len = snprintf(buf, siz, "%s%s in function `%s` [%s]\n",
-                           (flag ? "" : "; "), reason, func, error);
+                           (flag ? "" : "; "), reason, func, info);
             if (len < siz) {
                 tao_adjust_buffer_contents_size(NULL, &srvbuf, len);
                 break;
@@ -644,6 +682,10 @@ int main(int argc, char* argv[])
     if (cam == NULL) {
         tao_report_errors(&errs);
         exit(1);
+    }
+    if (debug) {
+        fprintf(stderr, "shmid: %ld\n",
+                (long)tao_get_shared_camera_ident(cam->shared));
     }
     cam->shared->state = 0;
     cam->shared->depth = 8;
