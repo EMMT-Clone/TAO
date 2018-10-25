@@ -249,6 +249,7 @@ FUNC(int code)
         CASE(TAO_DESTROYED, "Ressource has been destroyed");
         CASE(TAO_CORRUPTED, "Corrupted structure");
         CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory for tracking error");
+        CASE(TAO_BAD_DEVICE, "Invalid device");
         CASE(TAO_BAD_TYPE, "Invalid type");
         CASE(TAO_BAD_SIZE, "Invalid size");
         CASE(TAO_BAD_SERIAL, "Invalid serial number");

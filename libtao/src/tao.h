@@ -188,17 +188,18 @@ typedef enum tao_error_code {
     TAO_BAD_SERIAL        =  -8, /**< Invalid serial number */
     TAO_BAD_SIZE          =  -9, /**< Invalid size */
     TAO_BAD_TYPE          = -10, /**< Invalid type */
-    TAO_CANT_TRACK_ERROR  = -11, /**< Insufficient memory for tracking error */
-    TAO_CORRUPTED         = -12, /**< Corrupted structure */
-    TAO_DESTROYED         = -13, /**< Resource has been destroyed */
-    TAO_MISSING_SEPARATOR = -14, /**< Separator missing */
-    TAO_OUT_OF_RANGE      = -15, /**< Out of range argument */
-    TAO_SYSTEM_ERROR      = -16, /**< Unknown system error */
-    TAO_UNCLOSED_STRING   = -17, /**< Unclosed string */
-    TAO_UNREADABLE        = -18, /**< Not readable */
-    TAO_UNWRITABLE        = -19, /**< Not writable */
-    TAO_ALREADY_IN_USE    = -20, /**< Resource already in use */
-    TAO_NOT_FOUND         = -21, /**< Item not found */
+    TAO_BAD_DEVICE        = -11, /**< Invalid device */
+    TAO_CANT_TRACK_ERROR  = -12, /**< Insufficient memory for tracking error */
+    TAO_CORRUPTED         = -13, /**< Corrupted structure */
+    TAO_DESTROYED         = -14, /**< Resource has been destroyed */
+    TAO_MISSING_SEPARATOR = -15, /**< Separator missing */
+    TAO_OUT_OF_RANGE      = -16, /**< Out of range argument */
+    TAO_SYSTEM_ERROR      = -17, /**< Unknown system error */
+    TAO_UNCLOSED_STRING   = -18, /**< Unclosed string */
+    TAO_UNREADABLE        = -19, /**< Not readable */
+    TAO_UNWRITABLE        = -20, /**< Not writable */
+    TAO_ALREADY_IN_USE    = -21, /**< Resource already in use */
+    TAO_NOT_FOUND         = -22, /**< Item not found */
 } tao_error_code_t;
 
 
