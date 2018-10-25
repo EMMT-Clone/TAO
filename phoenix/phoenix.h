@@ -37,6 +37,8 @@ struct phx_camera {
     phx_handle_t handle; /**< Camera handle */
     int (*start)(phx_camera_t*); /**< Start hook */
     int (*stop)(phx_camera_t*);  /**< Stop hook */
+    int (*update_temperature)(phx_camera_t*);  /**< Update temperature hook */
+    double temperature;  /**< Camera temperature (in degrees Celsius) */
     uint32_t fullwidth;  /**< Width (in pixels) of the sensor */
     uint32_t fullheight; /**< Height (in pixels) of the sensor */
     uint32_t xoff;       /**< Horizontal offset of acquired images with
@@ -79,6 +81,9 @@ phx_create(tao_error_t** errs,
 
 extern void
 phx_destroy(phx_camera_t* cam);
+
+extern int
+phx_update_temperature(phx_camera_t* cam);
 
 extern int
 phx_read_stream(phx_camera_t* cam, phx_acquisition_t command, void* addr);

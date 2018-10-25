@@ -46,6 +46,9 @@ int main(int argc, char** argv)
   printf("Detector bias: %.3f\n", cam->bias);
   printf("Detector gain: %.3f\n", cam->gain);
 #endif
+  if (cam->update_temperature != NULL) {
+      printf("Detector temperature: %.1f °C\n", cam->temperature);
+  }
   phx_destroy(cam);
   return 0;
 }
