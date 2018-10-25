@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <time.h>
 
 /**
  * @defgroup Messages             Messages and logging
@@ -1255,6 +1256,21 @@ tao_snprintf_time(char* str, size_t size, const tao_time_t* ts);
  */
 extern void
 tao_fprintf_time(FILE* stream, const tao_time_t* ts);
+
+/**
+ * Compute absolute timeout.
+ *
+ * This function compute an absolute timeout given a duration relative to the
+ * current time (as given by the clock `CLOCK_REALTIME`).
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param ts     Address of `timespec` structure.
+ * @param secs   Number of seconds from now.
+ *
+ * @return `0` on success, `-1` on failure.
+ */
+extern int
+tao_get_absolute_timeout(tao_error_t** errs, struct timespec* ts, double secs);
 
 /** @} */
 
@@ -2535,6 +2551,8 @@ tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
  * @return `1` if a new image is available before the specified number of
  * seconds; `0` if timed-out occured before a new image becomes available; `-1`
  * in case of error.
+ *
+ * @see tao_get_absolute_timeout.
  */
 extern int
 tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam,

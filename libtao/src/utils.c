@@ -232,3 +232,18 @@ tao_fprintf_time(FILE *stream, const tao_time_t* ts)
     tao_sprintf_time(buf, ts);
     fputs(buf, stream);
 }
+
+int
+tao_get_absolute_timeout(tao_error_t** errs, struct timespec* ts, double secs)
+{
+    double s = floor(secs);
+    long incr_s = (long)s;
+    long incr_ns = lround((secs - s)*1e9);
+    if (clock_gettime(CLOCK_REALTIME, ts) != 0) {
+        tao_push_system_error(errs, "clock_gettime");
+        return -1;
+    }
+    ts->tv_sec += incr_s;
+    ts->tv_nsec += incr_ns;
+    return 0;
+}
