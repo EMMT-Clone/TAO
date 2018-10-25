@@ -91,3 +91,21 @@ function pop_errors(errs::Errors)
     end
     return info
 end
+
+function showerror(io::IO, e::TaoError)
+    buffer = Array{UInt8}(undef, 20)
+    reason = Ref{Ptr{UInt8}}(0)
+    info = Ref{Ptr{UInt8}}(0)
+    errs = e.errs
+    prefix1= "TaoError: "
+    prefix2= "          "
+    for i in 1:length(errs)
+        ccall((:tao_retrieve_error_details, taolib), Cvoid,
+              (Cint, Ptr{Ptr{UInt8}}, Ptr{Ptr{UInt8}},
+               Ptr{Ptr{Cvoid}}, Ptr{UInt8}),
+              errs[i].code, reason, info, errs[i].proc, buffer)
+        print(io, (i == 1 ? prefix1 : prefix2),
+              unsafe_string(reason[]), " in function `",
+              errs[i].func, "` [", unsafe_string(info[]), "]")
+    end
+end

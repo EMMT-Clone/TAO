@@ -41,6 +41,8 @@ import ...TAO:
     trylock,
     unlock
 
+import Base: show, showerror
+
 # Constant `taolib` is defined in another file which is built at installation
 # time.
 include("../../deps/deps.jl")

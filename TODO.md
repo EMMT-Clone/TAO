@@ -1,7 +1,5 @@
 ## Things to do
 
-* Add anonymous semaphores to signal new images.
-
 * Instead of immediately attempt to reflect the configuration of the camera
   after any parameter change, it may be better to defer that until starting the
   acquisition.  Optionally a function, say `tao_apply_camera_configuration`,
@@ -13,8 +11,6 @@
 * Specialize `attach(::Type{TAO.SharedArray{T}},id)` and
   `attach(::Type{TAO.SharedArray{T,N}},id)` to have a more specific returned
   value.
-
-* Extract error messages in Julia interface.
 
 * Manage to have '-Wall -Werror -O2' the default compilation flags.
 
