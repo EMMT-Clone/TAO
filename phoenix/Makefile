@@ -32,13 +32,13 @@ TAO_LIBDIR = ${srcdir}/../build/src/.libs
 TAO_INCDIR = $(TAO_SRCDIR)
 TAO_DEFS = -I$(TAO_INCDIR)
 TAO_DLL = $(TAO_LIBDIR)/libtao.so
-TAO_LIBS = -L$(TAO_LIBDIR) -ltao -lrt -lpthread
+TAO_LIBS = -L$(TAO_LIBDIR) -ltao -lpthread -lm
 TAO_CFLAGS = $(CPPFLAGS) $(CFLAGS) $(PIC_FLAGS)
 
 # Macros for the Phoenix Frame Grabber Library (FGL):
 PHOENIX_LIBRARY = libphoenix.a
 PHOENIX_DLL = libphoenix.so
-PHOENIX_OBJECTS = phoenix.o coaxpress.o mikrotron-mc408x.o
+PHOENIX_OBJECTS = phoenix.o mikrotron-mc408x.o
 PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
                   ${srcdir}/phoenix.h \
                   ${srcdir}/phoenix-private.h \
@@ -46,7 +46,7 @@ PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
                   $(TAO_SRCDIR)/tao.h
 PHOENIX_DEFS = -DPHX_DEBUG -DPHX_VERBOSE
 PHOENIX_CFLAGS = $(CPPFLAGS) $(PHX_DEFS) $(TAO_DEFS) $(PHOENIX_DEFS) $(CFLAGS) $(PIC_FLAGS)
-PHOENIX_LIBS = $(PHOENIX_LIBRARY) $(PHX_LIBS)
+PHOENIX_LIBS = $(PHOENIX_LIBRARY) $(PHX_LIBS) $(TAO_LIBS)
 
 # Settings for te CFITSIO library.
 CFITSIO_LIBS = -lcfitsio
