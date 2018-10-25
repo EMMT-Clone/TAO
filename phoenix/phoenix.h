@@ -33,22 +33,27 @@ typedef struct phx_camera phx_camera_t;
  * read-only by the user.
  */
 struct phx_camera {
-    tao_error_t* errs;   /**< Error stack */
-    phx_handle_t handle; /**< Camera handle */
+    tao_error_t* errs;     /**< Error stack */
+    phx_handle_t handle;   /**< Camera handle */
     int (*start)(phx_camera_t*); /**< Start hook */
     int (*stop)(phx_camera_t*);  /**< Stop hook */
     int (*update_temperature)(phx_camera_t*);  /**< Update temperature hook */
-    double temperature;  /**< Camera temperature (in degrees Celsius) */
-    uint32_t fullwidth;  /**< Width (in pixels) of the sensor */
-    uint32_t fullheight; /**< Height (in pixels) of the sensor */
-    uint32_t xoff;       /**< Horizontal offset of acquired images with
-                              respect to sensor*/
-    uint32_t yoff;       /**< Vertical offset of acquired images with
-                              respect to sensor*/
-    uint32_t width;      /**< Width (in macro-pixels) of acquired images */
-    uint32_t height;     /**< Height (in macro-pixels) of acquired images */
-    int state;           /**< Current state of the camera (> 1 if
-                              acquisition started). */
+    double temperature;    /**< Camera temperature (in degrees Celsius) */
+    uint32_t fullwidth;    /**< Width (in pixels) of the sensor */
+    uint32_t fullheight;   /**< Height (in pixels) of the sensor */
+    uint32_t srcdepth;     /**< Bits per pixel in acquired images */
+    phx_value_t srcformat; /**< Pixel format in acquired images
+                                (PHX_CAM_SRC_...) */
+    phx_value_t dstformat; /**< Format of destination buffers
+                                (PHX_DST_FORMAT_...) */
+    uint32_t xoff;         /**< Horizontal offset of acquired images with
+                                respect to sensor*/
+    uint32_t yoff;         /**< Vertical offset of acquired images with
+                                respect to sensor*/
+    uint32_t width;        /**< Width (in macro-pixels) of acquired images */
+    uint32_t height;       /**< Height (in macro-pixels) of acquired images */
+    int state;             /**< Current state of the camera (> 1 if
+                                acquisition started). */
 
     /* Members for CoaXPress cameras. */
     int coaxpress;       /**< Camera has CoaXPress connection */

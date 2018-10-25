@@ -37,6 +37,7 @@ int main(int argc, char** argv)
          (cam->model[0] != '\0' ? cam->model : "Unknown"));
   printf("CoaXPress camera: %s\n",
          (cam->coaxpress ? "yes" : "no"));
+  printf("Bits per pixel: %d\n", (int)cam->srcdepth);
   printf("Sensor size: %d × %d pixels\n",
          (int)cam->fullwidth,  (int)cam->fullheight);
   printf("Region of interest: %d × %d at (%d,%d)\n",
