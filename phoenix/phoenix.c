@@ -22,7 +22,7 @@
 
 #define MAX(a,b) ((a) >= (b) ? (a) : (b))
 
-#define NEW(errs, type) ((type*)tao_calloc(errs, 1, sizeof(type)))
+#define NEW(errs, type, numb) ((type*)tao_calloc(errs, (numb), sizeof(type)))
 
 static struct {
     const char* model;
@@ -34,6 +34,15 @@ static struct {
      phx_initialize_mikrotron_mc408x},
     {NULL, NULL, NULL}
 };
+
+#define lock_mutex(cam) tao_lock_mutex(&(cam)->errs, &(cam)->mutex)
+
+#define unlock_mutex(cam) tao_unlock_mutex(&(cam)->errs, &(cam)->mutex)
+
+#define try_lock_mutex(cam) tao_try_lock_mutex(&(cam)->errs, &(cam)->mutex)
+
+#define signal_condition(cam)                       \
+    tao_signal_condition(&(cam)->errs, &(cam)->cond)
 
 /*---------------------------------------------------------------------------*/
 /* ERROR MANAGEMENT */
@@ -204,6 +213,312 @@ swap8(void* ptr)
 }
 
 /*--------------------------------------------------------------------------*/
+/* IMAGE ACQUISITION */
+
+static void
+free_virtual_buffers(phx_camera_t* cam)
+{
+    cam->nbufs = 0;
+    cam->bufsize = 0;
+    if (cam->bufs != NULL) {
+        /* Free buffers in the reverse order of their allocation so that
+           we can be interrupted. */
+        phx_imgbuf_t* bufs = cam->bufs;
+        int i = 0;
+        while (bufs[i].pvAddress != NULL) {
+            ++i;
+        }
+        while (--i >= 0) {
+            free(bufs[i].pvAddress);
+        }
+        cam->bufs = NULL;
+        free(bufs);
+    }
+}
+
+static int
+allocate_virtual_buffers(phx_camera_t* cam, int nbufs, long* bufstride)
+{
+    /* Check arguments. */
+    if (nbufs < 1) {
+        phx_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+        return -1;
+    }
+
+    /* Get buffer size. */
+    phx_value_t bufwidth, bufheight;
+    if (phx_get(cam, PHX_BUF_DST_XLENGTH, &bufwidth) != 0 ||
+        phx_get(cam, PHX_BUF_DST_YLENGTH, &bufheight) != 0) {
+        return -1;
+    }
+    size_t bufsize = (size_t)bufwidth*(size_t)bufheight;
+    if (bufstride != NULL) {
+        *bufstride = bufwidth;
+    }
+
+    if (cam->bufs == NULL || cam->nbufs != nbufs || cam->bufsize != bufsize) {
+        /* Allocate new image buffers */
+        free_virtual_buffers(cam);
+        cam->bufs = NEW(&cam->errs, phx_imgbuf_t, nbufs + 1);
+        if (cam->bufs == NULL) {
+            return -1;
+        }
+        for (int i = 0; i < nbufs; ++i) {
+            cam->bufs[i].pvAddress = (uint8_t*)tao_malloc(&cam->errs, bufsize);
+            if (cam->bufs[i].pvAddress == NULL) {
+                free_virtual_buffers(cam);
+                return -1;
+            }
+            cam->bufs[i].pvContext = (void*)(ptrdiff_t)i;
+        }
+
+        /* Terminate the list of buffers */
+        cam->bufs[nbufs].pvAddress = NULL;
+        cam->bufs[nbufs].pvContext = NULL;
+        cam->nbufs = nbufs;
+        cam->bufsize = bufsize;
+    }
+
+    /* Instruct Phoenix to use the virtual buffers. */
+    if (phx_set_parameter(cam, PHX_DST_PTRS_VIRT, cam->bufs) != 0) {
+        free_virtual_buffers(cam); /* FIXME: we can keep the virtual buffers? */
+        return -1;
+    }
+    phx_value_t value = PHX_DST_PTR_USER_VIRT;
+    if (phx_set_parameter(cam, (PHX_DST_PTR_TYPE|PHX_CACHE_FLUSH|
+                                PHX_FORCE_REWRITE), &value) != 0) {
+        free_virtual_buffers(cam); /* FIXME: we can keep the virtual buffers? */
+        return -1;
+    }
+
+    return 0;
+}
+
+/*
+ * Callback for acquisition.
+ */
+static void
+acquisition_callback(phx_handle_t handle, uint32_t events, void* data)
+{
+    phx_camera_t* cam = (phx_camera_t*)data;
+    phx_imgbuf_t imgbuf;
+    struct timespec ts;
+
+    /* Lock the context and make minimal sanity check. */
+    if (lock_mutex(cam) != 0) {
+        return;
+    }
+    if (cam->handle != handle) {
+        tao_push_error(&cam->errs, __func__, TAO_ASSERTION_FAILED);
+        goto unlock;
+    }
+
+    /* Account for events. */
+    if ((PHX_INTRPT_BUFFER_READY & events) != 0) {
+        /* A new frame is available. */
+        /* Take its arrival time stamp.  FIXME: time stamp must be attached to the buffer */
+        if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
+            tao_push_system_error(&cam->errs, "clock_gettime");
+            ts.tv_sec = 0;
+            ts.tv_nsec = 0;
+        }
+        /* Get last captured image buffer. */
+        if (phx_read_stream(cam, PHX_BUFFER_GET, &imgbuf) != 0) {
+            ++cam->lostframes;
+            events &= ~PHX_INTRPT_BUFFER_READY;
+        } else {
+            /* Store the time-stamp, address and index of the last captured
+               image and update counters. */
+            cam->last_buffer = imgbuf.pvAddress;
+            cam->last_index = (long)imgbuf.pvContext;
+            cam->last_time_s = ts.tv_sec;
+            cam->last_time_ns = ts.tv_nsec;
+            ++cam->frames;
+            ++cam->pending;
+        }
+    }
+    if ((PHX_INTRPT_FIFO_OVERFLOW & events) != 0) {
+        /* Fifo overflow. */
+        ++cam->frames;
+        ++cam->overflows;
+    }
+    if ((PHX_INTRPT_SYNC_LOST & events) != 0) {
+        /* Synchronization lost. */
+        ++cam->frames;
+        ++cam->lostsyncs;
+    }
+    if ((cam->events & events) != 0) {
+        /* Signal condition for waiting thread. */
+        signal_condition(cam);
+    }
+
+    /* Unlock the context. */
+ unlock:
+    unlock_mutex(cam);
+}
+
+int
+phx_start(phx_camera_t* cam, int nbufs)
+{
+
+  /* Minimal checks. */
+  if (cam == NULL) {
+    return -1;
+  }
+  if (cam->state < 1) {
+      // FIXME: change error code
+      tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+      return -1;
+  }
+  if (cam->state > 1) {
+      tao_push_error(&cam->errs, __func__, TAO_ACQUISITION_RUNNING);
+      return -1;
+  }
+
+  /* Allocate virtual buffers. */
+  if (allocate_virtual_buffers(cam, nbufs, NULL) != 0) {
+      return -1;
+  }
+
+  /* Enable interrupts for handled events. */
+  phx_value_t events = (PHX_INTRPT_BUFFER_READY |
+                        PHX_INTRPT_FIFO_OVERFLOW |
+                        PHX_INTRPT_SYNC_LOST);
+  if (phx_set(cam, PHX_INTRPT_CLR, ~(phx_value_t)0) != 0 ||
+      phx_set(cam, PHX_INTRPT_SET, events|PHX_INTRPT_GLOBAL_ENABLE) != 0) {
+      return -1;
+  }
+
+  /* Setup callback context. */
+  if (phx_set_parameter(cam, PHX_EVENT_CONTEXT, (void*)cam) != 0) {
+      return -1;
+  }
+
+  /* Start acquisition with given callback. */
+  if (phx_read_stream(cam, PHX_START, acquisition_callback) != 0) {
+      return -1;
+  }
+
+  /* Send specific start command. */
+  if (cam->start != NULL && cam->start(cam) != 0) {
+      phx_read_stream(cam, PHX_ABORT, acquisition_callback);
+      phx_read_stream(cam, PHX_UNLOCK, NULL);
+      return -1;
+  }
+
+  /* Update state and return. */
+  cam->state = 2;
+  return 0;
+}
+
+/*
+ * FIXME: Something not specified in the doc. is that, when continuous
+ * acquisition and blocking mode are both enabled, all calls to `PHX_BUFFER_GET`
+ * yield the same image buffer until `PHX_BUFFER_RELEASE` is called.  It seems
+ * that there is no needs to have a `PHX_BUFFER_GET` matches a
+ * `PHX_BUFFER_RELEASE` and that every `PHX_BUFFER_RELEASE` moves to the next
+ * buffer.  However, acquisition buffers are used in their given order so it is
+ * not too difficult to figure out where we are if we count the number of
+ * frames.
+ */
+int
+phx_wait_image(phx_camera_t* cam, double secs, int drop)
+{
+    struct timespec ts;
+    int forever, code, status = 0;
+
+    /* Check state. */
+    if (cam->state != 2) {
+        if (cam->state == 0 || cam->state == 1) {
+            tao_push_error(&cam->errs, __func__, TAO_NO_ACQUISITION);
+        } else {
+            tao_push_error(&cam->errs, __func__, TAO_CORRUPTED);
+        }
+        return -1;
+    }
+
+    /* Compute absolute time for time-out. */
+    if (isnan(secs) || secs < 0) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+        return -1;
+    }
+    if (secs > TAO_YEAR) {
+        forever = TRUE;
+    } else {
+        if (tao_get_absolute_timeout(&cam->errs, &ts, secs) != 0) {
+            return -1;
+        }
+        forever = FALSE;
+    }
+
+    /*
+     * Lock mutex and wait for next image, taking care to not throw anything
+     * while the mutex is locked.
+     */
+    if (lock_mutex(cam) != 0) {
+        return -1;
+    }
+
+    /*
+     * While there are no pending frames, wait for the condition to be
+     * signaled or an error to occur.  This is done in a `while` loop to
+     * cope with spurious signaled conditions.
+     */
+    while (cam->pending == 0) {
+        if (forever) {
+            code = pthread_cond_wait(&cam->cond, &cam->mutex);
+            if (code != 0) {
+                tao_push_error(&cam->errs, "pthread_cond_wait", code);
+                status = -1;
+                goto unlock;
+            }
+        } else {
+            code = pthread_cond_timedwait(&cam->cond, &cam->mutex, &ts);
+            if (code != 0) {
+                if (code == ETIMEDOUT) {
+                    status = 0;
+                } else {
+                    tao_push_error(&cam->errs, "pthread_cond_timedwait", code);
+                    status = -1;
+                }
+                goto unlock;
+            }
+        }
+    }
+
+    if (drop) {
+        /* Get rid of unprocessed pending image buffers. */
+        while (cam->pending > 1) {
+            if (phx_read_stream(cam, PHX_BUFFER_RELEASE, NULL) != 0) {
+                status = -1;
+                goto unlock;
+            }
+            --cam->pending;
+            ++cam->overflows;
+        }
+    }
+
+    if (cam->pending >= 1) {
+        /* If no errors occured so far and at least one image buffer is
+         * unprocessed, manage to return the index of this buffer.
+         */
+        --cam->pending;
+        cam->captured_index = cam->last_index - cam->pending;
+        while (cam->captured_index < 0) {
+            /* FIXME: use modulo arithmetic */
+            cam->captured_index += cam->nbufs;
+        }
+    }
+
+    /* Unlock the mutex (whatever the errors so far). */
+ unlock:
+    if (unlock_mutex(cam) != 0) {
+        return -1;
+    }
+    return status;
+}
+
+/*--------------------------------------------------------------------------*/
 /* WRAPPERS FOR PHOENIX ROUTINES */
 
 static int
@@ -269,7 +584,7 @@ phx_create(tao_error_t** errs,
     assert(sizeof(etParamValue) == sizeof(int));
 
     /* Allocate memory to store the camera instance. */
-    cam = NEW(errs, phx_camera_t);
+    cam = NEW(errs, phx_camera_t, 1);
     if (cam == NULL) {
         return NULL;
     }
@@ -369,7 +684,9 @@ phx_destroy(phx_camera_t* cam)
             /* Abort acquisition and unlock all buffers. */
             PHX_StreamRead(cam->handle, PHX_ABORT, NULL);
             PHX_StreamRead(cam->handle, PHX_UNLOCK, NULL);
-            //FIXME: cam->stop(cam);
+            if (cam->stop != NULL) {
+                cam->stop(cam);
+            }
             cam->state = 1;
         }
         if (cam->state >= 1) {
@@ -389,6 +706,9 @@ phx_destroy(phx_camera_t* cam)
             /* Destroy mutex. */
             pthread_mutex_destroy(&cam->mutex);
         }
+
+        /* Free virtual buffers. */
+        free_virtual_buffers(cam);
 
         /* Free error stack. */
         tao_discard_errors(&cam->errs);

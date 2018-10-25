@@ -70,7 +70,19 @@ struct phx_camera {
 
     /* Members shared with the acquisition callback. */
     uint64_t frames;       /**< Number of frames received so far */
+    uint64_t lostframes;   /**< Number of lost frames */
     uint64_t overflows;    /**< Number of overflows */
+    int64_t lostsyncs;     /**< Number of synchronization losts so far */
+    int64_t last_time_s;   /**< Time-stamp (seconds) of last captured image */
+    int64_t last_time_ns;  /**< Time-stamp (nanoeconds) of last captured image */
+    void* last_buffer;     /**< Last captured image buffer */
+    int last_index;        /**< Index of last captured image buffer */
+    int pending;           /**< Number of pending image buffers */
+    int captured_index;    /**< Index of captured image buffer */
+    uint32_t events;       /**< Mask of events to be signaled */
+    phx_imgbuf_t* bufs;    /**< Image buffers for acquisition */
+    int nbufs;             /**< Number of acquisition buffers */
+    size_t bufsize;        /**< Size of acquisition buffers */
 };
 
 #ifdef __cplusplus
