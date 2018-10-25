@@ -36,43 +36,61 @@ struct tao_error {
     tao_error_t*        prev; /**< Previous error */
 };
 
+void
+tao_retrieve_error_details(int code, const char** reason, const char** info,
+                           tao_error_getter_t* proc, char* buffer)
+{
+    if (proc != NULL) {
+        /* Use callback to retrieve error details.  Pre-set variables to NULL
+           in case getter does not provide information. */
+        if (reason != NULL || info != NULL) {
+            if (reason != NULL) {
+                *reason = NULL;
+            }
+            if (info != NULL) {
+                *info = NULL;
+            }
+            proc(code, reason, info);
+        }
+    } else {
+        /* Assume a system error or a TAO error. */
+        if (reason != NULL) {
+            *reason = tao_get_error_reason(code);
+        }
+        if (info != NULL) {
+            *info = tao_get_error_name(code);
+            if (*info != NULL) {
+                if (code > 0) {
+                    if (strcmp(*info, "UNKNOWN_SYSTEM_ERROR") == 0) {
+                        *info = NULL;
+                    }
+                } else if (code < 0) {
+                    if (strcmp(*info, "UNKNOWN_ERROR") == 0) {
+                        *info = NULL;
+                    }
+                }
+            }
+        }
+    }
+    if (reason != NULL && *reason == NULL) {
+        *reason = "Some error occured";
+    }
+    if (info != NULL && *info == NULL && buffer != NULL) {
+        /* Use the numerical value of the error code. */
+        sprintf(buffer, "%d", code);
+        *info = buffer;
+    }
+}
+
 static void
 report_error(const char* prefix, const char* func, int code,
              tao_error_getter_t* proc)
 {
     char buffer[20];
-    const char* reason = NULL;
-    const char* info = NULL;
+    const char* reason;
+    const char* info;
 
-    if (proc != NULL) {
-        /* Use callback to retrieve error details. */
-        reason = NULL;
-        info = NULL;
-        proc(code, &reason, &info);
-    } else {
-        /* Assume a system error or a TAO error. */
-        reason = tao_get_error_reason(code);
-        info = tao_get_error_name(code);
-        if (info != NULL) {
-            if (code > 0) {
-                if (strcmp(info, "UNKNOWN_SYSTEM_ERROR") == 0) {
-                    info = NULL;
-                }
-            } else if (code < 0) {
-                if (strcmp(info, "UNKNOWN_ERROR") == 0) {
-                    info = NULL;
-                }
-            }
-        }
-    }
-    if (reason == NULL) {
-        reason = "Some error occured";
-    }
-    if (info == NULL) {
-        /* Use the numerical value of the error code. */
-        sprintf(buffer, "%d", code);
-        info = buffer;
-    }
+    tao_retrieve_error_details(code, &reason, &info, proc, buffer);
     fprintf(stderr, "%s %s in function `%s` [%s]\n", prefix,
             reason, func, info);
 }

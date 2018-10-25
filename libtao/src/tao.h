@@ -215,6 +215,8 @@ typedef enum tao_error_code {
  *
  * If any of the above details can be provided, the callback shall set the
  * @p reason and/or @p info pointers with the address of a static string.
+ * Any of these pointers can be `NULL` to indicate that the corresponding
+ * information is not requested.
  *
  * The provided information is used to print an error message of the form:
  *
@@ -234,6 +236,8 @@ typedef enum tao_error_code {
  *     *info = NULL; // textual value of error code will be used
  * }
  * @endcode
+ *
+ * @see tao_retrieve_error_details.
  */
 typedef void tao_error_getter_t(int code, const char** reason,
                                 const char** info);
@@ -342,6 +346,31 @@ tao_push_system_error(tao_error_t** errs, const char* func);
 extern int
 tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,
               tao_error_getter_t** procptr);
+
+/**
+ * Retrieve details about a given error code.
+ *
+ * @param code      Error code.
+ * @param reason    Address of a variable to store the reason of the error.
+ *                  Can be `NULL` to not retrieve this information.
+ * @param info      Address of a variable to store a textual description of
+ *                  the error code.  Can be `NULL` to not retrieve this
+ *                  information.
+ * @param proc      Callback to retrieve details about an error given its code.
+ *                  Can be `NULL` to assume the convention in TAO library
+ *                  (nonnegative codes are for system errors while strictly
+ *                  negative codes are for errors in TAO functions).
+ * @param buffer    Address of a small text buffer to print the decimal value
+ *                  of the error code if no better description can be obtained.
+ *                  Providing this buffer is only useful if @p infoptr is not
+ *                  `NULL`.  Can be `NULL` to not use this fallback; otherwise
+ *                  must have at least 20 characters.
+ *
+ * @see tao_error_getter_t.
+ */
+extern void
+tao_retrieve_error_details(int code, const char** reason, const char** info,
+                           tao_error_getter_t* proc, char* buffer);
 
 /**
  * Report all tracked errors.
