@@ -254,6 +254,7 @@ phx_create(tao_error_t** errs,
 {
     phx_camera_t* cam;
     phx_status_t status;
+    int code;
 
     /* Check assumptions. */
     assert(sizeof(ui8)  == 1);
@@ -279,9 +280,21 @@ phx_create(tao_error_t** errs,
     cam->get_config = no_config;
     cam->set_config = no_config;
 #endif
-    pthread_mutex_init(&cam->mutex, NULL); // FIXME: check
+
+    /* Initialize lock. */
+    code = pthread_mutex_init(&cam->mutex, NULL);
+    if (code != 0) {
+        tao_push_error(&cam->errs, "pthread_mutex_init", code);
+        goto error;
+    }
     cam->state = -2;
-    pthread_cond_init(&cam->cond, NULL); // FIXME: check
+
+    /* Initialize condition variable. */
+    code = pthread_cond_init(&cam->cond, NULL);
+    if (code != 0) {
+        tao_push_error(&cam->errs, "pthread_cond_init", code);
+        goto error;
+    }
     cam->state = -1;
 
     /* Create a Phoenix handle. */
