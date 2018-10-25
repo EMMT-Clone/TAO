@@ -65,18 +65,21 @@ report_errors(tao_error_t** errs)
     const char* func;
     long buflen;
     int code;
+    char smallbuf[20];
+    const char* reason;
+    const char* info;
+    tao_error_getter_t* proc;
 
     if (bufsiz < 100) {
         resize_buffer(100);
     }
     buflen = 0;
-    while (tao_pop_error(errs, &func, &code)) {
-        const char* reason = tao_get_error_reason(code);
-        const char* errnam = tao_get_error_name(code);
+    while (tao_pop_error(errs, &func, &code, &proc)) {
+        tao_retrieve_error_details(code, &reason, &info, proc, smallbuf);
         while (1) {
             long len = snprintf(buffer + buflen, bufsiz - buflen,
                                 "%s in function `%s` [%s]\n",
-                                reason, func, errnam);
+                                reason, func, info);
             if (buflen + len < bufsiz) {
                 buflen += len;
                 break;
