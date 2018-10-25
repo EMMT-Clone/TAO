@@ -272,6 +272,8 @@ const char*
 FUNC(int code)
 {
     switch (code) {
+        CASE(TAO_ACQUISITION_RUNNING, "Acquisition running");
+        CASE(TAO_NO_ACQUISITION, "Acquisition not started");
         CASE(TAO_NOT_FOUND, "Item not found");
         CASE(TAO_ALREADY_IN_USE, "Resource already in use");
         CASE(TAO_UNWRITABLE, "Not writable");

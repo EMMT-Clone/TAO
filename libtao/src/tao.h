@@ -177,29 +177,31 @@ typedef struct tao_error tao_error_t;
  * indicate a successful operation.
  */
 typedef enum tao_error_code {
-    TAO_SUCCESS           =   0, /**< Operation was successful */
-    TAO_ASSERTION_FAILED  =  -1, /**< Assertion failed */
-    TAO_BAD_ADDRESS       =  -2, /**< Invalid address */
-    TAO_BAD_ARGUMENT      =  -3, /**< Invalid argument */
-    TAO_BAD_CHARACTER     =  -4, /**< Illegal character */
-    TAO_BAD_ESCAPE        =  -5, /**< Unknown escape sequence */
-    TAO_BAD_MAGIC         =  -6, /**< Invalid magic number */
-    TAO_BAD_RANK          =  -7, /**< Invalid number of dimensions */
-    TAO_BAD_SERIAL        =  -8, /**< Invalid serial number */
-    TAO_BAD_SIZE          =  -9, /**< Invalid size */
-    TAO_BAD_TYPE          = -10, /**< Invalid type */
-    TAO_BAD_DEVICE        = -11, /**< Invalid device */
-    TAO_CANT_TRACK_ERROR  = -12, /**< Insufficient memory for tracking error */
-    TAO_CORRUPTED         = -13, /**< Corrupted structure */
-    TAO_DESTROYED         = -14, /**< Resource has been destroyed */
-    TAO_MISSING_SEPARATOR = -15, /**< Separator missing */
-    TAO_OUT_OF_RANGE      = -16, /**< Out of range argument */
-    TAO_SYSTEM_ERROR      = -17, /**< Unknown system error */
-    TAO_UNCLOSED_STRING   = -18, /**< Unclosed string */
-    TAO_UNREADABLE        = -19, /**< Not readable */
-    TAO_UNWRITABLE        = -20, /**< Not writable */
-    TAO_ALREADY_IN_USE    = -21, /**< Resource already in use */
-    TAO_NOT_FOUND         = -22, /**< Item not found */
+    TAO_SUCCESS             =   0, /**< Operation was successful */
+    TAO_ASSERTION_FAILED    =  -1, /**< Assertion failed */
+    TAO_BAD_ADDRESS         =  -2, /**< Invalid address */
+    TAO_BAD_ARGUMENT        =  -3, /**< Invalid argument */
+    TAO_BAD_CHARACTER       =  -4, /**< Illegal character */
+    TAO_BAD_ESCAPE          =  -5, /**< Unknown escape sequence */
+    TAO_BAD_MAGIC           =  -6, /**< Invalid magic number */
+    TAO_BAD_RANK            =  -7, /**< Invalid number of dimensions */
+    TAO_BAD_SERIAL          =  -8, /**< Invalid serial number */
+    TAO_BAD_SIZE            =  -9, /**< Invalid size */
+    TAO_BAD_TYPE            = -10, /**< Invalid type */
+    TAO_BAD_DEVICE          = -11, /**< Invalid device */
+    TAO_CANT_TRACK_ERROR    = -12, /**< Insufficient memory for tracking error */
+    TAO_CORRUPTED           = -13, /**< Corrupted structure */
+    TAO_DESTROYED           = -14, /**< Resource has been destroyed */
+    TAO_MISSING_SEPARATOR   = -15, /**< Separator missing */
+    TAO_OUT_OF_RANGE        = -16, /**< Out of range argument */
+    TAO_SYSTEM_ERROR        = -17, /**< Unknown system error */
+    TAO_UNCLOSED_STRING     = -18, /**< Unclosed string */
+    TAO_UNREADABLE          = -19, /**< Not readable */
+    TAO_UNWRITABLE          = -20, /**< Not writable */
+    TAO_ALREADY_IN_USE      = -21, /**< Resource already in use */
+    TAO_NOT_FOUND           = -22, /**< Item not found */
+    TAO_NO_ACQUISITION      = -23, /**< Acquisition not started */
+    TAO_ACQUISITION_RUNNING = -24, /**< Acquisition running */
 } tao_error_code_t;
 
 
