@@ -25,6 +25,7 @@ end
 struct ErrorInfo
     func::String
     code::Cint
+    proc::Ptr{Cvoid}
 end
 
 struct TaoError <: Exception

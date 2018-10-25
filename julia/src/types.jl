@@ -11,26 +11,6 @@
 # Copyright (C) 2018, Éric Thiébaut.
 #
 
-"""
-
-`TAO.Errors` is used to keep tracks of errors occuring in calls to TAO
-library functions.
-
-"""
-mutable struct Errors # Must be mutable so that it can be passed by reference.
-    ptr::Ptr{Cvoid}
-    Errors() = new(C_NULL)
-end
-
-struct ErrorInfo
-    func::String
-    code::Cint
-end
-
-struct TaoError <: Exception
-    errs::Array{ErrorInfo}
-end
-
 abstract type AbstractSharedObject end
 
 mutable struct SharedObject <: AbstractSharedObject

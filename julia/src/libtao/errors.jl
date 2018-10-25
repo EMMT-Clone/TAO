@@ -82,11 +82,12 @@ instances of `TAO.ErrorInfo` (possibly empty if there are no errors).
 function pop_errors(errs::Errors)
     func = Ref{Ptr{UInt8}}(0)
     code = Ref{Cint}(0)
+    proc = Ref{Ptr{Cvoid}}(0)
     info = Array{ErrorInfo}(undef, 0)
     while 0 != ccall((:tao_pop_error, taolib), Cint,
-                     (Ref{Errors}, Ptr{Ptr{UInt8}}, Ptr{Cint}),
-                     errs, func, code)
-        push!(info, ErrorInfo(unsafe_string(func[]), code[]))
+                     (Ref{Errors}, Ptr{Ptr{UInt8}}, Ptr{Cint}, Ptr{Ptr{Cvoid}}),
+                     errs, func, code, proc)
+        push!(info, ErrorInfo(unsafe_string(func[]), code[], proc[]))
     end
     return info
 end
