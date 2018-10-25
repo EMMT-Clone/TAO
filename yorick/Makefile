@@ -2,10 +2,8 @@
 srcdir=.
 
 TAO_SRCDIR = ${srcdir}/../libtao/src
-#TAO_LIBDIR = ${srcdir}/../build/src/.libs
 TAO_DEFS = -I$(TAO_SRCDIR)
 TAO_INCS = $(TAO_SRCDIR)/tao.h
-#TAO_LIBS = -L$(TAO_LIBDIR) -ltao -lrt -lpthread
 TAO_DEPS = $(TAO_SRCDIR)/tao.h $(TAO_SRCDIR)/tao-private.h $(TAO_SRCDIR)/macros.h
 TAO_OBJS = \
     buffers.o \
@@ -42,7 +40,7 @@ OBJS=yor-tao-rt.o $(TAO_OBJS)
 PKG_EXENAME=yorick
 
 # PKG_DEPLIBS=-Lsomedir -lsomelib   for dependencies of this package
-PKG_DEPLIBS=-lpthread
+PKG_DEPLIBS=
 # set compiler (or rarely loader) flags specific to this package
 PKG_CFLAGS=
 PKG_LDFLAGS=
