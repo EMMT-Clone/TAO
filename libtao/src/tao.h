@@ -250,10 +250,10 @@ typedef void tao_error_getter_t(int code, const char** reason,
  * and the process is aborted.  If argument @p proc is `NULL`, it is assumed
  * that the error code follows the convention in TAO library (nonnegative codes
  * are for system errors while strictly negative codes are for errors in TAO
- * functions); otherwise, @p proc is the callback which will be called to
+ * functions); otherwise, @p proc is the callback which can be called to
  * retrieve error details from the error code.
  *
- * @warning @p func and @p info must be a static strings.
+ * @warning @p func must be a static strings.
  *
  * @param errs   Address of a variable to track errors.
  * @param func   Name of the function where the error occured.
@@ -267,13 +267,11 @@ tao_push_other_error(tao_error_t** errs, const char* func, int code,
 /**
  * Register an error due to a function call.
  *
- * This function is called to register the information related to the occurence
- * of an error.  This information consiste in the name of the function @p func
- * where the error occured and the numerical identifier @p code of the error.
- * If @p errs is non-`NULL`, it is assumed to be that of the variable provided
- * by the caller to track errors and the error information is added there;
- * othwerise (that is, if @p errs is `NULL`), the error is immediately reported
- * and the process is aborted.
+ * This function is equivalent to:
+ *
+ * @code{.c}
+ * tao_push_other_error(errs, func, code, NULL);
+ * @encode
  *
  * @warning @p func must be a static string.
  *
@@ -336,7 +334,10 @@ tao_push_system_error(tao_error_t** errs, const char* func);
  *                  `NULL` to not retrieve this information.
  *
  * @return A boolean value (that is, `0` or `1`) indicating whether there was
- * some error information to retrieve.
+ * some error information to retrieve.  When there are no errors, the value at
+ * @p codeptr is set to `0` and the values at @p funcptr and @p procptr are set
+ * to `NULL` (respectively providing that @p codeptr, @p funcptr and @p procptr
+ * are not `NULL`).
  */
 extern int
 tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,

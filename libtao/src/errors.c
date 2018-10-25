@@ -140,7 +140,8 @@ void
 tao_push_system_error(tao_error_t** errs, const char* func)
 {
     int code = errno;
-    tao_push_other_error(errs, func, (code > 0 ? code : TAO_SYSTEM_ERROR), NULL);
+    tao_push_other_error(errs, func,
+                         (code > 0 ? code : TAO_SYSTEM_ERROR), NULL);
 }
 
 int
@@ -148,6 +149,15 @@ tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,
               tao_error_getter_t** procptr)
 {
     if (errs == NULL || *errs == TAO_NO_ERRORS) {
+        if (funcptr != NULL) {
+            *funcptr = NULL;
+        }
+        if (codeptr != NULL) {
+            *codeptr = 0;
+        }
+        if (procptr != NULL) {
+            *procptr = NULL;
+        }
         return 0;
     } else {
         tao_error_t* err = *errs;
