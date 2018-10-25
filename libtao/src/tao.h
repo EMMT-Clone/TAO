@@ -349,6 +349,21 @@ tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,
               tao_error_getter_t** procptr);
 
 /**
+ * Transfer errors between two error stacks.
+ *
+ * This function removes the errors from @p src and stack them int @p dest.  If
+ * there are any errors in @p src and @p dest is `NULL`, it is assumed that the
+ * caller has declined to store error informations and all errors in @p src are
+ * reported and the process aborted.
+
+ * @param dest      Address of a variable tracking errors (can be `NULL`).
+ * @param src       Address of another variable tracking errors (can be
+ *                  `NULL`).
+ */
+extern void
+tao_transfer_errors(tao_error_t** dest, tao_error_t** src);
+
+/**
  * Retrieve details about a given error code.
  *
  * @param code      Error code.

@@ -212,6 +212,40 @@ tao_discard_errors(tao_error_t** errs)
     }
 }
 
+void
+tao_transfer_errors(tao_error_t** dest, tao_error_t** src)
+{
+    if (dest == NULL) {
+        /* The caller has declined to store error informations.  Panic if there
+           are any errors in the source. */
+        if (src != NULL && *src != TAO_NO_ERRORS) {
+            tao_report_errors(src);
+            panic(NULL, 0, NULL);
+        }
+    } else if (src != NULL && src != dest) {
+        /* Transfer all errors from `src` to `dest` preserving the order (hence the
+           double loop). */
+        while (*src != TAO_NO_ERRORS) {
+            /* Find the last and penultimate errors.  Then remove it from `src`
+               and push it into `dest`*/
+            tao_error_t* penultimate = NULL;
+            tao_error_t* last = *src;
+            while (last->prev != TAO_NO_ERRORS) {
+                penultimate = last;
+                last = last->prev;
+            }
+            if (penultimate == NULL) {
+                *src = NULL;
+            } else {
+                penultimate->prev = NULL;
+            }
+            last->prev = *dest;
+            *dest = last;
+        }
+    }
+}
+
+
 #define GET_ERR_FUNC 1
 #include __FILE__
 
