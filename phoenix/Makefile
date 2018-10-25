@@ -38,10 +38,12 @@ TAO_CFLAGS = $(CPPFLAGS) $(CFLAGS) $(PIC_FLAGS)
 # Macros for the Phoenix Frame Grabber Library (FGL):
 PHOENIX_LIBRARY = libphoenix.a
 PHOENIX_DLL = libphoenix.so
-PHOENIX_OBJECTS = phoenix.o coaxpress.o MikrotronMC408x.o tao.o
-PHOENIX_HEADERS = phoenix-types.h phoenix.h phoenix-private.h \
-              coaxpress.h $(TAO_SRCDIR)/tao.h
-#MikrotronMC408x.h tao.h
+PHOENIX_OBJECTS = phoenix.o coaxpress.o mikrotron-mc408x.o
+PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
+                  ${srcdir}/phoenix.h \
+                  ${srcdir}/phoenix-private.h \
+                  ${srcdir}/coaxpress.h \
+                  $(TAO_SRCDIR)/tao.h
 PHOENIX_DEFS = -DPHX_DEBUG -DPHX_VERBOSE
 PHOENIX_CFLAGS = $(CPPFLAGS) $(PHX_DEFS) $(TAO_DEFS) $(PHOENIX_DEFS) $(CFLAGS) $(PIC_FLAGS)
 PHOENIX_LIBS = $(PHOENIX_LIBRARY) $(PHX_LIBS)
@@ -67,27 +69,35 @@ $(PHOENIX_DLL): $(PHOENIX_OBJECTS)
 #	$(CC) -Wl,-rpath,$(PHX_LIBDIR) -Wl,-export-dynamic -Wl,-soname,$(PHOENIX_DLL).1 -fPIC -shared $^ -o $@ $(PHX_LIBS)
 #	$(CC) -Wl,-rpath,$(PHX_LIBDIR) -fPIC -shared -L$(PHX_LIBDIR) $^ -o $@ -lphxapi-x86_64
 
-phx_info: phx_info.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_info: ${srcdir}/phx_info.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
-phx_live: phx_live.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_live: ${srcdir}/phx_live.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
-phx_capture: phx_capture.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_capture: ${srcdir}/phx_capture.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(CFITSIO_DEFS) $(LDFLAGS) $< -o $@ \
 	    $(PHOENIX_LIBS) $(CFITSIO_LIBS) -lm
 
-phx_rt_last: phx_rt_last.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_rt_last: ${srcdir}/phx_rt_last.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
-phx_rt_wait: phx_rt_wait.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_rt_wait: ${srcdir}/phx_rt_wait.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
-phoenix.o: phoenix.c $(PHOENIX_HEADERS)
+phoenix.o: ${srcdir}/phoenix.c $(PHOENIX_HEADERS)
 	$(CC) -c $(PHOENIX_CFLAGS) $< -o $@
 
-coaxpress.o: coaxpress.c $(PHOENIX_HEADERS)
+coaxpress.o: ${srcdir}/coaxpress.c $(PHOENIX_HEADERS)
 	$(CC) -c $(PHOENIX_CFLAGS) $< -o $@
 
-MikrotronMC408x.o: MikrotronMC408x.c $(PHOENIX_HEADERS)
+mikrotron-mc408x.o: ${srcdir}/mikrotron-mc408x.c $(PHOENIX_HEADERS) ${srcdir}/mikrotron-mc408x.h
 	$(CC) -c $(PHOENIX_CFLAGS) $< -o $@
+
+test-macros.e: ${srcdir}/test-macros.c ${srcdir}/coaxpress.h ${srcdir}/mikrotron-mc408x.h
+	$(CC) -E "$<" -o "$@"
+
+test-macros: test-macros.e
+	tail -30 "$<"
+
+.PHONY: test-macros
