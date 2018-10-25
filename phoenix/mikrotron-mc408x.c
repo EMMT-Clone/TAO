@@ -153,8 +153,10 @@ int set_subsampling(phx_camera_t* cam, int req_xsub, int req_ysub)
         cxp_get(cam, DECIMATION_VERTICAL,   &ysub) != 0) {
         return -1;
     }
-    if ((xsub != req_xsub && cxp_set(cam, DECIMATION_HORIZONTAL, req_xsub) != 0) ||
-        (ysub != req_ysub && cxp_set(cam, DECIMATION_VERTICAL,   req_ysub) != 0)) {
+    if ((xsub != req_xsub &&
+         cxp_set(cam, DECIMATION_HORIZONTAL, req_xsub) != 0) ||
+        (ysub != req_ysub &&
+         cxp_set(cam, DECIMATION_VERTICAL,   req_ysub) != 0)) {
         return -1;
     }
     return 0;
@@ -165,7 +167,8 @@ set_pattern_noise_reduction(phx_camera_t* cam, int flag)
 {
     uint32_t val, req_val = (flag ? 1 : 0);
     if (cxp_get(cam, FIXED_PATTERN_NOISE_REDUCTION, &val) != 0 ||
-        (val != req_val && cxp_set(cam, FIXED_PATTERN_NOISE_REDUCTION, req_val) != 0)) {
+        (val != req_val &&
+         cxp_set(cam, FIXED_PATTERN_NOISE_REDUCTION, req_val) != 0)) {
         return -1;
     }
     return 0;

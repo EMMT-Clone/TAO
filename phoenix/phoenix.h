@@ -26,6 +26,15 @@
 
 typedef struct phx_camera phx_camera_t;
 
+typedef struct phx_virtual_buffer phx_virtual_buffer_t;
+
+struct phx_virtual_buffer {
+    void* data;
+    int64_t counter;
+    struct timespec ts;
+    int index;
+};
+
 /**
  * Camera structure.
  *
@@ -73,16 +82,12 @@ struct phx_camera {
     uint64_t lostframes;   /**< Number of lost frames */
     uint64_t overflows;    /**< Number of overflows */
     int64_t lostsyncs;     /**< Number of synchronization losts so far */
-    int64_t last_time_s;   /**< Time-stamp (seconds) of last captured image */
-    int64_t last_time_ns;  /**< Time-stamp (nanoeconds) of last captured image */
-    void* last_buffer;     /**< Last captured image buffer */
-    int last_index;        /**< Index of last captured image buffer */
-    int pending;           /**< Number of pending image buffers */
-    int captured_index;    /**< Index of captured image buffer */
-    uint32_t events;       /**< Mask of events to be signaled */
     phx_imgbuf_t* bufs;    /**< Image buffers for acquisition */
     int nbufs;             /**< Number of acquisition buffers */
+    int last;              /**< Index of last captured image buffer */
+    int pending;           /**< Number of pending image buffers */
     size_t bufsize;        /**< Size of acquisition buffers */
+    uint32_t events;       /**< Mask of events to be signaled */
 };
 
 #ifdef __cplusplus

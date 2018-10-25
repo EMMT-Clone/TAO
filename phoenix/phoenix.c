@@ -18,6 +18,14 @@
 #include <termios.h>
 #endif
 
+#define ALIGNMENT 32
+#if defined(__BIGGEST_ALIGNMENT__) && __BIGGEST_ALIGNMENT__ > ALIGNMENT
+#  undef ALIGNMENT
+#  define ALIGNMENT __BIGGEST_ALIGNMENT__
+#endif
+
+#define ROUND_UP(a, b) ((((b) - 1 + (a))/(b))*(b))
+
 #define MIN(a,b) ((a) <= (b) ? (a) : (b))
 
 #define MAX(a,b) ((a) >= (b) ? (a) : (b))
@@ -225,11 +233,11 @@ free_virtual_buffers(phx_camera_t* cam)
            we can be interrupted. */
         phx_imgbuf_t* bufs = cam->bufs;
         int i = 0;
-        while (bufs[i].pvAddress != NULL) {
+        while (bufs[i].pvContext != NULL) {
             ++i;
         }
         while (--i >= 0) {
-            free(bufs[i].pvAddress);
+            free(bufs[i].pvContext);
         }
         cam->bufs = NULL;
         free(bufs);
@@ -258,18 +266,26 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs, long* bufstride)
 
     if (cam->bufs == NULL || cam->nbufs != nbufs || cam->bufsize != bufsize) {
         /* Allocate new image buffers */
+        size_t offset = ROUND_UP(sizeof(phx_virtual_buffer_t), ALIGNMENT);
+        size_t size = offset + bufsize;
         free_virtual_buffers(cam);
         cam->bufs = NEW(&cam->errs, phx_imgbuf_t, nbufs + 1);
         if (cam->bufs == NULL) {
             return -1;
         }
         for (int i = 0; i < nbufs; ++i) {
-            cam->bufs[i].pvAddress = (uint8_t*)tao_malloc(&cam->errs, bufsize);
-            if (cam->bufs[i].pvAddress == NULL) {
+            phx_virtual_buffer_t* buf = tao_malloc(&cam->errs, size);
+            if (buf == NULL) {
                 free_virtual_buffers(cam);
                 return -1;
             }
-            cam->bufs[i].pvContext = (void*)(ptrdiff_t)i;
+            buf->data = (void*)(((uint8_t*)buf) + offset);
+            buf->counter = -1;
+            buf->ts.tv_sec = 0;
+            buf->ts.tv_nsec = 0;
+            buf->index = i;
+            cam->bufs[i].pvAddress = buf->data;
+            cam->bufs[i].pvContext = buf;
         }
 
         /* Terminate the list of buffers */
@@ -315,8 +331,7 @@ acquisition_callback(phx_handle_t handle, uint32_t events, void* data)
 
     /* Account for events. */
     if ((PHX_INTRPT_BUFFER_READY & events) != 0) {
-        /* A new frame is available. */
-        /* Take its arrival time stamp.  FIXME: time stamp must be attached to the buffer */
+        /* A new frame is available.  Take its arrival time stamp. */
         if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
             tao_push_system_error(&cam->errs, "clock_gettime");
             ts.tv_sec = 0;
@@ -329,12 +344,13 @@ acquisition_callback(phx_handle_t handle, uint32_t events, void* data)
         } else {
             /* Store the time-stamp, address and index of the last captured
                image and update counters. */
-            cam->last_buffer = imgbuf.pvAddress;
-            cam->last_index = (long)imgbuf.pvContext;
-            cam->last_time_s = ts.tv_sec;
-            cam->last_time_ns = ts.tv_nsec;
+            phx_virtual_buffer_t* vbuf = (phx_virtual_buffer_t*)imgbuf.pvContext;
             ++cam->frames;
             ++cam->pending;
+            vbuf->counter = cam->frames;
+            vbuf->ts.tv_sec = ts.tv_sec;
+            vbuf->ts.tv_nsec = ts.tv_nsec;
+            cam->last = vbuf->index;
         }
     }
     if ((PHX_INTRPT_FIFO_OVERFLOW & events) != 0) {
@@ -421,11 +437,27 @@ phx_start(phx_camera_t* cam, int nbufs)
  * not too difficult to figure out where we are if we count the number of
  * frames.
  */
+
+/*
+ * FIXME: `BUFFER_RELASE` must be called once the returned image has been
+ *         processed.
+ *
+ * FIXME: Errors in the camera error stack should be checked (perhaps this has
+ *        to be signaled).
+ */
+
+/**
+ * Wait for an image to be available.
+ *
+ * @return The index (starting at 1) of the next image available in the ring of
+ * virtual buffers.  0 is returned if timeout expired before a new image is
+ * available, -1 is returned in case of errors.
+ */
 int
 phx_wait_image(phx_camera_t* cam, double secs, int drop)
 {
     struct timespec ts;
-    int forever, code, status = 0;
+    int forever, code, index = 0;
 
     /* Check state. */
     if (cam->state != 2) {
@@ -469,17 +501,17 @@ phx_wait_image(phx_camera_t* cam, double secs, int drop)
             code = pthread_cond_wait(&cam->cond, &cam->mutex);
             if (code != 0) {
                 tao_push_error(&cam->errs, "pthread_cond_wait", code);
-                status = -1;
+                index = -1;
                 goto unlock;
             }
         } else {
             code = pthread_cond_timedwait(&cam->cond, &cam->mutex, &ts);
             if (code != 0) {
                 if (code == ETIMEDOUT) {
-                    status = 0;
+                    index = 0;
                 } else {
                     tao_push_error(&cam->errs, "pthread_cond_timedwait", code);
-                    status = -1;
+                    index = -1;
                 }
                 goto unlock;
             }
@@ -490,7 +522,7 @@ phx_wait_image(phx_camera_t* cam, double secs, int drop)
         /* Get rid of unprocessed pending image buffers. */
         while (cam->pending > 1) {
             if (phx_read_stream(cam, PHX_BUFFER_RELEASE, NULL) != 0) {
-                status = -1;
+                index = -1;
                 goto unlock;
             }
             --cam->pending;
@@ -502,12 +534,17 @@ phx_wait_image(phx_camera_t* cam, double secs, int drop)
         /* If no errors occured so far and at least one image buffer is
          * unprocessed, manage to return the index of this buffer.
          */
-        --cam->pending;
-        cam->captured_index = cam->last_index - cam->pending;
-        while (cam->captured_index < 0) {
-            /* FIXME: use modulo arithmetic */
-            cam->captured_index += cam->nbufs;
+        --cam->pending; /* FIXME: decreasing the # of pending images should be
+                         * done at the same time PHX_BUFFER_RELEASE is
+                         * called. */
+        index = (cam->last - cam->pending)%cam->nbufs;
+        if (index < 0) {
+            index += cam->nbufs;
         }
+        ++index;
+    } else {
+        /* No new image available. */
+        index = 0;
     }
 
     /* Unlock the mutex (whatever the errors so far). */
@@ -515,7 +552,7 @@ phx_wait_image(phx_camera_t* cam, double secs, int drop)
     if (unlock_mutex(cam) != 0) {
         return -1;
     }
-    return status;
+    return index;
 }
 
 /*--------------------------------------------------------------------------*/
