@@ -10,8 +10,8 @@
  * This file if part of TAO software (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  * Copyright (C) 2017-2018, Éric Thiébaut.
+ * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  */
 
 #ifndef _MIKROTRON_MC408X_H
@@ -185,19 +185,6 @@
 #define CXP_DEVICE_RESET__addr    0x8300
 #define CXP_DEVICE_RESET__comm    1
 
-#define CXP_CONNECTION_RESET__kind    Value
-#define CXP_CONNECTION_RESET__type    Command
-#define CXP_CONNECTION_RESET__size    4
-#define CXP_CONNECTION_RESET__mode    WriteOnly
-#define CXP_CONNECTION_RESET__addr    0x4000
-#define CXP_CONNECTION_RESET__comm    1
-
-#define CXP_CONNECTION_CONFIG__kind    Value
-#define CXP_CONNECTION_CONFIG__type    Integer
-#define CXP_CONNECTION_CONFIG__size    4
-#define CXP_CONNECTION_CONFIG__mode    ReadWrite
-#define CXP_CONNECTION_CONFIG__addr    0x4014
-
 #define CXP_CONNECTION_DEFAULT__kind    Value
 #define CXP_CONNECTION_DEFAULT__type    Integer
 #define CXP_CONNECTION_DEFAULT__size    4
@@ -300,21 +287,6 @@
 #define CXP_REGION_SELECTOR_REGION0    0x0
 #define CXP_REGION_SELECTOR_REGION1    0x1
 #define CXP_REGION_SELECTOR_REGION2    0x2
-
-/*
- * Bits for CONNECTION_CONFIG register (the value is a conbination of speed and
- * number of connections).
- */
-#define CXP_CONNECTION_CONFIG_SPEED1250      0x00028
-#define CXP_CONNECTION_CONFIG_SPEED2500      0x00030
-#define CXP_CONNECTION_CONFIG_SPEED3125      0x00038
-#define CXP_CONNECTION_CONFIG_SPEED5000      0x00040
-#define CXP_CONNECTION_CONFIG_SPEED6250      0x00048
-#define CXP_CONNECTION_CONFIG_CONNECTION1    0x10000
-#define CXP_CONNECTION_CONFIG_CONNECTION2    0x20000
-#define CXP_CONNECTION_CONFIG_CONNECTION3    0x30000
-#define CXP_CONNECTION_CONFIG_CONNECTION4    0x40000
-
 
 #define CXP_GAIN__kind    Value
 #define CXP_GAIN__type    Integer
@@ -489,7 +461,7 @@
 #define CXP_HORIZONTAL_INCREMENT    16
 #define CXP_VERTICAL_INCREMENT       2
 
-/* Filter modes. */
+/* Image filter modes. */
 #define CXP_FILTER_MODE_RAW     0
 #define CXP_FILTER_MODE_MONO    1
 #define CXP_FILTER_MODE_COLOR   2

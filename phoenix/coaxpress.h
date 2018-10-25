@@ -8,8 +8,8 @@
  * This file if part of TAO software (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  * Copyright (C) 2017-2018, Éric Thiébaut.
+ * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  */
 
 #ifndef _COAXPRESS_H
@@ -187,10 +187,11 @@
 #define CXP_IMAGE1_STREAM_ID_ADDRESS__addr     0x0000301C
 
 #define CXP_CONNECTION_RESET__kind             Value
-#define CXP_CONNECTION_RESET__type             Integer
+#define CXP_CONNECTION_RESET__type             Command
 #define CXP_CONNECTION_RESET__size             4
 #define CXP_CONNECTION_RESET__mode             ReadWrite
 #define CXP_CONNECTION_RESET__addr             0x00004000
+#define CXP_CONNECTION_RESET__comm             1
 
 #define CXP_DEVICE_CONNECTION_ID__kind         Value
 #define CXP_DEVICE_CONNECTION_ID__type         Integer
@@ -267,6 +268,21 @@
 /* Start of manufacturer specific register space. */
 #define CXP_MANUFACTURER__addr                 0x00006000
 
+/*
+ * Bits for CONNECTION_CONFIG register.  The value is a combination of speed
+ * and number of connections (not all combinations are possible, see camera
+ * manual).
+ */
+#define CXP_CONNECTION_CONFIG_SPEED1250      0x00028
+#define CXP_CONNECTION_CONFIG_SPEED2500      0x00030
+#define CXP_CONNECTION_CONFIG_SPEED3125      0x00038
+#define CXP_CONNECTION_CONFIG_SPEED5000      0x00040
+#define CXP_CONNECTION_CONFIG_SPEED6250      0x00048
+#define CXP_CONNECTION_CONFIG_CONNECTION1    0x10000
+#define CXP_CONNECTION_CONFIG_CONNECTION2    0x20000
+#define CXP_CONNECTION_CONFIG_CONNECTION3    0x30000
+#define CXP_CONNECTION_CONFIG_CONNECTION4    0x40000
+
 
 #define _cxp_verbatim(a)  a
 #define _cxp_stringify(a)  #a
@@ -288,19 +304,44 @@
 #define _cxp_size(id) CXP_##id##__size
 #define _cxp_addr(id) CXP_##id##__addr
 #define _cxp_mode(id) CXP_##id##__mode
+#define _cxp_comm(id) CXP_##id##__comm
 #define _cxp_min(id)  CXP_##id##__min
 #define _cxp_max(id)  CXP_##id##__max
 #define _cxp_inc(id)  CXP_##id##__inc
 
+#define cxp_kind(id) _cxp_kind(id)
+#define cxp_type(id) _cxp_type(id)
+#define cxp_size(id) _cxp_size(id)
+#define cxp_addr(id) _cxp_addr(id)
+#define cxp_mode(id) _cxp_mode(id)
+#define cxp_comm(id) _cxp_comm(id)
+#define cxp_min(id)  _cxp_min(id)
+#define cxp_max(id)  _cxp_max(id)
+#define cxp_inc(id)  _cxp_inc(id)
 
-/* cascade macros for getting a CoaXPress parameter.  We first manage to
-   raise a compilation error is parameter is not readable; we otherwise
-   dispatch to the specific reader function. */
-
+/**
+ * Set a CoaXPress register.
+ */
 #define cxp_get(cam, id, ptr) \
     _cxp_xjoin(_cxp_get_,_cxp_mode(id))(cam, id, ptr)
 
-#define _cxp_get_ReadOnly(cam, id, ptr)                                 \
+/**
+ * Execute a CoaXPress command.
+ */
+#define cxp_exec(cam, id) cxp_set(cam, id, cxp_comm(id))
+
+/**
+ * Set a CoaXPress register.
+ */
+#define cxp_set(cam, id, val) \
+    _cxp_xjoin(_cxp_set_,_cxp_mode(id))(cam, id, val)
+
+
+/* Cascading macros for getting a CoaXPress parameter.  We first manage to
+   raise a compilation error is parameter is not readable; we otherwise
+   dispatch to the specific reader function. */
+
+#define _cxp_get_ReadOnly(cam, id, ptr) \
     _cxp_xjoin3(_cxp_get_,_cxp_kind(id),_cxp_type(id))(cam, id, ptr)
 
 #define _cxp_get_ReadWrite(cam, id, ptr) \
@@ -315,13 +356,19 @@
 #define _cxp_get_ValueString(cam, id, ptr) \
     cxp_read_string(cam, _cxp_addr(id), _cxp_size(id), ptr)
 
+#define _cxp_get_ValueCommand(cam, id, ptr) \
+    _cxp_get_ValueInteger(cam, id, ptr)
+
+#define _cxp_get_ValueEnumeration(cam, id, ptr) \
+    _cxp_get_ValueInteger(cam, id, ptr)
+
 #define _cxp_get_ValueInteger(cam, id, ptr) \
     _cxp_xjoin(_cxp_get_ValueInteger,_cxp_size(id))(cam, id, ptr)
 
 #define _cxp_get_ValueFloat(cam, id, ptr) \
     _cxp_xjoin(_cxp_get_ValueFloat,_cxp_size(id))(cam, id, ptr)
 
-#define _cxp_get_ValueInteger4(cam, id, ptr)    \
+#define _cxp_get_ValueInteger4(cam, id, ptr) \
     cxp_read_uint32(cam, _cxp_addr(id), ptr)
 
 #define _cxp_get_ValueInteger8(cam, id, ptr) \
@@ -350,9 +397,6 @@
    raise a compilation error is parameter is not writable; we otherwise
    dispatch to the specific writer function. */
 
-#define cxp_set(cam, id, val) \
-    _cxp_xjoin(_cxp_set_,_cxp_mode(id))(cam, id, val)
-
 #define _cxp_set_ReadOnly(cam, id, val) \
     TRYING_TO_WRITE_READONLY_PARAMETER_##id
 
@@ -365,8 +409,14 @@
 #define _cxp_set_Unknown(cam, id, val) \
     TRYING_TO_WRITE_UNKNOWN_PARAMETER_##id
 
-#define _cxp_set_ValueString(cam, id, val)                      \
+#define _cxp_set_ValueString(cam, id, val) \
     cxp_write_string(cam, _cxp_addr(id), _cxp_size(id), val)
+
+#define _cxp_set_ValueCommand(cam, id, val) \
+    _cxp_set_ValueInteger(cam, id, val)
+
+#define _cxp_set_ValueEnumeration(cam, id, val) \
+    _cxp_set_ValueInteger(cam, id, val)
 
 #define _cxp_set_ValueInteger(cam, id, val) \
     _cxp_xjoin(_cxp_set_ValueInteger,_cxp_size(id))(cam, id, val)
@@ -374,7 +424,7 @@
 #define _cxp_set_ValueFloat(cam, id, val) \
     _cxp_xjoin(_cxp_set_ValueFloat,_cxp_size(id))(cam, id, val)
 
-#define _cxp_set_ValueInteger4(cam, id, val)    \
+#define _cxp_set_ValueInteger4(cam, id, val) \
     cxp_write_uint32(cam, _cxp_addr(id), val)
 
 #define _cxp_set_ValueInteger8(cam, id, val) \
