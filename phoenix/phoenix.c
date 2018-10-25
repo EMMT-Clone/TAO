@@ -8,8 +8,8 @@
  * This file if part of TAO software (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  * Copyright (C) 2017-2018, Éric Thiébaut.
+ * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  */
 
 #include "phoenix.h"
@@ -23,6 +23,17 @@
 #define MAX(a,b) ((a) >= (b) ? (a) : (b))
 
 #define NEW(errs, type) ((type*)tao_calloc(errs, 1, sizeof(type)))
+
+static struct {
+    const char* model;
+    int (*check)(phx_camera_t* cam);
+    int (*initialize)(phx_camera_t* cam);
+} known_cameras[] = {
+    {"Mikrotron MC408x",
+     phx_check_mikrotron_mc408x,
+     phx_initialize_mikrotron_mc408x},
+    {NULL, NULL, NULL}
+};
 
 /*---------------------------------------------------------------------------*/
 /* ERROR MANAGEMENT */
@@ -251,6 +262,7 @@ phx_create(tao_error_t** errs,
     assert(sizeof(ui64) == 8);
     assert(sizeof(float32_t) == 4);
     assert(sizeof(float64_t) == 8);
+    assert(sizeof(etParamValue) == sizeof(int));
 
     /* Allocate memory to store the camera instance. */
     cam = NEW(errs, phx_camera_t);
@@ -261,9 +273,9 @@ phx_create(tao_error_t** errs,
     cam->state = -3;
     cam->swap = FALSE;
     cam->coaxpress = FALSE;
+    cam->start = NULL;
+    cam->stop = NULL;
 #if 0
-    cam->start = no_op;
-    cam->stop = no_op;
     cam->get_config = no_config;
     cam->set_config = no_config;
 #endif
@@ -311,22 +323,23 @@ phx_create(tao_error_t** errs,
     if (check_coaxpress(cam) != 0) {
         goto error;
     }
-    //if (cam->coaxpress) {
-    //    /* Apply specific camera initialization. */
-    //    if (phx_check_MikrotronMC408x(cam)) {
-    //        status = phx_initialize_MikrotronMC408x(cam);
-    //        if (status != PHX_OK) {
-    //            goto done;
-    //        }
-    //    } else {
-    //        fprintf(stderr, "WARNING: Unknown CoaXPress camera, "
-    //                "initialization may be incomplete.\n");
-    //    }
-    //}
+
+    /* Initialize specific camera model. */
+    for (int k = 0; known_cameras[k].check != NULL; ++k) {
+        if (known_cameras[k].check(cam) &&
+            known_cameras[k].initialize != NULL) {
+            if (known_cameras[k].initialize(cam) != 0) {
+                goto error;
+            }
+        }
+    }
 
     return cam;
 
  error:
+    if (cam != NULL) {
+        tao_transfer_errors(errs, &cam->errs);
+    }
     phx_destroy(cam);
     return NULL;
 }
@@ -360,6 +373,10 @@ phx_destroy(phx_camera_t* cam)
             /* Destroy mutex. */
             pthread_mutex_destroy(&cam->mutex);
         }
+
+        /* Free error stack. */
+        tao_discard_errors(&cam->errs);
+
         /* Release memory. */
         free(cam);
     }
@@ -403,31 +420,18 @@ phx_set_parameter(phx_camera_t* cam, phx_param_t param, void* addr)
    return 0;
 }
 
-#define DEF_FUNC(SUFFIX, TYPE)                          \
-    int                                                 \
-    phx_set_##SUFFIX##_parameter(phx_camera_t* cam,     \
-                                 phx_param_t   param,   \
-                                 TYPE          value)   \
-    {                                                   \
-        return phx_set_parameter(cam, param, &value);   \
-    }
-DEF_FUNC(enum,   int)
-DEF_FUNC(uint32, uint32_t)
-DEF_FUNC(uint64, uint64_t)
-#undef DEF_FUNC
+int
+phx_get(phx_camera_t* cam, phx_param_t param, phx_value_t* valptr)
+{
+    return phx_get_parameter(cam, param, valptr);
+}
 
-#define DEF_FUNC(SUFFIX, TYPE)                          \
-    int                                                 \
-    phx_get_##SUFFIX##_parameter(phx_camera_t* cam,     \
-                                 phx_param_t   param,   \
-                                 TYPE*         value)   \
-    {                                                   \
-        return phx_get_parameter(cam, param, value);    \
-    }
-DEF_FUNC(enum,   int)
-DEF_FUNC(uint32, uint32_t)
-DEF_FUNC(uint64, uint64_t)
-#undef DEF_FUNC
+int
+phx_set(phx_camera_t* cam, phx_param_t param, phx_value_t value)
+{
+    return phx_set_parameter(cam, param, &value);
+}
+
 
 /*---------------------------------------------------------------------------*/
 /* ROUTINES TO READ/WRITE COAXPRESS REGISTERS */
@@ -525,6 +529,77 @@ cxp_read_indirect_uint32(phx_camera_t* cam, uint32_t addr, uint32_t* value)
 
 /*--------------------------------------------------------------------------*/
 /* UTILITIES */
+
+/*
+ * The macro `DST_FORMATS` provide all known (destination) pixel formats.
+ * Macro `DST_FORMAT(f,t,b)` have to be defined before evaluationg this macro.
+ * An example of usage is in `phx_capture_format_bits`.
+ */
+#define DST_FORMATS                                                \
+    DST_FORMAT(PHX_DST_FORMAT_Y8,     Monochrome,  8)              \
+    DST_FORMAT(PHX_DST_FORMAT_Y10,    Monochrome, 10)              \
+    DST_FORMAT(PHX_DST_FORMAT_Y12,    Monochrome, 12)              \
+    DST_FORMAT(PHX_DST_FORMAT_Y12B,   Monochrome, 12) /* FIXME: */ \
+    DST_FORMAT(PHX_DST_FORMAT_Y14,    Monochrome, 14)              \
+    DST_FORMAT(PHX_DST_FORMAT_Y16,    Monochrome, 16)              \
+    DST_FORMAT(PHX_DST_FORMAT_Y32,    Monochrome, 32)              \
+    DST_FORMAT(PHX_DST_FORMAT_Y36,    Monochrome, 36)              \
+    DST_FORMAT(PHX_DST_FORMAT_2Y12,   Monochrome, 24)              \
+    DST_FORMAT(PHX_DST_FORMAT_BAY8,   BayerFormat,  8)             \
+    DST_FORMAT(PHX_DST_FORMAT_BAY10,  BayerFormat, 10)             \
+    DST_FORMAT(PHX_DST_FORMAT_BAY12,  BayerFormat, 12)             \
+    DST_FORMAT(PHX_DST_FORMAT_BAY14,  BayerFormat, 14)             \
+    DST_FORMAT(PHX_DST_FORMAT_BAY16,  BayerFormat, 16)             \
+    DST_FORMAT(PHX_DST_FORMAT_RGB15,  RGB, 15)                     \
+    DST_FORMAT(PHX_DST_FORMAT_RGB16,  RGB, 16)                     \
+    DST_FORMAT(PHX_DST_FORMAT_RGB24,  RGB, 24)                     \
+    DST_FORMAT(PHX_DST_FORMAT_RGB32,  RGB, 32)                     \
+    DST_FORMAT(PHX_DST_FORMAT_RGB36,  RGB, 36)                     \
+    DST_FORMAT(PHX_DST_FORMAT_RGB48,  RGB, 48)                     \
+    DST_FORMAT(PHX_DST_FORMAT_BGR15,  BGR, 15)                     \
+    DST_FORMAT(PHX_DST_FORMAT_BGR16,  BGR, 16)                     \
+    DST_FORMAT(PHX_DST_FORMAT_BGR24,  BGR, 24)                     \
+    DST_FORMAT(PHX_DST_FORMAT_BGR32,  BGR, 32)                     \
+    DST_FORMAT(PHX_DST_FORMAT_BGR36,  BGR, 36)                     \
+    DST_FORMAT(PHX_DST_FORMAT_BGR48,  BGR, 48)                     \
+    DST_FORMAT(PHX_DST_FORMAT_BGRX32, BGRX, 32)                    \
+    DST_FORMAT(PHX_DST_FORMAT_RGBX32, RGBX, 32)                    \
+    /* FIXME: PHX_DST_FORMAT_RRGGBB8 => 8 */                       \
+    DST_FORMAT(PHX_DST_FORMAT_XBGR32, XBGR, 32)                    \
+    DST_FORMAT(PHX_DST_FORMAT_XRGB32, XRGB, 32)                    \
+    DST_FORMAT(PHX_DST_FORMAT_YUV422, YUV422, 16)
+
+uint32_t
+phx_capture_format_bits(phx_value_t fmt)
+{
+    switch (fmt) {
+#define DST_FORMAT(f,t,b) case f: return b;
+        DST_FORMATS
+#undef DST_FORMAT
+    default: return 0;
+    }
+}
+
+int
+phx_capture_format_type(phx_value_t fmt)
+{
+    const int Monochrome  = 1;
+    const int BayerFormat = 2;
+    const int RGB         = 3;
+    const int BGR         = 4;
+    const int RGBX        = 5;
+    const int BGRX        = 6;
+    const int XRGB        = 7;
+    const int XBGR        = 8;
+    const int YUV422      = 9;
+    switch (fmt) {
+#define DST_FORMAT(f,t,b) case f: return t;
+        DST_FORMATS
+#undef DST_FORMAT
+    default: return 0;
+    }
+}
+
 
 #ifdef _PHX_POSIX
 static int              peek_character = -1;

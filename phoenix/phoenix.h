@@ -8,8 +8,8 @@
  * This file if part of TAO software (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  * Copyright (C) 2017-2018, Éric Thiébaut.
+ * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  */
 
 #ifndef _PHOENIX_H
@@ -35,8 +35,14 @@ typedef struct phx_camera phx_camera_t;
 struct phx_camera {
     tao_error_t* errs;   /**< Error stack */
     phx_handle_t handle; /**< Camera handle */
+    int (*start)(phx_camera_t*); /**< Start hook */
+    int (*stop)(phx_camera_t*);  /**< Stop hook */
     uint32_t fullwidth;  /**< Width (in pixels) of the sensor */
     uint32_t fullheight; /**< Height (in pixels) of the sensor */
+    uint32_t xoff;       /**< Horizontal offset of acquired images with
+                              respect to sensor*/
+    uint32_t yoff;       /**< Vertical offset of acquired images with
+                              respect to sensor*/
     uint32_t width;      /**< Width (in macro-pixels) of acquired images */
     uint32_t height;     /**< Height (in macro-pixels) of acquired images */
     int state;           /**< Current state of the camera (> 1 if
@@ -74,48 +80,21 @@ phx_create(tao_error_t** errs,
 extern void
 phx_destroy(phx_camera_t* cam);
 
-//extern int
-//phx_open(tao_error_t** errs, phx_handle_t handle);
-//
-//extern int
-//phx_close(tao_error_t** errs, phx_handle_t* handle);
-//
-//extern int
-//phx_destroy(tao_error_t** errs, phx_handle_t* handle);
-
 extern int
 phx_read_stream(phx_camera_t* cam, phx_acquisition_t command, void* addr);
 
 extern int
-phx_get_parameter(phx_camera_t* cam, phx_param_t param,
-                  void* addr);
-
-extern int
-phx_get_enum_parameter(phx_camera_t* cam, phx_param_t param,
-                       int* value);
-
-extern int
-phx_get_uint32_parameter(phx_camera_t* cam, phx_param_t param,
-                         uint32_t* value);
-
-extern int
-phx_get_uint64_parameter(phx_camera_t* cam, phx_param_t param,
-                         uint64_t* value);
+phx_get_parameter(phx_camera_t* cam, phx_param_t param, void* addr);
 
 extern int
 phx_set_parameter(phx_camera_t* cam, phx_param_t param, void* addr);
 
 extern int
-phx_set_enum_parameter(phx_camera_t* cam, phx_param_t param,
-                       int value);
+phx_get(phx_camera_t* cam, phx_param_t param, phx_value_t* valptr);
 
 extern int
-phx_set_uint32_parameter(phx_camera_t* cam, phx_param_t param,
-                         uint32_t value);
+phx_set(phx_camera_t* cam, phx_param_t param, phx_value_t value);
 
-extern int
-phx_set_uint64_parameter(phx_camera_t* cam, phx_param_t param,
-                         uint64_t value);
 
 /*---------------------------------------------------------------------------*/
 /* ROUTINES TO READ/WRITE COAXPRESS REGISTERS */
@@ -160,7 +139,71 @@ extern int
 cxp_write_float64(phx_camera_t* cam, uint32_t addr, float64_t value);
 
 /*--------------------------------------------------------------------------*/
+/* CAMERAS */
+
+/**
+ * Check whether a camera is one of the Mikrotron MC408x cameras.
+ *
+ * @param cam   Camera instance which has already been connected.
+ *
+ * @return Non-zero if @p cam is connected to one of the Mikrotron MC408x
+ * cameras; zero otherwise.
+ *
+ * @see phx_initialize_mikrotron_mc408x
+ */
+extern int
+phx_check_mikrotron_mc408x(phx_camera_t* cam);
+
+/**
+ * Initialize a Mikrotron MC408x camera.
+ *
+ * This function initialize the members of @p cam assuming it is connected to
+ * one of the Mikrotron MC408x cameras.
+ *
+ * @param cam   Camera instance which has already been connected.
+ *
+ * @return 0 on success, -1 on error (with errors information stored in
+ * camera error stack).
+ *
+ * @see phx_check_mikrotron_mc408x.
+ */
+extern int
+phx_initialize_mikrotron_mc408x(phx_camera_t* cam);
+
+/*--------------------------------------------------------------------------*/
 /* UTILITIES */
+
+/**
+ * Get number of bits for a given capture format.
+ *
+ * @param fmt   One of the `PHX_DST_FORMAT_*` value.
+ *
+ * @return The number of bits per pixel for the given capture format; 0 if
+ * unknown.
+ */
+extern uint32_t
+phx_capture_format_bits(phx_value_t fmt);
+
+/**
+ * Get pixel type for a given capture format.
+ *
+ * @param fmt   One of the `PHX_DST_FORMAT_*` value.
+ *
+ * @return The pixel type of the given capture format:
+ *
+ * - 0 if unknown;
+ * - 1 if monochrome;
+ * - 2 if Bayer format;
+ * - 3 if RGB;
+ * - 4 if BGR;
+ * - 5 if RGBX;
+ * - 6 if BGRX;
+ * - 7 if XRGB;
+ * - 8 if XBGR;
+ * - 9 if YUV422;
+ */
+extern int
+phx_capture_format_type(phx_value_t fmt);
 
 /**
  * Initialize cross-platform keyboard input routines.
