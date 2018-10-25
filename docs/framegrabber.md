@@ -5,7 +5,43 @@ and to work as an image server for other processes.  There may be several frame
 grabbers running at the same time (they can be distinguished by their names).
 To communicate with other processes, [XPA](https://github.com/ericmandel/xpa)
 protocol is used to exchange commands and messages in textual form while images
-and and the global settings of the frame grabber are stored in shared memory.
+and the global settings of the frame grabber are stored in shared memory.
+
+
+### Configuration of the camera
+
+When configuring a camera for image acquisition, it is important to distinguish
+actual camera settings and chosen but not yet applied parameters.  The semantic
+of configuration commands (see below) is that *getting* a parameter shall
+always yield the actual parameter value while *setting* a parameter is always
+deferred until the configuration settings are *applied*.  In general, applying
+the parameters of the configuration cannot be done while image acquisition is
+running.  Shared camera data contains the actual parameters and must therefore
+be considered as read-only by clients.
+
+| Parameter     | Units        | Configurable | Description                                 |
+|:------------- |:------------ |:------------ |:------------------------------------------- |
+| `temperature` | °C           | no           | Camera temperature                          |
+| `bias`        |              | yes          | Detector Bias                               |
+| `gain`        |              | yes          | Detector gain                               |
+| `exposure`    | s            | yes          | Exposure time                               |
+| `rate`        | Hz           | yes          | Frame rate                                  |
+| `fullwidth`   | pixels       | yes          | Width of sensor                             |
+| `fullheight`  | pixels       | yes          | Height of sensor                            |
+| `xoff`        | pixels       | yes          | Horizontal offset of ROI relative to sensor |
+| `yoff`        | pixels       | yes          | Vertical offset of ROI relative to sensor   |
+| `width`       | macro-pixels | yes          | Width of acquired images                    |
+| `height`      | macro-pixels | yes          | Height of acquired images                   |
+| `srcdepth`    | bits         | yes          | Bits per pixel in acquired images           |
+| `state`       |              | via commands | Current state of the camera                 |
+| `last_ident`  |              | no           | Shared object identifier of last image      |
+| `frames`      |              | no           | Number of images acquired so far            |
+
+
+Here **ROI** means *Region Of Interest*, it is the region corresponding to captured images.
+
+
+### Available commands
 
 In what follows, the implemented XPA commands are described assuming the client
 is operating from the command line (with `xpaget` and `xpaset` commands).  The
