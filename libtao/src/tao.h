@@ -214,10 +214,10 @@ typedef enum tao_error_code {
  * @param info     Address of string pointer to store the textual equivalent of
  *                 the error code.
  *
- * If any of the above details can be provided, the callback shall set the
- * @p reason and/or @p info pointers with the address of a static string.
- * Any of these pointers can be `NULL` to indicate that the corresponding
- * information is not requested.
+ * The callback shall set the value pointed by @p reason and/or @p info to the
+ * address of a static string if the corresponding information can be provided
+ * and to `NULL` otherwise.  Any of these pointers can be `NULL` to indicate
+ * that the corresponding information is not requested.
  *
  * The provided information is used to print an error message of the form:
  *
@@ -380,7 +380,8 @@ tao_transfer_errors(tao_error_t** dest, tao_error_t** src);
  *                  of the error code if no better description can be obtained.
  *                  Providing this buffer is only useful if @p infoptr is not
  *                  `NULL`.  Can be `NULL` to not use this fallback; otherwise
- *                  must have at least 20 characters.
+ *                  must have at least 20 characters (enough to print any value
+ *                  of a 64-bit signed integer in decimal form).
  *
  * @see tao_error_getter_t.
  */
