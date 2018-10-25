@@ -39,6 +39,10 @@ struct phx_camera {
     int (*stop)(phx_camera_t*);  /**< Stop hook */
     int (*update_temperature)(phx_camera_t*);  /**< Update temperature hook */
     double temperature;    /**< Camera temperature (in degrees Celsius) */
+    double bias;           /**< Detector Bias */
+    double gain;           /**< Detector gain */
+    double exposure;       /**< Exposure time (in seconds) */
+    double rate;           /**< Frames per seconds */
     uint32_t fullwidth;    /**< Width (in pixels) of the sensor */
     uint32_t fullheight;   /**< Height (in pixels) of the sensor */
     uint32_t srcdepth;     /**< Bits per pixel in acquired images */

@@ -193,6 +193,50 @@ set_pixel_pulse_reset(phx_camera_t* cam, int flag)
     return 0;
 }
 
+static int
+update_bias(phx_camera_t* cam)
+{
+    uint32_t val;
+    if (cxp_get(cam, BLACK_LEVEL, &val) != 0) {
+        return -1;
+    }
+    cam->bias = val;
+    return 0;
+}
+
+static int
+update_gain(phx_camera_t* cam)
+{
+    uint32_t val;
+    if (cxp_get(cam, GAIN, &val) != 0) {
+        return -1;
+    }
+    cam->gain = val;
+    return 0;
+}
+
+static int
+update_exposure_time(phx_camera_t* cam)
+{
+    uint32_t val;
+    if (cxp_get(cam, EXPOSURE_TIME, &val) != 0) {
+        return -1;
+    }
+    cam->exposure = val*1e-6; /* value is in microseconds */
+    return 0;
+}
+
+static int
+update_frame_rate(phx_camera_t* cam)
+{
+    uint32_t val;
+    if (cxp_get(cam, ACQUISITION_FRAME_RATE, &val) != 0) {
+        return -1;
+    }
+    cam->rate = val; /* value is in Hz */
+    return 0;
+}
+
 int
 phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
 {
@@ -354,7 +398,11 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     /*
      * Update other information.
      */
-    if (update_temperature(cam) != 0) {
+    if (update_temperature(  cam) != 0 ||
+        update_bias(         cam) != 0 ||
+        update_gain(         cam) != 0 ||
+        update_exposure_time(cam) != 0 ||
+        update_frame_rate(   cam) != 0) {
         return -1;
     }
 
