@@ -42,9 +42,15 @@ static struct {
 static void
 get_error_details(int code, const char** reason, const char** info)
 {
-    static char buffer[20]; /* FIXME: not thread safe */
-    *reason = "ActiveSilicon Phoenix library reports that an error occured";
-    *info = phx_status_string(buffer, code);
+    if (reason != NULL) {
+        *reason = "ActiveSilicon Phoenix library reports that an error occured";
+    }
+    if (info != NULL) {
+        *info = phx_status_string(code);
+        if (*info != NULL && (*info)[0] == '\0') {
+            *info = NULL;
+        }
+    }
 }
 
 void
@@ -95,10 +101,8 @@ error_handler(const char* funcname, phx_status_t errcode, const char* reason)
   }
 }
 
-/* buffer must have at least 20 bytes (enough to print any value of a 64-bit
-   signed integer in decimal form). */
 const char*
-phx_status_string(char* buffer, phx_status_t status)
+phx_status_string(phx_status_t status)
 {
     switch (status) {
 #define CASE(x) case x: return #x;
@@ -144,8 +148,7 @@ phx_status_string(char* buffer, phx_status_t status)
         CASE(PHX_WARNING_TIMEOUT_EXTENDED);
 #undef CASE
     default:
-        sprintf(buffer, "%d", status);
-        return buffer;
+        return "";
     }
 }
 

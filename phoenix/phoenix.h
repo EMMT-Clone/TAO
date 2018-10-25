@@ -33,6 +33,8 @@ typedef struct phx_camera phx_camera_t;
  * read-only by the user.
  */
 struct phx_camera {
+    pthread_mutex_t mutex; /**< Lock to protect this structure */
+    pthread_cond_t cond;   /**< Condition variable to signal events */
     tao_error_t* errs;     /**< Error stack */
     phx_handle_t handle;   /**< Camera handle */
     int (*start)(phx_camera_t*); /**< Start hook */
@@ -51,26 +53,24 @@ struct phx_camera {
     phx_value_t dstformat; /**< Format of destination buffers
                                 (PHX_DST_FORMAT_...) */
     uint32_t xoff;         /**< Horizontal offset of acquired images with
-                                respect to sensor*/
+                                respect to sensor */
     uint32_t yoff;         /**< Vertical offset of acquired images with
-                                respect to sensor*/
+                                respect to sensor */
     uint32_t width;        /**< Width (in macro-pixels) of acquired images */
     uint32_t height;       /**< Height (in macro-pixels) of acquired images */
     int state;             /**< Current state of the camera (> 1 if
                                 acquisition started). */
 
     /* Members for CoaXPress cameras. */
-    int coaxpress;       /**< Camera has CoaXPress connection */
-    int swap;            /**< Byteswapping needed for CoaXPress connection */
-    uint32_t timeout;    /**< CoaXPress connection timeout (milliseconds) */
+    int coaxpress;         /**< Camera has CoaXPress connection */
+    int swap;              /**< Byteswapping needed for CoaXPress connection */
+    uint32_t timeout;      /**< CoaXPress connection timeout (milliseconds) */
     char vendor[CXP_DEVICE_VENDOR_NAME_LENGTH + 1];
     char model[CXP_DEVICE_MODEL_NAME_LENGTH + 1];
 
     /* Members shared with the acquisition callback. */
     uint64_t frames;       /**< Number of frames received so far */
     uint64_t overflows;    /**< Number of overflows */
-    pthread_mutex_t mutex; /**< Mutex to protect shared data */
-    pthread_cond_t cond;   /**< Condition variable to signal events */
 };
 
 #ifdef __cplusplus
@@ -81,7 +81,7 @@ extern void
 phx_push_error(tao_error_t** errs, const char* func, int code);
 
 extern const char*
-phx_status_string(char* buffer, phx_status_t status);
+phx_status_string(phx_status_t status);
 
 extern phx_camera_t*
 phx_create(tao_error_t** errs,
