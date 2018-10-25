@@ -127,3 +127,14 @@ tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
          }
     }
 }
+
+int
+tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond)
+{
+    int code = pthread_cond_signal(cond);
+    if (code != 0) {
+        tao_push_error(errs, "pthread_cond_signal", code);
+        return -1;
+    }
+    return 0;
+}

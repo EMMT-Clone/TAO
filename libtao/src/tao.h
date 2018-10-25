@@ -1279,8 +1279,8 @@ tao_fprintf_time(FILE* stream, const tao_time_t* ts);
  *
  * @return `0` if successful; `-1` in case of error.
  */
-extern int tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex,
-                                int shared);
+extern int
+tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, int shared);
 
 /**
  * Lock a mutex.
@@ -1290,7 +1290,8 @@ extern int tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex,
  *
  * @return `0` if successful; `-1` in case of error.
  */
-extern int tao_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
+extern int
+tao_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
 
 /**
  * Try to lock a mutex.
@@ -1301,7 +1302,8 @@ extern int tao_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
  * @return `1` if mutex has been locked by the caller; `0` if the mutex is
  * already locked by some other thread/process; `-1` in case of error.
  */
-extern int tao_try_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
+extern int
+tao_try_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
 
 /**
  * Unlock a mutex.
@@ -1311,7 +1313,8 @@ extern int tao_try_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
  *
  * @return `0` if successful; `-1` in case of error.
  */
-extern int tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
+extern int
+tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
 
 /**
  * Destroy a mutex.
@@ -1322,6 +1325,20 @@ extern int tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
  * @return `0` if successful; `-1` in case of error.
  */
 extern int tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
+
+/**
+ * Signal a condition variable.
+ *
+ * This function restarts one of the threads that are waiting on the condition
+ * variable @p cond.  Nothing happens, if no threads are waiting on @p cond.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cond   Pointer to the condition variable to signal.
+ *
+ * @return `0` if successful; `-1` in case of error.
+ */
+extern int
+tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond);
 
 /** @} */
 
