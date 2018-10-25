@@ -13,7 +13,7 @@
 # The following default values are specific to the package.  They can be
 # overwritten by options on the command line.
 #cfg_cflags='-I${srcdir}/../libtao/src'
-#cfg_deplibs='-L${srcdir}/../build/src/.libs -ltao -lrt -lpthread'
+#cfg_deplibs='-L${srcdir}/../build/src/.libs -ltao -lpthread'
 cfg_cflags=
 cfg_deplibs='-lpthread'
 cfg_ldflags=
