@@ -201,8 +201,9 @@ typedef enum tao_error_code {
     TAO_UNWRITABLE          = -20, /**< Not writable */
     TAO_ALREADY_IN_USE      = -21, /**< Resource already in use */
     TAO_NOT_FOUND           = -22, /**< Item not found */
-    TAO_NO_ACQUISITION      = -23, /**< Acquisition not started */
-    TAO_ACQUISITION_RUNNING = -24, /**< Acquisition running */
+    TAO_NOT_READY           = -23, /**< Device not ready */
+    TAO_NO_ACQUISITION      = -24, /**< Acquisition not started */
+    TAO_ACQUISITION_RUNNING = -25, /**< Acquisition running */
 } tao_error_code_t;
 
 
