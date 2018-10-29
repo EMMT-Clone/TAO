@@ -36,8 +36,8 @@ TAO_LIBS = -L$(TAO_LIBDIR) -ltao -lpthread -lm
 TAO_CFLAGS = $(CPPFLAGS) $(CFLAGS) $(PIC_FLAGS)
 
 # Macros for the Phoenix Frame Grabber Library (FGL):
-PHOENIX_LIBRARY = libphoenix.a
-PHOENIX_DLL = libphoenix.so
+PHOENIX_STATIC_LIBRARY = libtaophx.a
+PHOENIX_SHARED_LIBRARY = libtaophx.so
 PHOENIX_OBJECTS = phoenix.o mikrotron-mc408x.o
 PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
                   ${srcdir}/phoenix.h \
@@ -46,7 +46,7 @@ PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
                   $(TAO_SRCDIR)/tao.h
 PHOENIX_DEFS = -DPHX_DEBUG -DPHX_VERBOSE
 PHOENIX_CFLAGS = $(CPPFLAGS) $(PHX_DEFS) $(TAO_DEFS) $(PHOENIX_DEFS) $(CFLAGS) $(PIC_FLAGS)
-PHOENIX_LIBS = $(PHOENIX_LIBRARY) $(PHX_LIBS) $(TAO_LIBS)
+PHOENIX_LIBS = $(PHOENIX_STATIC_LIBRARY) $(PHX_LIBS) $(TAO_LIBS)
 
 # Settings for te CFITSIO library.
 CFITSIO_LIBS = -lcfitsio
@@ -57,32 +57,34 @@ TOOLS = phx_info phx_live phx_capture phx_rt_last phx_rt_wait
 default: all
 
 clean:
-	rm -f *~ *.o $(TOOLS)
+	rm -f *~ *.o
+dist-clean: clean
+	rm -f $(PHOENIX_STATIC_LIBRARY) $(PHOENIX_SHARED_LIBRARY) $(TOOLS)
 
-all: $(TOOLS)
+all: $(PHOENIX_STATIC_LIBRARY) $(PHOENIX_SHARED_LIBRARY) $(TOOLS)
 
-$(PHOENIX_LIBRARY): $(PHOENIX_OBJECTS)
+$(PHOENIX_STATIC_LIBRARY): $(PHOENIX_OBJECTS)
 	$(AR) rv $@ $^
 
-$(PHOENIX_DLL): $(PHOENIX_OBJECTS)
+$(PHOENIX_SHARED_LIBRARY): $(PHOENIX_OBJECTS)
 	$(CC) -Wl,-rpath,$(PHX_LIBDIR) -fPIC -shared $^ -o $@ $(PHX_LIBS)
-#	$(CC) -Wl,-rpath,$(PHX_LIBDIR) -Wl,-export-dynamic -Wl,-soname,$(PHOENIX_DLL).1 -fPIC -shared $^ -o $@ $(PHX_LIBS)
+#	$(CC) -Wl,-rpath,$(PHX_LIBDIR) -Wl,-export-dynamic -Wl,-soname,$(PHOENIX_SHARED_LIBRARY).1 -fPIC -shared $^ -o $@ $(PHX_LIBS)
 #	$(CC) -Wl,-rpath,$(PHX_LIBDIR) -fPIC -shared -L$(PHX_LIBDIR) $^ -o $@ -lphxapi-x86_64
 
-phx_info: ${srcdir}/phx_info.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_info: ${srcdir}/phx_info.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
-phx_live: ${srcdir}/phx_live.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_live: ${srcdir}/phx_live.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
-phx_capture: ${srcdir}/phx_capture.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_capture: ${srcdir}/phx_capture.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(CFITSIO_DEFS) $(LDFLAGS) $< -o $@ \
 	    $(PHOENIX_LIBS) $(CFITSIO_LIBS) -lm
 
-phx_rt_last: ${srcdir}/phx_rt_last.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_rt_last: ${srcdir}/phx_rt_last.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
-phx_rt_wait: ${srcdir}/phx_rt_wait.c $(PHOENIX_HEADERS) $(PHOENIX_LIBRARY)
+phx_rt_wait: ${srcdir}/phx_rt_wait.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
 phoenix.o: ${srcdir}/phoenix.c $(PHOENIX_HEADERS)
@@ -100,4 +102,4 @@ test-macros.e: ${srcdir}/test-macros.c ${srcdir}/coaxpress.h ${srcdir}/mikrotron
 test-macros: test-macros.e
 	tail -30 "$<"
 
-.PHONY: test-macros
+.PHONY: test-macros clean dist-clean
