@@ -57,7 +57,8 @@ TOOLS = phx_info phx_live phx_capture phx_rt_last phx_rt_wait
 default: all
 
 clean:
-	rm -f *~ *.o
+	rm -f *~ *.o test-macros.e
+
 dist-clean: clean
 	rm -f $(PHOENIX_STATIC_LIBRARY) $(PHOENIX_SHARED_LIBRARY) $(TOOLS)
 
