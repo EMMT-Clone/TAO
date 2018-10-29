@@ -36,6 +36,29 @@ struct phx_virtual_buffer {
 };
 
 /**
+ * Region of interest.
+ *
+ * A region of interest (ROI for short) is defined with respect to a *parent*.
+ * This parent can be another ROI, the sensor, an image, etc.
+ */
+typedef struct phx_roi {
+    int xoff;    /**< Horizontal offset with respect to parent */
+    int yoff;    /**< Vertical offset with respect to parent */
+    int width;   /**< Horizontal size */
+    int height;  /**< Vertical size */
+} phx_roi_t;
+
+typedef struct phx_config {
+    double bias;           /**< Detector Bias */
+    double gain;           /**< Detector gain */
+    double exposure;       /**< Exposure time (in seconds) */
+    double rate;           /**< Frames per seconds */
+    int depth;             /**< Bits per pixel */
+    phx_roi_t roi;         /**< ROI of acquired images and defined relatively
+                                to the sensor surface */
+} phx_config_t;
+
+/**
  * Camera structure.
  *
  * This structure is exposed for convenience but should be considered as
@@ -49,25 +72,26 @@ struct phx_camera {
     int (*start)(phx_camera_t*); /**< Start hook */
     int (*stop)(phx_camera_t*);  /**< Stop hook */
     int (*update_temperature)(phx_camera_t*);  /**< Update temperature hook */
+    int (*set_config)(phx_camera_t*);
+                           /**< Hook to set the camera settings according to
+                                the configuration chosen by the user */
+    int (*get_config)(phx_camera_t*);
+                           /**< Hook to get the camera settings according to
+                                the configuration chosen by the user */
     double temperature;    /**< Camera temperature (in degrees Celsius) */
-    double bias;           /**< Detector Bias */
-    double gain;           /**< Detector gain */
-    double exposure;       /**< Exposure time (in seconds) */
-    double rate;           /**< Frames per seconds */
+    phx_config_t dev_cfg;  /**< Current device settings */
+    phx_config_t usr_cfg;  /**< User chosen camera settings */
     uint32_t pixelformat;  /**< Raw pixel format of the camera */
     uint32_t fullwidth;    /**< Width (in pixels) of the sensor */
     uint32_t fullheight;   /**< Height (in pixels) of the sensor */
     uint32_t srcdepth;     /**< Bits per pixel in acquired images */
+    phx_roi_t cam_roi;     /**< ROI defining the images sent by the camera and
+                                defined relatively to the sensor surface */
+    phx_roi_t usr_roi;     /**< User chosen ROI */
     phx_value_t srcformat; /**< Pixel format in acquired images
                                 (PHX_CAM_SRC_...) */
     phx_value_t dstformat; /**< Format of destination buffers
                                 (PHX_DST_FORMAT_...) */
-    uint32_t xoff;         /**< Horizontal offset of acquired images with
-                                respect to sensor */
-    uint32_t yoff;         /**< Vertical offset of acquired images with
-                                respect to sensor */
-    uint32_t width;        /**< Width (in macro-pixels) of acquired images */
-    uint32_t height;       /**< Height (in macro-pixels) of acquired images */
     int state;             /**< Current state of the camera (> 1 if
                                 acquisition started). */
 

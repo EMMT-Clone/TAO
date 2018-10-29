@@ -102,6 +102,8 @@
 #define CXP_EXPOSURE_TIME__size    4
 #define CXP_EXPOSURE_TIME__mode    ReadWrite
 #define CXP_EXPOSURE_TIME__addr    0x8840
+#define CXP_EXPOSURE_TIME__min     1
+#define CXP_EXPOSURE_TIME__max     100000 // depends on ACQUISITION_FRAME_RATE
 
 #define CXP_EXPOSURE_TIME_MAX__kind    Value
 #define CXP_EXPOSURE_TIME_MAX__type    Integer
@@ -115,6 +117,7 @@
 #define CXP_ACQUISITION_FRAME_RATE__mode    ReadWrite
 #define CXP_ACQUISITION_FRAME_RATE__addr    0x8814
 #define CXP_ACQUISITION_FRAME_RATE__min     10 // FIXME: the XML file says 16
+#define CXP_ACQUISITION_FRAME_RATE__max     1000000 // depends on EXPOSURE_TIME
 
 #define CXP_ACQUISITION_FRAME_RATE_MAX__kind    Value
 #define CXP_ACQUISITION_FRAME_RATE_MAX__type    Integer
@@ -303,6 +306,7 @@
 #define CXP_BLACK_LEVEL__addr    0x8854
 #define CXP_BLACK_LEVEL__min     0
 #define CXP_BLACK_LEVEL__max     500
+#define CXP_BLACK_LEVEL__inc     1
 
 #define CXP_GAMMA__kind    Value
 #define CXP_GAMMA__type    Float

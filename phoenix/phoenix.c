@@ -653,9 +653,13 @@ check_coaxpress(phx_camera_t* cam)
           cxp_get(cam, DEVICE_MODEL_NAME,      cam->model) != 0) {
           return -1;
       }
-      cam->pixelformat = pixelformat;
-      cam->fullwidth   = cam->width  = width;
-      cam->fullheight  = cam->height = height;
+      cam->pixelformat         = pixelformat;
+      cam->dev_cfg.roi.xoff    = 0;
+      cam->dev_cfg.roi.yoff    = 0;
+      cam->dev_cfg.roi.width   = width;
+      cam->dev_cfg.roi.height  = height;
+      cam->fullwidth           = width;
+      cam->fullheight          = height;
   }
   return 0;
 }
