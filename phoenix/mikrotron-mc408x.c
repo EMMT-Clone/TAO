@@ -38,88 +38,6 @@ phx_check_mikrotron_mc408x(phx_camera_t* cam)
              cam->model[5] == '6' || cam->model[5] == '7'));
 }
 
-/*
- * Set the dimensions of the active region for camera `cam`.
- */
-static int
-set_active_region(phx_camera_t* cam, phx_value_t width, phx_value_t height)
-{
-    if (phx_set(cam, PHX_CAM_ACTIVE_XOFFSET,      0) != 0 ||
-        phx_set(cam, PHX_CAM_ACTIVE_YOFFSET,      0) != 0 ||
-        phx_set(cam, PHX_CAM_ACTIVE_XLENGTH,  width) != 0 ||
-        phx_set(cam, PHX_CAM_ACTIVE_YLENGTH, height) != 0 ||
-        phx_set(cam, PHX_CAM_XBINNING,            1) != 0 ||
-        phx_set(cam, PHX_CAM_YBINNING,            1) != 0) {
-        return -1;
-    }
-    return 0;
-}
-
-/*    setsourceregion!(cam, xoff, yoff, width, height)
- *
- * set the offsets and dimensions of the *source* region for camera `cam`.  This
- * is a low-level method which does not check its arguments.  It is equivalent to:
- *
- *    cam[PHX_ROI_SRC_XOFFSET] = xoff
- *    cam[PHX_ROI_SRC_YOFFSET] = yoff
- *    cam[PHX_ROI_XLENGTH]     = width
- *    cam[PHX_ROI_YLENGTH]     = height
- *
- *The *source* region is the *capture* region, a.k.a. *ROI*, relative to the
- **active* region.
- *
- *See also: [`setcaptureregion!`](@ref), [`setroi!`](@ref).
- */
-static int
-set_source_region(phx_camera_t* cam, phx_value_t xoff, phx_value_t yoff,
-                  phx_value_t width, phx_value_t height)
-{
-    if (phx_set(cam, PHX_ROI_SRC_XOFFSET, xoff) != 0 ||
-        phx_set(cam, PHX_ROI_SRC_YOFFSET, yoff) != 0 ||
-        phx_set(cam, PHX_ROI_XLENGTH,    width) != 0 ||
-        phx_set(cam, PHX_ROI_YLENGTH,   height) != 0) {
-        return -1;
-    }
-    return 0;
-}
-
-/*
- * Yields values of parameters `PHX_CAM_SRC_COL`, `PHX_CAM_SRC_DEPTH`
- * and `PHX_DST_FORMAT` corresponding to the camera pixel format `pixfmt`
- * which is one of `PIXEL_FORMAT_MONO8`, `PIXEL_FORMAT_MONO10`,
- * `PIXEL_FORMAT_BAYERGR8` or `PIXEL_FORMAT_BAYERGR10`.
- */
-static int
-get_pixel_format(phx_camera_t* cam, phx_value_t* srcformat,
-                 phx_value_t* srcdepth, phx_value_t* dstformat)
-{
-    uint32_t pixformat;
-    if (cxp_get(cam, PIXEL_FORMAT, &pixformat) != 0) {
-        return -1;
-    }
-    if (pixformat == CXP_PIXEL_FORMAT_MONO8) {
-        *srcformat = PHX_CAM_SRC_MONO;
-        *srcdepth  = 8;
-        *dstformat = PHX_DST_FORMAT_Y8;
-    } else if (pixformat == CXP_PIXEL_FORMAT_MONO10) {
-        *srcformat = PHX_CAM_SRC_MONO;
-        *srcdepth  = 10;
-        *dstformat = PHX_DST_FORMAT_Y16;
-    } else if (pixformat == CXP_PIXEL_FORMAT_BAYERGR8) {
-        *srcformat = PHX_CAM_SRC_BAY_RGGB;
-        *srcdepth  = 8;
-        *dstformat = PHX_DST_FORMAT_BAY8;
-    } else if (pixformat == CXP_PIXEL_FORMAT_BAYERGR10) {
-        *srcformat = PHX_CAM_SRC_BAY_RGGB;
-        *srcdepth  = 10;
-        *dstformat = PHX_DST_FORMAT_BAY16;
-    } else {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_TYPE);
-        return -1;
-    }
-    return 0;
-}
-
 static int
 start(phx_camera_t* cam)
 {
@@ -200,6 +118,41 @@ set_pixel_pulse_reset(phx_camera_t* cam, int flag)
     return 0;
 }
 
+
+/*
+ * set values of parameters `PHX_CAM_SRC_COL`, `PHX_CAM_SRC_DEPTH` and
+ * `PHX_DST_FORMAT` corresponding to the camera pixel format which is one of
+ * `PIXEL_FORMAT_MONO8`, `PIXEL_FORMAT_MONO10`, `PIXEL_FORMAT_BAYERGR8` or
+ * `PIXEL_FORMAT_BAYERGR10`.
+ */
+
+static int
+set_other_formats(phx_camera_t* cam)
+{
+    switch (cam->pixel_format) {
+    case CXP_PIXEL_FORMAT_MONO8:
+        cam->cam_color = PHX_CAM_SRC_MONO;
+        cam->buf_format = PHX_DST_FORMAT_Y8;
+        return 0;
+    case CXP_PIXEL_FORMAT_MONO10:
+        cam->cam_color = PHX_CAM_SRC_MONO;
+        cam->buf_format = PHX_DST_FORMAT_Y16;
+        return 0;
+    case CXP_PIXEL_FORMAT_BAYERGR8:
+        cam->cam_color = PHX_CAM_SRC_BAY_RGGB;
+        cam->buf_format = PHX_DST_FORMAT_BAY8;
+        return 0;
+    case CXP_PIXEL_FORMAT_BAYERGR10:
+        cam->cam_color = PHX_CAM_SRC_BAY_RGGB;
+        cam->buf_format = PHX_DST_FORMAT_BAY16;
+        return 0;
+    default:
+        tao_push_error(&cam->errs, __func__, TAO_BAD_TYPE);
+        return -1;
+    }
+}
+
+
 /*
  * Update pixel format and set bits per pixels.
  */
@@ -211,7 +164,7 @@ update_pixel_format(phx_camera_t* cam)
     if (cxp_get(cam, PIXEL_FORMAT, &val) != 0) {
         return -1;
     }
-    cam->pixelformat = val;
+    cam->pixel_format = val;
     if (val == CXP_PIXEL_FORMAT_MONO8 ||
         val == CXP_PIXEL_FORMAT_BAYERGR8) {
         cam->dev_cfg.depth = 8;
@@ -222,28 +175,28 @@ update_pixel_format(phx_camera_t* cam)
         tao_push_error(&cam->errs, __func__, TAO_BAD_TYPE);
         return -1;
     }
-    return 0;
+    return set_other_formats(cam);
 }
 
 static int
 set_bits_per_pixel(phx_camera_t* cam, int depth)
 {
-    uint32_t pixelformat = 0;
-    if (cam->pixelformat == CXP_PIXEL_FORMAT_MONO8 ||
-        cam->pixelformat == CXP_PIXEL_FORMAT_MONO10) {
+    uint32_t pixel_format = 0;
+    if (cam->pixel_format == CXP_PIXEL_FORMAT_MONO8 ||
+        cam->pixel_format == CXP_PIXEL_FORMAT_MONO10) {
         if (depth == 8) {
-            pixelformat = CXP_PIXEL_FORMAT_MONO8;
+            pixel_format = CXP_PIXEL_FORMAT_MONO8;
         } else if (depth == 10) {
-            pixelformat = CXP_PIXEL_FORMAT_MONO10;
+            pixel_format = CXP_PIXEL_FORMAT_MONO10;
         } else {
             goto error;
         }
-    } else if (cam->pixelformat == CXP_PIXEL_FORMAT_BAYERGR8 ||
-               cam->pixelformat == CXP_PIXEL_FORMAT_BAYERGR10) {
+    } else if (cam->pixel_format == CXP_PIXEL_FORMAT_BAYERGR8 ||
+               cam->pixel_format == CXP_PIXEL_FORMAT_BAYERGR10) {
         if (depth == 8) {
-            pixelformat = CXP_PIXEL_FORMAT_BAYERGR8;
+            pixel_format = CXP_PIXEL_FORMAT_BAYERGR8;
         } else if (depth == 10) {
-            pixelformat = CXP_PIXEL_FORMAT_BAYERGR10;
+            pixel_format = CXP_PIXEL_FORMAT_BAYERGR10;
         } else {
             goto error;
         }
@@ -251,14 +204,14 @@ set_bits_per_pixel(phx_camera_t* cam, int depth)
         tao_push_error(&cam->errs, __func__, TAO_BAD_TYPE);
         return -1;
     }
-    if (cam->pixelformat != pixelformat) {
-        if (cxp_set(cam, PIXEL_FORMAT, pixelformat) != 0) {
+    if (cam->pixel_format != pixel_format) {
+        if (cxp_set(cam, PIXEL_FORMAT, pixel_format) != 0) {
             return -1;
         }
-        cam->pixelformat = pixelformat;
+        cam->pixel_format = pixel_format;
         cam->dev_cfg.depth = depth;
     }
-    return 0;
+    return set_other_formats(cam);
 
  error:
     tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
@@ -402,10 +355,10 @@ static int
 update_region_of_interest(phx_camera_t* cam)
 {
     uint32_t xoff, yoff, width, height;
-    if (cxp_get(cam, OFFSET_X,            &xoff) != 0 ||
-        cxp_get(cam, OFFSET_Y,            &yoff) != 0 ||
-        cxp_get(cam, WIDTH,              &width) != 0 ||
-        cxp_get(cam, HEIGHT,            &height) != 0) {
+    if (cxp_get(cam, OFFSET_X, &xoff) != 0 ||
+        cxp_get(cam, OFFSET_Y, &yoff) != 0 ||
+        cxp_get(cam, WIDTH,   &width) != 0 ||
+        cxp_get(cam, HEIGHT, &height) != 0) {
         return -1;
     }
     cam->dev_cfg.roi.xoff = xoff;
@@ -500,9 +453,9 @@ update_camera_config(phx_camera_t* cam)
  * 2. reduce frame rate if requested;
  * 3. reduce exposure time if requested;
  * 4. change ROI if requested;
- * 1. augment bits per pixel if requested;
- * 2. augment frame rate if requested;
- * 3. augment exposure time if requested;
+ * 5. augment exposure time if requested;
+ * 6. augment frame rate if requested;
+ * 7. augment bits per pixel if requested;
  */
 static int
 set_config(phx_camera_t* cam)
@@ -650,8 +603,6 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     if (update_camera_config(cam) != 0) {
         return -1;
     }
-    uint32_t width = cam->dev_cfg.roi.width;
-    uint32_t height = cam->dev_cfg.roi.height;
 
     /*
      * The following settings are the same as the contents of the configuration
@@ -680,26 +631,7 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     }
 
     /*
-     * Set the format of the image sent by the camera.
-     */
-    phx_value_t srcformat, srcdepth, dstformat;
-    if (get_pixel_format(cam, &srcformat, &srcdepth, &dstformat) != 0) {
-        return -1;
-    }
-    cam->srcformat = srcformat;
-    cam->srcdepth  = srcdepth;
-    cam->dstformat = dstformat;
-    if (phx_set(cam, PHX_CAM_SRC_COL,  srcformat) != 0 ||
-        phx_set(cam, PHX_CAM_SRC_DEPTH, srcdepth) != 0 ||
-        phx_set(cam, PHX_DST_FORMAT,   dstformat) != 0) {
-        return -1;
-    }
-    if (set_active_region(cam, width, height) != 0) {
-        return -1;
-    }
-
-    /*
-     * Set acquisition parameters.
+     * Set acquisition parameters (FIXME: some are re-set in phx_start).
      */
     if (phx_set(cam, PHX_ACQ_BLOCKING,                PHX_ENABLE) != 0 ||
         phx_set(cam, PHX_ACQ_CONTINUOUS,              PHX_ENABLE) != 0 ||
@@ -710,32 +642,6 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
         phx_set(cam, PHX_ACQ_BUFFER_START,                     1) != 0 ||
         phx_set(cam, PHX_DATASTREAM_VALID, PHX_DATASTREAM_ALWAYS) != 0 ||
         phx_set(cam, PHX_TIMEOUT_DMA,    1000 /* milliseconds */) != 0) {
-        return -1;
-    }
-
-    /*
-     * Set source ROI to match the size of the image sent by the camera.
-     */
-    if (set_source_region(cam, 0, 0, width, height) != 0) {
-        return -1;;
-    }
-
-    /*
-     * Setup destination buffer parameters.  The value of `PHX_BUF_DST_XLENGTH`
-     * is the number of bytes per line of the destination buffer (it must be
-     * larger of equal the width of the ROI times the number of bits per pixel
-     * rounded up to a number of bytes), the value of `PHX_BUF_DST_YLENGTH` is
-     * the number of lines in the destination buffer (it must be larger or
-     * equal `PHX_ROI_DST_YOFFSET` plus `PHX_ROI_YLENGTH`.
-     *
-     * FIXME: PHX_BIT_SHIFT_ALIGN_LSB not defined for PHX_BIT_SHIFT
-     */
-    uint32_t bits = phx_capture_format_bits(dstformat);
-    if (phx_set(cam, PHX_ROI_DST_XOFFSET,                  0) != 0 ||
-        phx_set(cam, PHX_ROI_DST_YOFFSET,                  0) != 0 ||
-        phx_set(cam, PHX_BUF_DST_XLENGTH, (width*bits + 7)/8) != 0 ||
-        phx_set(cam, PHX_BUF_DST_YLENGTH,             height) != 0 ||
-        phx_set(cam, PHX_BIT_SHIFT,                        0) != 0) {
         return -1;
     }
 
@@ -759,5 +665,11 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     cam->stop = stop;
     cam->update_temperature = update_temperature;
     cam->set_config = set_config;
+
+    /*
+     * Make user settings identical to that of the device.
+     */
+    memcpy(&cam->usr_cfg, &cam->dev_cfg, sizeof(cam->dev_cfg));
+
     return 0;
 }

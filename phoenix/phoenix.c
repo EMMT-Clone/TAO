@@ -245,25 +245,74 @@ free_virtual_buffers(phx_camera_t* cam)
 }
 
 static int
-allocate_virtual_buffers(phx_camera_t* cam, int nbufs, long* bufstride)
+allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
 {
     /* Check arguments. */
     if (nbufs < 2) {
         phx_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
-
-    /* Get buffer size. */
-    phx_value_t bufwidth, bufheight;
-    if (phx_get(cam, PHX_BUF_DST_XLENGTH, &bufwidth) != 0 ||
-        phx_get(cam, PHX_BUF_DST_YLENGTH, &bufheight) != 0) {
+    const phx_roi_t* dev_roi = &cam->dev_cfg.roi;
+    const phx_roi_t* usr_roi = &cam->usr_cfg.roi;
+    if (dev_roi->xoff < 0 || dev_roi->xoff > usr_roi->xoff ||
+        dev_roi->yoff < 0 || dev_roi->yoff > usr_roi->yoff ||
+        usr_roi->width < 1 ||
+        dev_roi->xoff + dev_roi->width < usr_roi->xoff + usr_roi->width ||
+        usr_roi->xoff + usr_roi->width > cam->fullwidth ||
+        usr_roi->height < 1 ||
+        dev_roi->xoff + dev_roi->height < usr_roi->xoff + usr_roi->height ||
+        usr_roi->yoff + usr_roi->height > cam->fullheight) {
+        phx_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
-    size_t bufsize = (size_t)bufwidth*(size_t)bufheight;
-    if (bufstride != NULL) {
-        *bufstride = bufwidth;
+
+    /*
+     * Set active, source and destination regions.  The value of parameter
+     * PHX_BUF_DST_XLENGTH is the number of bytes per line of the destination
+     * buffer (it must be larger of equal the width of the ROI times the number
+     * of bits per pixel rounded up to a number of bytes), the value of
+     * PHX_BUF_DST_YLENGTH is the number of lines in the destination buffer (it
+     * must be larger or equal PHX_ROI_DST_YOFFSET plus PHX_ROI_YLENGTH.
+     *
+     * FIXME: PHX_BIT_SHIFT_ALIGN_LSB not defined for PHX_BIT_SHIFT
+     */
+    phx_value_t active_xlength = dev_roi->width;
+    phx_value_t active_ylength = dev_roi->width;
+    phx_value_t cam_color      = cam->cam_color;
+    phx_value_t cam_depth      = cam->dev_cfg.depth;
+    phx_value_t src_xoffset    = usr_roi->xoff - dev_roi->xoff;
+    phx_value_t src_yoffset    = usr_roi->yoff - dev_roi->yoff;
+    phx_value_t roi_xlength    = usr_roi->width;
+    phx_value_t roi_ylength    = usr_roi->height;
+    phx_value_t buf_format     = cam->buf_format;
+    phx_value_t buf_depth      = phx_capture_format_bits(buf_format);
+    phx_value_t buf_xlength    = (roi_xlength*buf_depth + 7)/8;
+    phx_value_t buf_ylength    = roi_ylength;
+    if (phx_set(cam, PHX_CAM_SRC_COL,             cam_color) != 0 ||
+        phx_set(cam, PHX_CAM_SRC_DEPTH,           cam_depth) != 0 ||
+        phx_set(cam, PHX_CAM_ACTIVE_XOFFSET,              0) != 0 ||
+        phx_set(cam, PHX_CAM_ACTIVE_YOFFSET,              0) != 0 ||
+        phx_set(cam, PHX_CAM_ACTIVE_XLENGTH, active_xlength) != 0 ||
+        phx_set(cam, PHX_CAM_ACTIVE_YLENGTH, active_ylength) != 0 ||
+        phx_set(cam, PHX_CAM_XBINNING,                    1) != 0 ||
+        phx_set(cam, PHX_CAM_YBINNING,                    1) != 0 ||
+        phx_set(cam, PHX_ACQ_XSUB,                        1) != 0 ||
+        phx_set(cam, PHX_ACQ_YSUB,                        1) != 0 ||
+        phx_set(cam, PHX_ROI_SRC_XOFFSET,       src_xoffset) != 0 ||
+        phx_set(cam, PHX_ROI_SRC_YOFFSET,       src_yoffset) != 0 ||
+        phx_set(cam, PHX_ROI_XLENGTH,           roi_xlength) != 0 ||
+        phx_set(cam, PHX_ROI_YLENGTH,           roi_ylength) != 0 ||
+        phx_set(cam, PHX_ROI_DST_XOFFSET,                 0) != 0 ||
+        phx_set(cam, PHX_ROI_DST_YOFFSET,                 0) != 0 ||
+        phx_set(cam, PHX_DST_FORMAT,             buf_format) != 0 ||
+        phx_set(cam, PHX_BUF_DST_XLENGTH,       buf_xlength) != 0 ||
+        phx_set(cam, PHX_BUF_DST_YLENGTH,       buf_ylength) != 0 ||
+        phx_set(cam, PHX_BIT_SHIFT,                       0) != 0) {
+        return -1;
     }
 
+    /* Get buffer size. */
+    size_t bufsize = (size_t)buf_xlength*(size_t)buf_ylength;
     if (cam->bufs == NULL || cam->nbufs != nbufs || cam->bufsize != bufsize) {
         /* Allocate new image buffers */
         size_t offset = ROUND_UP(sizeof(phx_virtual_buffer_t), ALIGNMENT);
@@ -390,7 +439,7 @@ phx_start(phx_camera_t* cam, int nbufs)
     }
 
     /* Allocate virtual buffers. */
-    if (allocate_virtual_buffers(cam, nbufs, NULL) != 0) {
+    if (allocate_virtual_buffers(cam, nbufs) != 0) {
         return -1;
     }
 
@@ -617,7 +666,7 @@ static int
 check_coaxpress(phx_camera_t* cam)
 {
   phx_value_t info;
-  uint32_t magic, width, height, pixelformat;
+  uint32_t magic, width, height, pixel_format;
 
   if (phx_get_parameter(cam, PHX_CXP_INFO, &info) != 0) {
       return -1;
@@ -646,14 +695,14 @@ check_coaxpress(phx_camera_t* cam)
        * Get pixel format, current image size (full width and full height must
        * be correctly set later), device vendor name and device model name.
        */
-      if (cxp_get(cam, PIXEL_FORMAT_ADDRESS, &pixelformat) != 0 ||
-          cxp_get(cam, WIDTH_ADDRESS,              &width) != 0 ||
-          cxp_get(cam, HEIGHT_ADDRESS,            &height) != 0 ||
-          cxp_get(cam, DEVICE_VENDOR_NAME,    cam->vendor) != 0 ||
-          cxp_get(cam, DEVICE_MODEL_NAME,      cam->model) != 0) {
+      if (cxp_get(cam, PIXEL_FORMAT_ADDRESS, &pixel_format) != 0 ||
+          cxp_get(cam, WIDTH_ADDRESS,               &width) != 0 ||
+          cxp_get(cam, HEIGHT_ADDRESS,             &height) != 0 ||
+          cxp_get(cam, DEVICE_VENDOR_NAME,     cam->vendor) != 0 ||
+          cxp_get(cam, DEVICE_MODEL_NAME,       cam->model) != 0) {
           return -1;
       }
-      cam->pixelformat         = pixelformat;
+      cam->pixel_format        = pixel_format;
       cam->dev_cfg.roi.xoff    = 0;
       cam->dev_cfg.roi.yoff    = 0;
       cam->dev_cfg.roi.width   = width;

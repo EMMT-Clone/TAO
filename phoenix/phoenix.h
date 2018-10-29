@@ -48,6 +48,11 @@ typedef struct phx_roi {
     int height;  /**< Vertical size */
 } phx_roi_t;
 
+/**
+ * Configuration settings.
+ *
+ * This structure stores all settable camera settings.
+ */
 typedef struct phx_config {
     double bias;           /**< Detector Bias */
     double gain;           /**< Detector gain */
@@ -65,35 +70,34 @@ typedef struct phx_config {
  * read-only by the user.
  */
 struct phx_camera {
-    pthread_mutex_t mutex; /**< Lock to protect this structure */
-    pthread_cond_t cond;   /**< Condition variable to signal events */
-    tao_error_t* errs;     /**< Error stack */
-    phx_handle_t handle;   /**< Camera handle */
+    pthread_mutex_t mutex;  /**< Lock to protect this structure */
+    pthread_cond_t cond;    /**< Condition variable to signal events */
+    tao_error_t* errs;      /**< Error stack */
+    phx_handle_t handle;    /**< Camera handle */
     int (*start)(phx_camera_t*); /**< Start hook */
     int (*stop)(phx_camera_t*);  /**< Stop hook */
     int (*update_temperature)(phx_camera_t*);  /**< Update temperature hook */
     int (*set_config)(phx_camera_t*);
-                           /**< Hook to set the camera settings according to
-                                the configuration chosen by the user */
+                            /**< Hook to set the camera settings according to
+                                 the configuration chosen by the user */
     int (*get_config)(phx_camera_t*);
-                           /**< Hook to get the camera settings according to
-                                the configuration chosen by the user */
-    double temperature;    /**< Camera temperature (in degrees Celsius) */
-    phx_config_t dev_cfg;  /**< Current device settings */
-    phx_config_t usr_cfg;  /**< User chosen camera settings */
-    uint32_t pixelformat;  /**< Raw pixel format of the camera */
-    uint32_t fullwidth;    /**< Width (in pixels) of the sensor */
-    uint32_t fullheight;   /**< Height (in pixels) of the sensor */
-    uint32_t srcdepth;     /**< Bits per pixel in acquired images */
-    phx_roi_t cam_roi;     /**< ROI defining the images sent by the camera and
-                                defined relatively to the sensor surface */
-    phx_roi_t usr_roi;     /**< User chosen ROI */
-    phx_value_t srcformat; /**< Pixel format in acquired images
-                                (PHX_CAM_SRC_...) */
-    phx_value_t dstformat; /**< Format of destination buffers
-                                (PHX_DST_FORMAT_...) */
-    int state;             /**< Current state of the camera (> 1 if
-                                acquisition started). */
+                            /**< Hook to get the camera settings according to
+                                 the configuration chosen by the user */
+    double temperature;     /**< Camera temperature (in degrees Celsius) */
+    phx_config_t dev_cfg;   /**< Current device settings */
+    phx_config_t usr_cfg;   /**< User chosen camera settings */
+    uint32_t fullwidth;     /**< Width (in pixels) of the sensor */
+    uint32_t fullheight;    /**< Height (in pixels) of the sensor */
+    phx_roi_t cam_roi;      /**< ROI defining the images sent by the camera and
+                                  defined relatively to the sensor surface */
+    phx_roi_t usr_roi;      /**< User chosen ROI */
+    uint32_t pixel_format;  /**< Raw pixel format of the camera */
+    phx_value_t cam_color;  /**< Pixel format in acquired images
+                                 (PHX_CAM_SRC_...) */
+    phx_value_t buf_format; /**< Format of destination buffers
+                                 (PHX_DST_FORMAT_...) */
+    int state;              /**< Current state of the camera (> 1 if
+                                 acquisition started). */
 
     /* Members for CoaXPress cameras. */
     int coaxpress;         /**< Camera has CoaXPress connection */
