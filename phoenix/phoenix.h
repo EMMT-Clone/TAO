@@ -54,6 +54,7 @@ struct phx_camera {
     double gain;           /**< Detector gain */
     double exposure;       /**< Exposure time (in seconds) */
     double rate;           /**< Frames per seconds */
+    uint32_t pixelformat;  /**< Raw pixel format of the camera */
     uint32_t fullwidth;    /**< Width (in pixels) of the sensor */
     uint32_t fullheight;   /**< Height (in pixels) of the sensor */
     uint32_t srcdepth;     /**< Bits per pixel in acquired images */
@@ -100,13 +101,133 @@ phx_push_error(tao_error_t** errs, const char* func, int code);
 extern const char*
 phx_status_string(phx_status_t status);
 
+/**
+ * Create a new instance of a frame grabber connection to a camera.
+ *
+ * This function allocates a camera hanlder, connects to the camera and sets
+ * some initial camera parameters.  A pointer to a `phx_camera_t` structure is
+ * returned.  This pointer can be used to query/set camera parameters and
+ * acquire images.  When no longer needed, the ressources should be released by
+ * calling phx_destroy().
+ *
+ * @param errs        A pointer to a variable to track errors.
+ *
+ * @param handler     A user defined handler for errors.  If `NULL`, a
+ *                    default handler is used whose behavior can be tuned via
+ *                    phx_set_error_handler_verbosity().
+ *
+ * @param configname  The name of the camera configuration file.  Can be
+ *                    `NULL`, to attempt to automatically guess the camera
+ *                    settings (for now, this only works for the Mikrotron
+ *                    MC408x series cameras).
+ *
+ * @param boardnumber The frame grabber board number.  It can be automatically
+ *                    set by using the value `PHX_BOARD_NUMBER_AUTO`.
+ *
+ * @return A pointer to the new instance or `NULL` in case of errors.
+ *
+ * @see phx_destroy().
+ */
 extern phx_camera_t*
 phx_create(tao_error_t** errs,
            void (*handler)(const char*, phx_status_t, const char*),
            char* configname, phx_value_t boardnumber);
 
+/**
+ * Release the ressources associated to a frame grabber connection to a camera.
+ *
+ * This function aborts any acquisition with the associated camera and releases
+ * all related ressources.
+ *
+ * @param camera      A pointer to the camera instance.
+ *
+ * @see phx_create().
+ */
 extern void
 phx_destroy(phx_camera_t* cam);
+
+/**
+ * Start continuous acquisition.
+ *
+ * This function starts continuous acquisition with a given number of virtual
+ * image buffers.
+ *
+ * @param cam    Address of camera instance.
+ * @param nbufs  Number of virtual buffers (must be larger than 2 to avoid
+ *               oveflows).
+ *
+ * @return `0` on success, `-1` on failure.
+ *
+ * @see phx_stop(), phx_abort(), phx_wait().
+ */
+extern int
+phx_start(phx_camera_t* cam, int nbufs);
+
+/**
+ * Wait for an image to be available.
+ *
+ * @param cam    Address of camera instance.
+ * @param secs   Maximum number of seconds to wait.  Must be nonnegative.
+ *               Wait forever if @p secs is larger than one year.
+ * @param drop   If non-zero, the very last image is always delivered,  the
+ *               older unprocessed images, if any, are discarded.
+ *
+ * @return The index (starting at 1) of the next image available in the ring of
+ * virtual buffers.  0 is returned if timeout expired before a new image is
+ * available, -1 is returned in case of errors.  If a valid index (>= 1) is
+ * returned, the caller shall use the contents of the acquisition buffer as
+ * soon as possible and call phx_release_buffer() when this is done.
+ *
+ * @see phx_release_buffer().
+ */
+extern int
+phx_wait(phx_camera_t* cam, double secs, int drop);
+
+/**
+ * Release usage of acquisition buffer.
+ *
+ * This function releases the usage of the last acquisition buffer and
+ * decrement the number of pending frames.  This function must be called after
+ * a successfull call to phx_wait().
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @return `0` on success, `-1` on failure.
+ *
+ * @see phx_wait().
+ */
+extern int
+phx_release_buffer(phx_camera_t* cam);
+
+/**
+ * Stop continuous acquisition after current image.
+ *
+ * This function stops continuous acquisition after current image has been
+ * acquired.
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @return `0` on success, `-1` on failure.
+ *
+ * @see phx_start(), phx_abort(), phx_wait().
+ */
+extern int
+phx_stop(phx_camera_t* cam);
+
+/**
+ * Stop continuous acquisition immediately.
+ *
+ * This function stops continuous acquisition without waiting for the arrival
+ * of the current image.
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @return `0` on success, `-1` on failure.
+ *
+ * @see phx_start(), phx_stop(), phx_wait().
+ */
+extern int
+phx_abort(phx_camera_t* cam);
 
 extern int
 phx_update_temperature(phx_camera_t* cam);

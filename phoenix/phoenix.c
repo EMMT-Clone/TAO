@@ -248,7 +248,7 @@ static int
 allocate_virtual_buffers(phx_camera_t* cam, int nbufs, long* bufstride)
 {
     /* Check arguments. */
-    if (nbufs < 1) {
+    if (nbufs < 2) {
         phx_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
@@ -344,12 +344,12 @@ acquisition_callback(phx_handle_t handle, uint32_t events, void* data)
         } else {
             /* Store the time-stamp, address and index of the last captured
                image and update counters. */
-            phx_virtual_buffer_t* vbuf = (phx_virtual_buffer_t*)imgbuf.pvContext;
-            ++cam->frames;
-            ++cam->pending;
-            vbuf->counter = cam->frames;
+            phx_virtual_buffer_t* vbuf;
+            vbuf = (phx_virtual_buffer_t*)imgbuf.pvContext;
             vbuf->ts.tv_sec = ts.tv_sec;
             vbuf->ts.tv_nsec = ts.tv_nsec;
+            vbuf->counter = ++cam->frames;
+            ++cam->pending;
             cam->last = vbuf->index;
         }
     }
@@ -377,31 +377,52 @@ int
 phx_start(phx_camera_t* cam, int nbufs)
 {
 
-  /* Minimal checks. */
-  if (cam == NULL) {
-    return -1;
-  }
-  if (cam->state < 1) {
-      // FIXME: change error code
-      tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
-      return -1;
-  }
-  if (cam->state > 1) {
-      tao_push_error(&cam->errs, __func__, TAO_ACQUISITION_RUNNING);
-      return -1;
-  }
+    /* Minimal checks. */
+    if (cam == NULL) {
+        return -1;
+    }
+    if (cam->state != 1) {
+        tao_push_error(&cam->errs, __func__,
+                       (cam->state == 0 ? TAO_NOT_READY :
+                        (cam->state == 2 ? TAO_ACQUISITION_RUNNING :
+                         TAO_CORRUPTED)));
+        return -1;
+    }
 
-  /* Allocate virtual buffers. */
-  if (allocate_virtual_buffers(cam, nbufs, NULL) != 0) {
-      return -1;
-  }
+    /* Allocate virtual buffers. */
+    if (allocate_virtual_buffers(cam, nbufs, NULL) != 0) {
+        return -1;
+    }
 
-  /* Enable interrupts for handled events. */
-  phx_value_t events = (PHX_INTRPT_BUFFER_READY |
+    /*
+     * Instruct Phoenix to use the virtual buffers. The PHX_CACHE_FLUSH here is
+     * to make sure that the new buffers do replace the old ones, if any,
+     * before they may be claimed by the garbage collector.  (FIXME: I am not
+     * sure whether this is really needed and I do not known the effects of the
+     * PHX_FORCE_REWRITE flag.)
+     */
+    if (phx_set(cam,  PHX_ACQ_IMAGES_PER_BUFFER,              1) != 0 ||
+        phx_set(cam,  PHX_ACQ_BUFFER_START,                   1) != 0 ||
+        phx_set(cam,  PHX_ACQ_NUM_BUFFERS,           cam->nbufs) != 0 ||
+        phx_set_parameter(cam,  PHX_DST_PTRS_VIRT,    cam->bufs) != 0 ||
+        phx_set(cam, (PHX_DST_PTR_TYPE|PHX_CACHE_FLUSH|
+                      PHX_FORCE_REWRITE), PHX_DST_PTR_USER_VIRT) != 0) {
+        return -1;
+    }
+
+  /*
+   * Configure frame grabber for continuous acquisition and enable interrupts
+   * for expected events.
+   */
+  phx_value_t events = (PHX_INTRPT_GLOBAL_ENABLE |
+                        PHX_INTRPT_BUFFER_READY  |
                         PHX_INTRPT_FIFO_OVERFLOW |
                         PHX_INTRPT_SYNC_LOST);
   if (phx_set(cam, PHX_INTRPT_CLR, ~(phx_value_t)0) != 0 ||
-      phx_set(cam, PHX_INTRPT_SET, events|PHX_INTRPT_GLOBAL_ENABLE) != 0) {
+      phx_set(cam, PHX_INTRPT_SET,          events) != 0 ||
+      phx_set(cam, PHX_ACQ_BLOCKING,    PHX_ENABLE) != 0 ||
+      phx_set(cam, PHX_ACQ_CONTINUOUS,  PHX_ENABLE) != 0 ||
+      phx_set(cam, PHX_COUNT_BUFFER_READY,       1) != 0) {
       return -1;
   }
 
@@ -417,7 +438,7 @@ phx_start(phx_camera_t* cam, int nbufs)
 
   /* Send specific start command. */
   if (cam->start != NULL && cam->start(cam) != 0) {
-      phx_read_stream(cam, PHX_ABORT, acquisition_callback);
+      phx_read_stream(cam, PHX_ABORT, NULL);
       phx_read_stream(cam, PHX_UNLOCK, NULL);
       return -1;
   }
@@ -439,46 +460,46 @@ phx_start(phx_camera_t* cam, int nbufs)
  */
 
 /*
- * FIXME: `BUFFER_RELASE` must be called once the returned image has been
- *         processed.
- *
  * FIXME: Errors in the camera error stack should be checked (perhaps this has
  *        to be signaled).
  */
 
-/**
- * Wait for an image to be available.
- *
- * @return The index (starting at 1) of the next image available in the ring of
- * virtual buffers.  0 is returned if timeout expired before a new image is
- * available, -1 is returned in case of errors.
- */
 int
-phx_wait_image(phx_camera_t* cam, double secs, int drop)
+phx_release_buffer(phx_camera_t* cam)
+{
+    if (cam->pending <= 0) {
+        cam->pending = 0;
+        tao_push_error(&cam->errs, __func__, TAO_OUT_OF_RANGE);
+        return -1;
+    }
+    --cam->pending;
+    return phx_read_stream(cam, PHX_BUFFER_RELEASE, NULL);
+}
+
+int
+phx_wait(phx_camera_t* cam, double secs, int drop)
 {
     struct timespec ts;
-    int forever, code, index = 0;
+    int forever, code, index = -1;
 
     /* Check state. */
     if (cam->state != 2) {
-        if (cam->state == 0 || cam->state == 1) {
-            tao_push_error(&cam->errs, __func__, TAO_NO_ACQUISITION);
-        } else {
-            tao_push_error(&cam->errs, __func__, TAO_CORRUPTED);
-        }
-        return -1;
+        tao_push_error(&cam->errs, __func__,
+                       ((cam->state == 0 || cam->state == 1) ?
+                        TAO_NO_ACQUISITION : TAO_CORRUPTED));
+        return index;
     }
 
     /* Compute absolute time for time-out. */
     if (isnan(secs) || secs < 0) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
-        return -1;
+        return index;
     }
     if (secs > TAO_YEAR) {
         forever = TRUE;
     } else {
         if (tao_get_absolute_timeout(&cam->errs, &ts, secs) != 0) {
-            return -1;
+            return index;
         }
         forever = FALSE;
     }
@@ -488,7 +509,7 @@ phx_wait_image(phx_camera_t* cam, double secs, int drop)
      * while the mutex is locked.
      */
     if (lock_mutex(cam) != 0) {
-        return -1;
+        return index;
     }
 
     /*
@@ -496,12 +517,11 @@ phx_wait_image(phx_camera_t* cam, double secs, int drop)
      * signaled or an error to occur.  This is done in a `while` loop to
      * cope with spurious signaled conditions.
      */
-    while (cam->pending == 0) {
+    while (cam->pending < 1) {
         if (forever) {
             code = pthread_cond_wait(&cam->cond, &cam->mutex);
             if (code != 0) {
                 tao_push_error(&cam->errs, "pthread_cond_wait", code);
-                index = -1;
                 goto unlock;
             }
         } else {
@@ -511,7 +531,6 @@ phx_wait_image(phx_camera_t* cam, double secs, int drop)
                     index = 0;
                 } else {
                     tao_push_error(&cam->errs, "pthread_cond_timedwait", code);
-                    index = -1;
                 }
                 goto unlock;
             }
@@ -521,55 +540,94 @@ phx_wait_image(phx_camera_t* cam, double secs, int drop)
     if (drop) {
         /* Get rid of unprocessed pending image buffers. */
         while (cam->pending > 1) {
-            if (phx_read_stream(cam, PHX_BUFFER_RELEASE, NULL) != 0) {
-                index = -1;
+            ++cam->overflows;
+            if (phx_release_buffer(cam) != 0) {
                 goto unlock;
             }
-            --cam->pending;
-            ++cam->overflows;
         }
     }
 
-    if (cam->pending >= 1) {
-        /* If no errors occured so far and at least one image buffer is
-         * unprocessed, manage to return the index of this buffer.
-         */
-        --cam->pending; /* FIXME: decreasing the # of pending images should be
-                         * done at the same time PHX_BUFFER_RELEASE is
-                         * called. */
-        index = (cam->last - cam->pending)%cam->nbufs;
-        if (index < 0) {
-            index += cam->nbufs;
-        }
-        ++index;
-    } else {
-        /* No new image available. */
-        index = 0;
-    }
+    /*
+     * At least one image buffer is unprocessed, manage to return the 1-based
+     * index of this buffer.
+     */
+    int k = (cam->last + 1 - cam->pending)%cam->nbufs;
+    index = k + (k >= 0 ? 1 : 1 + cam->nbufs);
 
     /* Unlock the mutex (whatever the errors so far). */
  unlock:
     if (unlock_mutex(cam) != 0) {
-        return -1;
+        index = -1;
     }
     return index;
 }
 
+static int
+stop_acquisition(phx_camera_t* cam, phx_acquisition_t command)
+{
+    int status = 0;
+
+    /* Minimal checks. */
+    if (cam == NULL) {
+        return -1;
+    }
+    if (cam->state != 2) {
+        tao_push_error(&cam->errs,
+                       (command == PHX_STOP ? "phx_stop" : "phx_abort"),
+                       (cam->state < 2 ?
+                        TAO_NO_ACQUISITION :
+                        TAO_CORRUPTED));
+        return -1;
+    }
+
+    /* Stop/abort acquisition. */
+    if (phx_read_stream(cam, command, NULL) != 0) {
+        status = -1;
+    }
+
+    /* Unlock all buffers */
+    if (phx_read_stream(cam, PHX_UNLOCK, NULL) != 0) {
+        status = -1;
+    }
+
+    /* Call specific stop hook. */
+    if (cam->stop != NULL && cam->stop(cam) != 0) {
+        status = -1;
+    }
+    cam->state = 1;
+    return status;
+}
+
+int
+phx_stop(phx_camera_t* cam)
+{
+    return stop_acquisition(cam, PHX_STOP);
+}
+
+int
+phx_abort(phx_camera_t* cam)
+{
+    return stop_acquisition(cam, PHX_ABORT);
+}
+
 /*--------------------------------------------------------------------------*/
-/* WRAPPERS FOR PHOENIX ROUTINES */
+/* CREATE/DESTROY CAMERA INSTANCE */
 
 static int
 check_coaxpress(phx_camera_t* cam)
 {
   phx_value_t info;
-  uint32_t magic, width, height;
+  uint32_t magic, width, height, pixelformat;
 
   if (phx_get_parameter(cam, PHX_CXP_INFO, &info) != 0) {
       return -1;
   }
   cam->coaxpress = FALSE;
   if ((info & PHX_CXP_CAMERA_DISCOVERED) != 0) {
-      /* We have a CoaXPress camera. */
+      /*
+       * The frame grabber thinks that we have a CoaXPress camera.  We check
+       * the magic number and set the byte order for CoaXPress communication.
+       */
       if (cxp_get(cam, STANDARD, &magic) != 0) {
       bad_magic:
           tao_push_error(&cam->errs, __func__, TAO_BAD_MAGIC);
@@ -584,20 +642,20 @@ check_coaxpress(phx_camera_t* cam)
       }
       cam->coaxpress = TRUE;
 
-      /* Get sensor width and height (full width and full height must be
-         correctly set later). */
-      if (cxp_get(cam, WIDTH_ADDRESS, &width) != 0 ||
-          cxp_get(cam, HEIGHT_ADDRESS, &height) != 0) {
+      /*
+       * Get pixel format, current image size (full width and full height must
+       * be correctly set later), device vendor name and device model name.
+       */
+      if (cxp_get(cam, PIXEL_FORMAT_ADDRESS, &pixelformat) != 0 ||
+          cxp_get(cam, WIDTH_ADDRESS,              &width) != 0 ||
+          cxp_get(cam, HEIGHT_ADDRESS,            &height) != 0 ||
+          cxp_get(cam, DEVICE_VENDOR_NAME,    cam->vendor) != 0 ||
+          cxp_get(cam, DEVICE_MODEL_NAME,      cam->model) != 0) {
           return -1;
       }
-      cam->fullwidth  = cam->width  = width;
-      cam->fullheight = cam->height = height;
-
-    /* Get device vendor name and device model name. */
-    if (cxp_get(cam, DEVICE_VENDOR_NAME, cam->vendor) != 0 ||
-        cxp_get(cam, DEVICE_MODEL_NAME, cam->model) != 0) {
-      return -1;
-    }
+      cam->pixelformat = pixelformat;
+      cam->fullwidth   = cam->width  = width;
+      cam->fullheight  = cam->height = height;
   }
   return 0;
 }
@@ -629,12 +687,6 @@ phx_create(tao_error_t** errs,
     cam->state = -3;
     cam->swap = FALSE;
     cam->coaxpress = FALSE;
-    cam->start = NULL;
-    cam->stop = NULL;
-#if 0
-    cam->get_config = no_config;
-    cam->set_config = no_config;
-#endif
 
     /* Initialize lock. */
     code = pthread_mutex_init(&cam->mutex, NULL);
@@ -719,21 +771,21 @@ phx_destroy(phx_camera_t* cam)
         /* Close/release/destroy resources in reverse order. */
         if (cam->state >= 2) {
             /* Abort acquisition and unlock all buffers. */
-            PHX_StreamRead(cam->handle, PHX_ABORT, NULL);
-            PHX_StreamRead(cam->handle, PHX_UNLOCK, NULL);
+            (void)PHX_StreamRead(cam->handle, PHX_ABORT, NULL);
+            (void)PHX_StreamRead(cam->handle, PHX_UNLOCK, NULL);
             if (cam->stop != NULL) {
-                cam->stop(cam);
+                (void)cam->stop(cam);
             }
             cam->state = 1;
         }
         if (cam->state >= 1) {
             /* Close the Phoenix board. */
-            PHX_Close(&cam->handle);
+            (void)PHX_Close(&cam->handle);
             cam->state = 0;
         }
         if (cam->state >= 0) {
             /* Destroy the Phoenix handle and release memory. */
-            PHX_Destroy(&cam->handle);
+            (void)PHX_Destroy(&cam->handle);
         }
         if (cam->state >= -1) {
             /* Destroy condition variable. */
@@ -755,13 +807,18 @@ phx_destroy(phx_camera_t* cam)
     }
 }
 
-/* These wrappers use TAO error management system. */
+/*--------------------------------------------------------------------------*/
+/* WRAPPERS FOR PHOENIX ROUTINES */
 
 int
 phx_read_stream(phx_camera_t* cam, phx_acquisition_t command, void* addr)
 {
    phx_status_t status = PHX_StreamRead(cam->handle, command, addr);
    if (status != PHX_OK) {
+       if (command == PHX_UNLOCK && status == PHX_ERROR_NOT_IMPLEMENTED) {
+           /* Ignore this error. */
+           return 0;
+       }
        phx_push_error(&cam->errs, "PHX_StreamRead", status);
        return -1;
    }
