@@ -375,7 +375,7 @@ set_region_of_interest(phx_camera_t* cam, const phx_roi_t* arg)
         arg->yoff < 0 || arg->height < 1 ||
         arg->xoff + arg->width > cam->fullwidth ||
         arg->yoff + arg->height > cam->fullheight) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+        tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
     }
     phx_roi_t newroi;
     newroi.xoff = ROUND_DOWN(arg->xoff, CXP_HORIZONTAL_INCREMENT);
@@ -385,42 +385,30 @@ set_region_of_interest(phx_camera_t* cam, const phx_roi_t* arg)
     newroi.height = ROUND_UP(arg->yoff + arg->height,
                              CXP_VERTICAL_INCREMENT) - newroi.yoff;
     phx_roi_t* oldroi = &cam->dev_cfg.roi;
+#define CFG_SET(m, id)                              \
+        if (cxp_set(cam, id, newroi.m) != 0) {      \
+            return -1;                              \
+        }                                           \
+        oldroi->m = newroi.m
     if (newroi.xoff < oldroi->xoff) {
-        if (cxp_set(cam, OFFSET_X, newroi.xoff) != 0) {
-            return -1;
-        }
-        oldroi->xoff = newroi.xoff;
+        CFG_SET(xoff, OFFSET_X);
     }
     if (newroi.width != oldroi->width) {
-        if (cxp_set(cam, WIDTH, newroi.width) != 0) {
-            return -1;
-        }
-        oldroi->width = newroi.width;
+        CFG_SET(width, WIDTH);
     }
     if (newroi.xoff > oldroi->xoff) {
-        if (cxp_set(cam, OFFSET_X, newroi.xoff) != 0) {
-            return -1;
-        }
-        oldroi->xoff = newroi.xoff;
+        CFG_SET(xoff, OFFSET_X);
     }
     if (newroi.yoff < oldroi->yoff) {
-        if (cxp_set(cam, OFFSET_Y, newroi.yoff) != 0) {
-            return -1;
-        }
-        oldroi->yoff = newroi.yoff;
+        CFG_SET(yoff, OFFSET_Y);
     }
     if (newroi.height != oldroi->height) {
-        if (cxp_set(cam, HEIGHT, newroi.height) != 0) {
-            return -1;
-        }
-        oldroi->height = newroi.height;
+        CFG_SET(height, HEIGHT);
     }
-    if (newroi.yoff < oldroi->yoff) {
-        if (cxp_set(cam, OFFSET_Y, newroi.yoff) != 0) {
-            return -1;
-        }
-        oldroi->yoff = newroi.yoff;
+    if (newroi.yoff > oldroi->yoff) {
+        CFG_SET(yoff, OFFSET_Y);
     }
+#undef CFG_SET
     return 0;
 }
 
@@ -430,7 +418,7 @@ set_region_of_interest(phx_camera_t* cam, const phx_roi_t* arg)
  */
 
 static int
-update_camera_config(phx_camera_t* cam)
+update_config(phx_camera_t* cam)
 {
     if (update_pixel_format(      cam) != 0 ||
         update_region_of_interest(cam) != 0 ||
@@ -600,7 +588,7 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     /*
      * Update other device information.
      */
-    if (update_camera_config(cam) != 0) {
+    if (update_config(cam) != 0) {
         return -1;
     }
 
