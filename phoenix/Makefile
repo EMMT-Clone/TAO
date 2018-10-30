@@ -38,7 +38,7 @@ TAO_CFLAGS = $(CPPFLAGS) $(CFLAGS) $(PIC_FLAGS)
 # Macros for the Phoenix Frame Grabber Library (FGL):
 PHOENIX_STATIC_LIBRARY = libtaophx.a
 PHOENIX_SHARED_LIBRARY = libtaophx.so
-PHOENIX_OBJECTS = phoenix.o mikrotron-mc408x.o
+PHOENIX_OBJECTS = errors.o phoenix.o mikrotron-mc408x.o
 PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
                   ${srcdir}/phoenix.h \
                   ${srcdir}/phoenix-private.h \
@@ -92,6 +92,17 @@ phx_rt_wait: ${srcdir}/phx_rt_wait.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
 phoenix.o: ${srcdir}/phoenix.c $(PHOENIX_HEADERS)
+	$(CC) -c $(PHOENIX_CFLAGS) $< -o $@
+
+dump-errors: ${srcdir}/dump-errors.c
+	$(CC) $(PHX_DEFS) $(CFLAGS) "$<" -o "$@" $(PHX_LIBS)
+
+errors.c: dump-errors
+	rm -f "$@"
+	LD_LIBRARY_PATH="$(PHX_LIBDIR)" ./dump-errors > "$@"
+	chmod 444 "$@"
+
+errors.o: errors.c $(PHOENIX_HEADERS)
 	$(CC) -c $(PHOENIX_CFLAGS) $< -o $@
 
 coaxpress.o: ${srcdir}/coaxpress.c $(PHOENIX_HEADERS)

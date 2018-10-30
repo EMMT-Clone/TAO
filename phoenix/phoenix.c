@@ -60,10 +60,10 @@ static void
 get_error_details(int code, const char** reason, const char** info)
 {
     if (reason != NULL) {
-        *reason = "ActiveSilicon Phoenix library reports that an error occured";
+        *reason = phx_status_description(code);
     }
     if (info != NULL) {
-        *info = phx_status_string(code);
+        *info = phx_status_identifier(code);
         if (*info != NULL && (*info)[0] == '\0') {
             *info = NULL;
         }
@@ -81,7 +81,7 @@ phx_push_error(tao_error_t** errs, const char* func, int code)
 static pthread_mutex_t error_handler_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Verbosity of error handler. */
-static int error_handler_level = 2;
+static int error_handler_level = 1;
 
 void
 phx_set_error_handler_verbosity(int level)
@@ -108,18 +108,20 @@ error_handler(const char* funcname, phx_status_t errcode, const char* reason)
 {
   if (errcode != PHX_OK) {
     int level = phx_get_error_handler_verbosity();
-    if (level >= 2 && reason != NULL && reason[0] != '\0') {
-        fprintf(stderr, "Function %s failed with code 0x%08x.\n%s\n",
-                funcname, errcode, reason);
-    } else if (level >= 1) {
-        fprintf(stderr, "Function %s failed with code 0x%08x.\n",
-                funcname, errcode);
+    if (level >= 2) {
+        if (reason != NULL && reason[0] != '\0') {
+            fprintf(stderr, "Function %s failed with code 0x%08x.\n%s\n",
+                    funcname, (unsigned int)errcode, reason);
+        } else {
+            fprintf(stderr, "Function %s failed with code 0x%08x.\n",
+                    funcname, (unsigned int)errcode);
+        }
     }
   }
 }
 
 const char*
-phx_status_string(phx_status_t status)
+phx_status_identifier(phx_status_t status)
 {
     switch (status) {
 #define CASE(x) case x: return #x;

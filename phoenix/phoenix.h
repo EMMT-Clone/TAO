@@ -136,8 +136,28 @@ extern "C" {
 extern void
 phx_push_error(tao_error_t** errs, const char* func, int code);
 
+/**
+ * Get textual identifier of status code.
+ *
+ * @param status    Status returned by one of the functions of the
+ *                  ActiveSilicon Phoenix library.
+ *
+ * @return The address of a static string with the textual identifier of
+ *         the status.
+ */
 extern const char*
-phx_status_string(phx_status_t status);
+phx_status_identifier(phx_status_t status);
+
+/**
+ * Get textual description of status code.
+ *
+ * @param status    Status returned by one of the functions of the
+ *                  ActiveSilicon Phoenix library.
+ *
+ * @return The address of a static string describing the status code.
+ */
+const char*
+phx_status_description(phx_status_t status);
 
 /**
  * Create a new instance of a frame grabber connection to a camera.
