@@ -174,6 +174,12 @@ phx_create(tao_error_t** errs,
 extern void
 phx_destroy(phx_camera_t* cam);
 
+extern void
+phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg);
+
+extern int
+phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg);
+
 /**
  * Start continuous acquisition.
  *

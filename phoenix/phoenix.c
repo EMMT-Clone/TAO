@@ -361,6 +361,9 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
 
 /*
  * Callback for acquisition.
+ *
+ * FIXME: Handle PHX_INTRPT_FRAME_START and PHX_INTRPT_FRAME_END events
+ *        to have a better time-stamp.
  */
 static void
 acquisition_callback(phx_handle_t handle, uint32_t events, void* data)
@@ -444,11 +447,13 @@ phx_start(phx_camera_t* cam, int nbufs)
     }
 
     /*
-     * Instruct Phoenix to use the virtual buffers. The PHX_CACHE_FLUSH here is
-     * to make sure that the new buffers do replace the old ones, if any,
-     * before they may be claimed by the garbage collector.  (FIXME: I am not
-     * sure whether this is really needed and I do not known the effects of the
-     * PHX_FORCE_REWRITE flag.)
+     * Instruct Phoenix to use the virtual buffers.  The PHX_CACHE_FLUSH here
+     * is to make sure that the new buffers do replace the old ones, if any,
+     * before they may be claimed by the garbage collector.  Note that
+     * (obsolete but still used in the examples and the documentation)
+     * parameter PHX_ACQ_NUM_IMAGES is the same as PHX_ACQ_NUM_BUFFERS.
+     * (FIXME: I am not sure whether this is really needed and I do not known
+     * the effects of the PHX_FORCE_REWRITE flag.)
      */
     if (phx_set(cam,  PHX_ACQ_IMAGES_PER_BUFFER,              1) != 0 ||
         phx_set(cam,  PHX_ACQ_BUFFER_START,                   1) != 0 ||
@@ -660,7 +665,7 @@ phx_abort(phx_camera_t* cam)
 }
 
 /*--------------------------------------------------------------------------*/
-/* CREATE/DESTROY CAMERA INSTANCE */
+/* CREATE/DESTROY/CONFIGURE CAMERA INSTANCE */
 
 static int
 check_coaxpress(phx_camera_t* cam)
@@ -857,6 +862,64 @@ phx_destroy(phx_camera_t* cam)
 
         /* Release memory. */
         free(cam);
+    }
+}
+
+void
+phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg)
+{
+    if (cfg != NULL) {
+        if (cam == NULL) {
+            memset(cfg, 0, sizeof(phx_config_t));
+        } else {
+            memcpy(cfg, &cam->dev_cfg, sizeof(phx_config_t));
+        }
+    }
+}
+
+int
+phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg)
+{
+    if (cam == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
+    if (cfg != NULL) {
+        if (cfg->depth <= 0) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_DEPTH);
+            return -1;
+        }
+        if (isnan(cfg->bias) || isinf(cfg->bias)) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_BIAS);
+            return -1;
+        }
+        if (isnan(cfg->gain) || isinf(cfg->gain)) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_GAIN);
+            return -1;
+        }
+        if (isnan(cfg->exposure) || isinf(cfg->exposure) ||
+            cfg->exposure < 0) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
+            return -1;
+        }
+        if (isnan(cfg->rate) || isinf(cfg->rate) || cfg->rate <= 0) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_RATE);
+            return -1;
+        }
+        if (cfg->roi.xoff < 0 || cfg->roi.yoff < 0 ||
+            cfg->roi.width < 1 || cfg->roi.height < 1 ||
+            cfg->roi.xoff + cfg->roi.width > cam->fullwidth ||
+            cfg->roi.yoff + cfg->roi.height > cam->fullheight) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
+            return -1;
+        }
+        memcpy(&cam->usr_cfg, cfg, sizeof(phx_config_t));
+    }
+    if (cam->set_config != NULL) {
+        return cam->set_config(cam);
+    } else {
+        memcpy(&cam->dev_cfg, &cam->usr_cfg, sizeof(phx_config_t));
+        return 0;
     }
 }
 
