@@ -16,6 +16,8 @@
 #include "coaxpress.h"
 #include "mikrotron-mc408x.h"
 
+#define USE_FRAMEGRABBER_FOR_SETTING_CONNECTION 1
+
 #define ROUND_DOWN(a, b)  (((a)/(b))*(b))
 
 #define ROUND_UP(a, b)  ((((b) - 1 + (a))/(b))*(b))
@@ -214,10 +216,123 @@ set_bits_per_pixel(phx_camera_t* cam, int depth)
     return set_other_formats(cam);
 
  error:
-    tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+    tao_push_error(&cam->errs, __func__, TAO_BAD_DEPTH);
     return -1;
 }
 
+static int
+update_connection(phx_camera_t* cam)
+{
+    const uint32_t msk = (CXP_CONNECTION_CONFIG_CONNECTION_1 |
+                          CXP_CONNECTION_CONFIG_CONNECTION_2 |
+                          CXP_CONNECTION_CONFIG_CONNECTION_3 |
+                          CXP_CONNECTION_CONFIG_CONNECTION_4);
+    uint32_t val;
+    if (cxp_get(cam, CONNECTION_CONFIG, &val) != 0) {
+        return -1;
+    }
+    switch (val & msk) {
+    case CXP_CONNECTION_CONFIG_CONNECTION_1:
+        cam->dev_cfg.connection.channels = 1;
+        break;
+    case CXP_CONNECTION_CONFIG_CONNECTION_2:
+        cam->dev_cfg.connection.channels = 2;
+        break;
+    case CXP_CONNECTION_CONFIG_CONNECTION_3:
+        cam->dev_cfg.connection.channels = 3;
+        break;
+    case CXP_CONNECTION_CONFIG_CONNECTION_4:
+        cam->dev_cfg.connection.channels = 4;
+        break;
+    default:
+        cam->dev_cfg.connection.channels = 0;
+    }
+    switch (val & ~msk) {
+    case CXP_CONNECTION_CONFIG_SPEED_1250:
+        cam->dev_cfg.connection.speed = 1250;
+        break;
+    case CXP_CONNECTION_CONFIG_SPEED_2500:
+        cam->dev_cfg.connection.speed = 2500;
+        break;
+    case CXP_CONNECTION_CONFIG_SPEED_3125:
+        cam->dev_cfg.connection.speed = 3125;
+        break;
+    case CXP_CONNECTION_CONFIG_SPEED_5000:
+        cam->dev_cfg.connection.speed = 5000;
+        break;
+    case CXP_CONNECTION_CONFIG_SPEED_6250:
+        cam->dev_cfg.connection.speed = 6250;
+        break;
+    default:
+        cam->dev_cfg.connection.speed = 0;
+    }
+    return 0;
+}
+
+static int
+set_connection(phx_camera_t* cam, const phx_connection_t* con)
+{
+#if USE_FRAMEGRABBER_FOR_SETTING_CONNECTION
+    if (phx_set_coaxpress_connection(cam, con) != 0) {
+        return -1;
+    }
+    if (update_connection(cam)  != 0) {
+        return -1;
+    }
+    if (con->channels != 0 &&
+        con->channels != cam->dev_cfg.connection.channels) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_CHANNELS);
+    }
+    if (con->speed != 0 &&
+        con->speed != cam->dev_cfg.connection.speed) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_SPEED);
+    }
+#else
+    uint32_t val;
+    switch (con->channels) {
+    case 1:
+        val = CXP_CONNECTION_CONFIG_CONNECTION_1;
+        break;
+    case 2:
+        val = CXP_CONNECTION_CONFIG_CONNECTION_2;
+        break;
+    case 3:
+        val = CXP_CONNECTION_CONFIG_CONNECTION_3;
+        break;
+    case 4:
+        val = CXP_CONNECTION_CONFIG_CONNECTION_4;
+        break;
+    default:
+        tao_push_error(&cam->errs, __func__, TAO_BAD_CHANNELS);
+        return -1;
+    }
+    switch (con->speed) {
+    case 1250:
+        val |= CXP_CONNECTION_CONFIG_SPEED_1250;
+        break;
+    case 2500:
+        val |= CXP_CONNECTION_CONFIG_SPEED_2500;
+        break;
+    case 3125:
+        val |= CXP_CONNECTION_CONFIG_SPEED_3125;
+        break;
+    case 5000:
+        val |= CXP_CONNECTION_CONFIG_SPEED_5000;
+        break;
+    case 6250:
+        val |= CXP_CONNECTION_CONFIG_SPEED_6250;
+        break;
+        tao_push_error(&cam->errs, __func__, TAO_BAD_SPEED);
+        return -1;
+    }
+    if (cxp_set(cam, CONNECTION_CONFIG, val) != 0) {
+        return -1;
+    }
+    cam->dev_cfg.connection.channels = con->channels;
+    cam->dev_cfg.connection.speed = con->speed;
+#endif
+    return 0;
+}
 
 /*
  * Update and set detetctor bias (black level).
@@ -420,7 +535,8 @@ set_region_of_interest(phx_camera_t* cam, const phx_roi_t* arg)
 static int
 update_config(phx_camera_t* cam)
 {
-    if (update_pixel_format(      cam) != 0 ||
+    if (update_connection(        cam) != 0 ||
+        update_pixel_format(      cam) != 0 ||
         update_region_of_interest(cam) != 0 ||
         update_black_level(       cam) != 0 ||
         update_gain(              cam) != 0 ||
@@ -453,16 +569,20 @@ set_config(phx_camera_t* cam)
 
     /* Check configuration parameters. */
     if (isnan(usr->bias)) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT); // FIXME:
+        tao_push_error(&cam->errs, __func__, TAO_BAD_BIAS);
     }
     if (isnan(usr->gain)) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT); // FIXME:
+        tao_push_error(&cam->errs, __func__, TAO_BAD_GAIN);
     }
     if (isnan(usr->exposure)) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT); // FIXME:
+        tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
     }
     if (isnan(usr->rate)) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT); // FIXME:
+        tao_push_error(&cam->errs, __func__, TAO_BAD_RATE);
+    }
+    if (usr->connection.channels < 1 || usr->connection.channels > 4 ||
+        usr->connection.speed < 1250 || usr->connection.speed > 6250) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_SPEED);
     }
 
     /* Change black level and gain if requested. */
@@ -477,6 +597,16 @@ set_config(phx_camera_t* cam)
             return -1;
         }
         usr->gain = dev->gain;
+    }
+
+    /* Augment connection speed if requested. */
+    if (usr->connection.channels*usr->connection.speed >
+        dev->connection.channels*dev->connection.speed) {
+        if (set_connection(cam, &usr->connection) != 0) {
+            return -1;
+        }
+        dev->connection.channels = usr->connection.channels;
+        dev->connection.speed = usr->connection.speed;
     }
 
     /* Reduce bits per pixel if requested. */
@@ -531,6 +661,17 @@ set_config(phx_camera_t* cam)
         }
         usr->depth = dev->depth;
     }
+
+    /* Reduce connection speed if requested. */
+    if (usr->connection.channels != dev->connection.channels ||
+        usr->connection.speed  != dev->connection.speed) {
+        if (set_connection(cam, &usr->connection) != 0) {
+            return -1;
+        }
+        dev->connection.channels = usr->connection.channels;
+        dev->connection.speed = usr->connection.speed;
+    }
+
     return 0;
 }
 

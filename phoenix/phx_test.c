@@ -15,12 +15,12 @@
 
 #include "phoenix.h"
 
-
 static int
 parse_options(int argc, char* argv[], phx_config_t* cfg)
 {
     const char* progname = argv[0];
     char c;
+    char buffer[30];
 
     /* Parse arguments. */
     for (int i = 1; i < argc; ++i) {
@@ -52,6 +52,21 @@ parse_options(int argc, char* argv[], phx_config_t* cfg)
                     "Black level [%g].\n", cfg->bias);
             fprintf(stderr, "  --gain VALUE                  "
                     "Gain [%g].\n", cfg->gain);
+            if (cfg->connection.speed != 0) {
+                sprintf(buffer, "%u Mbps",
+                        (unsigned int)cfg->connection.speed);
+            } else {
+                strcpy(buffer, "auto");
+            }
+            fprintf(stderr, "  --bitrate VALUE               "
+                    "CoaXPress bitrate [%s].\n", buffer);
+            if (cfg->connection.channels != 0) {
+                sprintf(buffer, "%u", (unsigned int)cfg->connection.channels);
+            } else {
+                strcpy(buffer, "auto");
+            }
+            fprintf(stderr, "  --channels NUMBER             "
+                    "Number of CoaXPress channels [%s].\n", buffer);
             fprintf(stderr, "  --quiet                       "
                     "Quiet (non-verbose) mode.\n");
             fprintf(stderr, "  -h, --help                    "
@@ -150,6 +165,50 @@ parse_options(int argc, char* argv[], phx_config_t* cfg)
                         progname);
                 exit(1);
             }
+        } else if (strcmp(arg, "--bitrate") == 0) {
+            if (++i >= argc) {
+                fprintf(stderr, "%s: missing argument to option `--bitrate`\n",
+                        progname);
+                exit(1);
+            }
+            if (strcmp(argv[i], "auto") == 0) {
+                cfg->connection.speed = 0;
+            } else {
+                unsigned int bitrate;
+                if (sscanf(argv[i], " %u %c", &bitrate, &c) != 1) {
+                    fprintf(stderr, "%s: bad argument for option `--bitrate`, "
+                            "should be in Mbps\n", progname);
+                    exit(1);
+                }
+                if (bitrate < 1) {
+                    fprintf(stderr, "%s: bad value for option `--bitrate`\n",
+                            progname);
+                    exit(1);
+                }
+                cfg->connection.speed = bitrate;
+            }
+        } else if (strcmp(arg, "--channels") == 0) {
+            if (++i >= argc) {
+                fprintf(stderr, "%s: missing argument to option `--channels`\n",
+                        progname);
+                exit(1);
+            }
+            if (strcmp(argv[i], "auto") == 0) {
+                cfg->connection.channels = 0;
+            } else {
+                unsigned int channels;
+                if (sscanf(argv[i], " %u %c", &channels, &c) != 1) {
+                    fprintf(stderr, "%s: bad argument for option `--channels`, "
+                            "should be in Mbps\n", progname);
+                    exit(1);
+                }
+                if (channels < 1 || channels > 4) {
+                    fprintf(stderr, "%s: bad value for option `--channels`\n",
+                            progname);
+                    exit(1);
+                }
+                cfg->connection.channels = channels;
+            }
         } else {
             fprintf(stderr, "%s: unknown option `%s`\n", progname, argv[i]);
             exit(1);
@@ -175,6 +234,16 @@ int main(int argc, char* argv[])
   }
   phx_get_configuration(cam, &cfg);
   parse_options(argc, argv, &cfg);
+  //if (bitrate != 0) {
+  //    if (phx_set_coaxpress_speed(cam, bitrate, 4) != 0) {
+  //        if (errs == TAO_NO_ERRORS) {
+  //            fprintf(stderr, "Failed to set bitrate.\n");
+  //        } else {
+  //            tao_report_errors(&errs);
+  //        }
+  //        return 1;
+  //    }
+  //}
   //cfg.roi.xoff = 311;
   //cfg.roi.yoff = 407;
   //cfg.roi.width = 673;
@@ -192,6 +261,10 @@ int main(int argc, char* argv[])
       }
       return 1;
   }
+  printf("Board information:\n");
+  phx_print_board_info(cam, "  ", stdout);
+  printf("Connection channels: %u\n", cam->dev_cfg.connection.channels);
+  printf("Connection speed:    %u Mbps\n", cam->dev_cfg.connection.speed);
   printf("Camera vendor: %s\n",
          (cam->vendor[0] != '\0' ? cam->vendor : "Unknown"));
   printf("Camera model: %s\n",

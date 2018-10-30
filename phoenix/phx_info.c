@@ -31,6 +31,11 @@ int main(int argc, char** argv)
       }
       return 1;
   }
+
+  printf("Board information:\n");
+  phx_print_board_info(cam, "  ", stdout);
+  printf("Connection channels: %u\n", cam->dev_cfg.connection.channels);
+  printf("Connection speed:    %u Mbps\n", cam->dev_cfg.connection.speed);
   printf("Camera vendor: %s\n",
          (cam->vendor[0] != '\0' ? cam->vendor : "Unknown"));
   printf("Camera model: %s\n",

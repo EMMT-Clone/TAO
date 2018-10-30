@@ -49,6 +49,14 @@ typedef struct phx_roi {
 } phx_roi_t;
 
 /**
+ * Connection settings for image transmission.
+ */
+typedef struct phx_connection {
+    uint32_t channels; /**< Number of active connection channels */
+    uint32_t speed;    /**< Bitrate (in Mbps) of each channel */
+} phx_connection_t;
+
+/**
  * Configuration settings.
  *
  * This structure stores all settable camera settings.
@@ -58,6 +66,8 @@ typedef struct phx_config {
     double gain;           /**< Detector gain */
     double exposure;       /**< Exposure time (in seconds) */
     double rate;           /**< Frames per seconds */
+    phx_connection_t connection;
+                           /**< Connection for image transmission */
     int depth;             /**< Bits per pixel */
     phx_roi_t roi;         /**< ROI of acquired images and defined relatively
                                 to the sensor surface */
@@ -174,11 +184,17 @@ phx_create(tao_error_t** errs,
 extern void
 phx_destroy(phx_camera_t* cam);
 
+extern int
+phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream);
+
 extern void
 phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg);
 
 extern int
 phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg);
+
+extern int
+phx_set_coaxpress_connection(phx_camera_t* cam, const phx_connection_t* con);
 
 /**
  * Start continuous acquisition.

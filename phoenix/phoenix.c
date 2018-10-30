@@ -1076,6 +1076,239 @@ cxp_read_indirect_uint32(phx_camera_t* cam, uint32_t addr, uint32_t* value)
 /*--------------------------------------------------------------------------*/
 /* UTILITIES */
 
+int
+phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
+{
+    phx_value_t bits;
+    if (pfx == NULL) {
+        pfx = "";
+    }
+    if (stream == NULL) {
+        stream = stdout;
+    }
+    if (phx_get(cam, PHX_BOARD_INFO, &bits) != 0) {
+        return -1;
+    }
+#define PRT(msk, txt)                                   \
+    do {                                                \
+        if ((bits & (msk)) == (msk)) {                  \
+            fprintf(stream, "%s%s\n", pfx, txt);        \
+        }                                               \
+    } while (0)
+#define CASE(cst, txt) case cst: fprintf(stream, "%s%s\n", pfx, txt); break
+#define CASE1(cst) CASE(cst, #cst)
+
+    PRT(PHX_BOARD_INFO_PCI_3V, "PC slot is PCI 3.3V");
+    PRT(PHX_BOARD_INFO_PCI_5V, "PC slot is PCI 5V");
+    PRT(PHX_BOARD_INFO_PCI_33M, "PC slot is PCI 33 MHz");
+    PRT(PHX_BOARD_INFO_PCI_66M, "PC slot is PCI 66 MHz");
+    PRT(PHX_BOARD_INFO_PCI_32B, "PC slot is PCI 32 bit");
+    PRT(PHX_BOARD_INFO_PCI_64B, "PC slot is PCI 64 bit");
+    PRT(PHX_BOARD_INFO_PCI_EXPRESS, "PC slot is PCI Express");
+    if ((bits & PHX_BOARD_INFO_PCI_EXPRESS) != PHX_BOARD_INFO_PCI_EXPRESS) {
+        phx_value_t val;
+        if (phx_get(cam, PHX_PCIE_INFO, &val) != 0) {
+            return -1;
+        }
+        switch ((int)(val & PHX_EMASK_PCIE_INFO_LINK_GEN)) {
+            CASE(PHX_PCIE_INFO_LINK_GEN1,
+                 "PCI Express link operating at Gen 1 PCI Express speed");
+            CASE(PHX_PCIE_INFO_LINK_GEN2,
+                 "PCI Express link operating at Gen 2 PCI Express speed");
+            CASE(PHX_PCIE_INFO_LINK_GEN3,
+                 "PCI Express link operating at Gen 3 PCI Express speed");
+        default:
+            fprintf(stream, "%sUnknown PCI Express link generation\n", pfx);
+        }
+        switch ((int)(val & PHX_EMASK_PCIE_INFO_LINK_X)) {
+            CASE(PHX_PCIE_INFO_LINK_X1,
+                 "PCI Express link operating at x1 PCI Express width");
+            CASE(PHX_PCIE_INFO_LINK_X2,
+                 "PCI Express link operating at x2 PCI Express width");
+            CASE(PHX_PCIE_INFO_LINK_X4,
+                 "PCI Express link operating at x4 PCI Express width");
+            CASE(PHX_PCIE_INFO_LINK_X8,
+                 "PCI Express link operating at x8 PCI Express width");
+            CASE(PHX_PCIE_INFO_LINK_X12,
+                 "PCI Express link operating at x12 PCI Express width");
+            CASE(PHX_PCIE_INFO_LINK_X16,
+                 "PCI Express link operating at x16 PCI Express width");
+            CASE(PHX_PCIE_INFO_LINK_X32,
+                 "PCI Express link operating at x32 PCI Express width");
+        default:
+            fprintf(stream, "%sUnknown PCI Express link width\n", pfx);
+        }
+        switch ((int)(val & PHX_EMASK_PCIE_INFO_FG_GEN)) {
+            CASE(PHX_PCIE_INFO_FG_GEN1,
+                 "Frame grabber only supports Gen 1 PCI Express");
+            CASE(PHX_PCIE_INFO_FG_GEN2,
+                 "Frame grabber supports Gen 2 PCI Express");
+            CASE(PHX_PCIE_INFO_FG_GEN3,
+                 "Frame grabber supports Gen 3 PCI Express");
+        }
+        switch ((int)(val & PHX_EMASK_PCIE_INFO_FG_X)) {
+            CASE(PHX_PCIE_INFO_FG_X1,  "Frame grabber x1");
+            CASE(PHX_PCIE_INFO_FG_X2,  "Frame grabber x2");
+            CASE(PHX_PCIE_INFO_FG_X4,  "Frame grabber x4");
+            CASE(PHX_PCIE_INFO_FG_X8,  "Frame grabber x8");
+            CASE(PHX_PCIE_INFO_FG_X12, "Frame grabber x12");
+            CASE(PHX_PCIE_INFO_FG_X16, "Frame grabber x16");
+            CASE(PHX_PCIE_INFO_FG_X32, "Frame grabber x32");
+        }
+        switch ((int)(val & PHX_EMASK_PCIE_INFO_SLOT_GEN)) {
+            CASE(PHX_PCIE_INFO_SLOT_GEN1, "Slot Gen1");
+            CASE(PHX_PCIE_INFO_SLOT_GEN2, "Slot Gen2");
+            CASE(PHX_PCIE_INFO_SLOT_GEN3, "Slot Gen3");
+        }
+        switch ((int)(val & PHX_EMASK_PCIE_INFO_SLOT_X)) {
+            CASE(PHX_PCIE_INFO_SLOT_X1,  "Slot x1");
+            CASE(PHX_PCIE_INFO_SLOT_X2,  "Slot x2");
+            CASE(PHX_PCIE_INFO_SLOT_X4,  "Slot x4");
+            CASE(PHX_PCIE_INFO_SLOT_X8,  "Slot x8");
+            CASE(PHX_PCIE_INFO_SLOT_X12, "Slot x12");
+            CASE(PHX_PCIE_INFO_SLOT_X16, "Slot x16");
+            CASE(PHX_PCIE_INFO_SLOT_X32, "Slot x32");
+        }
+    }
+    PRT(PHX_BOARD_INFO_LVDS, "Board has LVDS camera interface");
+    PRT(PHX_BOARD_INFO_CL, "Board has Camera Link interface");
+    PRT(PHX_BOARD_INFO_CL_BASE, "Board using Camera Link Base interface");
+    PRT(PHX_BOARD_INFO_CL_MEDIUM, "Board using Camera Link Medium interface");
+    PRT(PHX_BOARD_INFO_CL_FULL, "Board using Camera Link Full interface");
+    PRT(PHX_BOARD_INFO_CHAIN_MASTER, "Board has chaining jumper set to Master");
+    PRT(PHX_BOARD_INFO_CHAIN_SLAVE, "Board has chaining jumper set to Slave");
+    PRT(PHX_BOARD_INFO_BOARD_3V, "Board is PCI 3.3V compatible");
+    PRT(PHX_BOARD_INFO_BOARD_5V, "Board is PCI 5V compatible");
+    PRT(PHX_BOARD_INFO_BOARD_33M, "Board is PCI 33 MHz compatible");
+    PRT(PHX_BOARD_INFO_BOARD_66M, "Board is PCI 66 MHz compatible");
+    PRT(PHX_BOARD_INFO_BOARD_32B, "Board is PCI 32 bit compatible");
+    PRT(PHX_BOARD_INFO_BOARD_64B, "Board is PCI 64 bit compatible");
+
+    /* CoaXPress information. */
+    if (phx_get(cam, PHX_CXP_INFO, &bits) != 0) {
+        return -1;
+    }
+    PRT(PHX_CXP_CAMERA_DISCOVERED,
+        "The CoaXPress camera has completed discovery");
+    PRT(PHX_CXP_CAMERA_IS_POCXP,
+        "The CoaXPress camera is powered via PoCXP from the frame grabber");
+    PRT(PHX_CXP_POCXP_UNAVAILABLE,
+        "There is no power to the frame grabber to provide PoCXP to a camera");
+    PRT(PHX_CXP_POCXP_TRIPPED,
+        "The PoCXP supply to the camera has been shutdown because high "
+        "current was detected");
+    PRT(PHX_CXP_LINK1_USED, "CoaXPress link 1 is in use");
+    PRT(PHX_CXP_LINK2_USED, "CoaXPress link 2 is in use");
+    PRT(PHX_CXP_LINK3_USED, "CoaXPress link 3 is in use");
+    PRT(PHX_CXP_LINK4_USED, "CoaXPress link 4 is in use");
+    PRT(PHX_CXP_LINK1_MASTER, "CoaXPress link 1 is the master link");
+    PRT(PHX_CXP_LINK2_MASTER, "CoaXPress link 2 is the master link");
+    PRT(PHX_CXP_LINK3_MASTER, "CoaXPress link 3 is the master link");
+    PRT(PHX_CXP_LINK4_MASTER, "CoaXPress link 4 is the master link");
+
+    if (bits != 0) {
+        phx_value_t val;
+        if (phx_get(cam, PHX_CXP_BITRATE, &val) != 0) {
+            return -1;
+        }
+        switch ((int)val) {
+            CASE(PHX_CXP_BITRATE_UNKNOWN, "No CoaXPress camera is connected, "
+                 "or a camera has not completed discovery");
+            CASE(PHX_CXP_BITRATE_CXP1, "The high speed bitrate is 1.25 Gbps");
+            CASE(PHX_CXP_BITRATE_CXP2, "The high speed bitrate is 2.5 Gbps");
+            CASE(PHX_CXP_BITRATE_CXP3, "The high speed bitrate is 3.125 Gbps");
+            CASE(PHX_CXP_BITRATE_CXP5, "The high speed bitrate is 5 Gbps");
+            CASE(PHX_CXP_BITRATE_CXP6, "The high speed bitrate is 6.25 Gbps");
+        }
+        if (phx_get(cam, PHX_CXP_BITRATE_MODE, &val) != 0) {
+            return -1;
+        }
+        switch ((int)val) {
+            CASE1(PHX_CXP_BITRATE_MODE_AUTO);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP1);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP2);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP3);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP5);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP6);
+        }
+        if (phx_get(cam, PHX_CXP_DISCOVERY, &val) != 0) {
+            return -1;
+        }
+        switch ((int)val) {
+            CASE(PHX_CXP_DISCOVERY_UNKNOWN, "No CoaXPress camera is connected, "
+                 "or a camera has not completed discovery");
+            CASE(PHX_CXP_DISCOVERY_1X,
+                 "The camera is using a single CoaXPress link");
+            CASE(PHX_CXP_DISCOVERY_2X,
+                 "The camera is using two CoaXPress links");
+            CASE(PHX_CXP_DISCOVERY_4X,
+                 "The camera is using four CoaXPress links");
+        }
+        if (phx_get(cam, PHX_CXP_DISCOVERY_MODE, &val) != 0) {
+            return -1;
+        }
+        switch ((int)val) {
+            CASE1(PHX_CXP_DISCOVERY_MODE_AUTO);
+            CASE1(PHX_CXP_DISCOVERY_MODE_1X);
+            CASE1(PHX_CXP_DISCOVERY_MODE_2X);
+            CASE1(PHX_CXP_DISCOVERY_MODE_4X);
+        }
+        if (phx_get(cam, PHX_CXP_POCXP_MODE, &val) != 0) {
+            return -1;
+        }
+        switch ((int)val) {
+            CASE1(PHX_CXP_POCXP_MODE_AUTO);
+            CASE1(PHX_CXP_POCXP_MODE_OFF);
+            CASE1(PHX_CXP_POCXP_MODE_TRIP_RESET);
+            CASE1(PHX_CXP_POCXP_MODE_FORCEON);
+        }
+    }
+#undef CASE
+#undef CASE1
+#undef PRT
+    return 0;
+}
+
+int
+phx_set_coaxpress_connection(phx_camera_t* cam, const phx_connection_t* con)
+{
+    phx_value_t bitrate, discovery;
+    switch (con->speed) {
+    case    0: bitrate = PHX_CXP_BITRATE_MODE_AUTO; break;
+    case 1250: bitrate = PHX_CXP_BITRATE_MODE_CXP1; break;
+    case 2500: bitrate = PHX_CXP_BITRATE_MODE_CXP2; break;
+    case 3125: bitrate = PHX_CXP_BITRATE_MODE_CXP3; break;
+    case 5000: bitrate = PHX_CXP_BITRATE_MODE_CXP5; break;
+    case 6250: bitrate = PHX_CXP_BITRATE_MODE_CXP6; break;
+    default:
+        tao_push_error(&cam->errs, __func__, TAO_BAD_SPEED);
+        return -1;
+   }
+    switch (con->channels) {
+    case 0: discovery = PHX_CXP_DISCOVERY_MODE_AUTO; break;
+    case 1: discovery = PHX_CXP_DISCOVERY_MODE_1X;   break;
+    case 2: discovery = PHX_CXP_DISCOVERY_MODE_2X;   break;
+    case 4: discovery = PHX_CXP_DISCOVERY_MODE_4X;   break;
+    default:
+        tao_push_error(&cam->errs, __func__, TAO_BAD_CHANNELS);
+        return -1;
+    }
+    if (bitrate != 0) {
+        if (phx_set(cam, PHX_CACHE_FLUSH, PHX_DUMMY_PARAM) != 0) {
+            return -1;
+        }
+        if (discovery != 0) {
+            if (phx_set(cam, PHX_CXP_DISCOVERY_MODE, discovery) != 0) {
+                return -1;
+            }
+        }
+        if (phx_set(cam, PHX_CXP_BITRATE_MODE|PHX_CACHE_FLUSH, bitrate) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*
  * The macro `DST_FORMATS` provide all known (destination) pixel formats.
  * Macro `DST_FORMAT(f,t,b)` have to be defined before evaluationg this macro.
