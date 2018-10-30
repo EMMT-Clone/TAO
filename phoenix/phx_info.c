@@ -1,5 +1,5 @@
 /*
- * phx_info.c --
+ * phx_info.c -
  *
  * Simple program to connect to a camera via ActiveSilicon Phoenix frame
  * grabber.
@@ -45,6 +45,9 @@ int main(int argc, char** argv)
   printf("Sensor size: %d × %d pixels\n",
          (int)cam->fullwidth,  (int)cam->fullheight);
   printf("Region of interest: %d × %d at (%d,%d)\n",
+         (int)cam->usr_cfg.roi.width,  (int)cam->usr_cfg.roi.height,
+         (int)cam->usr_cfg.roi.xoff, (int)cam->usr_cfg.roi.yoff);
+  printf("Active region:      %d × %d at (%d,%d)\n",
          (int)cam->dev_cfg.roi.width,  (int)cam->dev_cfg.roi.height,
          (int)cam->dev_cfg.roi.xoff, (int)cam->dev_cfg.roi.yoff);
   if (cam->update_temperature != NULL) {
