@@ -286,6 +286,7 @@ FUNC(int code)
         CASE(TAO_DESTROYED, "Ressource has been destroyed");
         CASE(TAO_CORRUPTED, "Corrupted structure");
         CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory for tracking error");
+        CASE(TAO_BAD_SPEED, "Invalid connection speed");
         CASE(TAO_BAD_ROI, "Invalid region of interest");
         CASE(TAO_BAD_RATE, "Invalid acquistion frame rate");
         CASE(TAO_BAD_EXPOSURE, "Invalid exposure time");

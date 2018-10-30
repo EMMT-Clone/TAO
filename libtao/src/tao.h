@@ -196,20 +196,21 @@ typedef enum tao_error_code {
     TAO_BAD_EXPOSURE        = -15, /**< Invalid exposure time */
     TAO_BAD_RATE            = -16, /**< Invalid acquistion frame rate */
     TAO_BAD_ROI             = -17, /**< Invalid region of interest */
-    TAO_CANT_TRACK_ERROR    = -18, /**< Insufficient memory for tracking error */
-    TAO_CORRUPTED           = -19, /**< Corrupted structure */
-    TAO_DESTROYED           = -20, /**< Resource has been destroyed */
-    TAO_MISSING_SEPARATOR   = -21, /**< Separator missing */
-    TAO_OUT_OF_RANGE        = -22, /**< Out of range argument */
-    TAO_SYSTEM_ERROR        = -23, /**< Unknown system error */
-    TAO_UNCLOSED_STRING     = -24, /**< Unclosed string */
-    TAO_UNREADABLE          = -25, /**< Not readable */
-    TAO_UNWRITABLE          = -26, /**< Not writable */
-    TAO_ALREADY_IN_USE      = -27, /**< Resource already in use */
-    TAO_NOT_FOUND           = -28, /**< Item not found */
-    TAO_NOT_READY           = -29, /**< Device not ready */
-    TAO_NO_ACQUISITION      = -30, /**< Acquisition not started */
-    TAO_ACQUISITION_RUNNING = -31, /**< Acquisition running */
+    TAO_BAD_SPEED           = -18, /**< Invalid connection speed */
+    TAO_CANT_TRACK_ERROR    = -19, /**< Insufficient memory for tracking error */
+    TAO_CORRUPTED           = -20, /**< Corrupted structure */
+    TAO_DESTROYED           = -21, /**< Resource has been destroyed */
+    TAO_MISSING_SEPARATOR   = -22, /**< Separator missing */
+    TAO_OUT_OF_RANGE        = -23, /**< Out of range argument */
+    TAO_SYSTEM_ERROR        = -24, /**< Unknown system error */
+    TAO_UNCLOSED_STRING     = -25, /**< Unclosed string */
+    TAO_UNREADABLE          = -26, /**< Not readable */
+    TAO_UNWRITABLE          = -27, /**< Not writable */
+    TAO_ALREADY_IN_USE      = -28, /**< Resource already in use */
+    TAO_NOT_FOUND           = -29, /**< Item not found */
+    TAO_NOT_READY           = -30, /**< Device not ready */
+    TAO_NO_ACQUISITION      = -31, /**< Acquisition not started */
+    TAO_ACQUISITION_RUNNING = -32, /**< Acquisition running */
 } tao_error_code_t;
 
 
