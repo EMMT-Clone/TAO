@@ -190,20 +190,26 @@ typedef enum tao_error_code {
     TAO_BAD_SIZE            =  -9, /**< Invalid size */
     TAO_BAD_TYPE            = -10, /**< Invalid type */
     TAO_BAD_DEVICE          = -11, /**< Invalid device */
-    TAO_CANT_TRACK_ERROR    = -12, /**< Insufficient memory for tracking error */
-    TAO_CORRUPTED           = -13, /**< Corrupted structure */
-    TAO_DESTROYED           = -14, /**< Resource has been destroyed */
-    TAO_MISSING_SEPARATOR   = -15, /**< Separator missing */
-    TAO_OUT_OF_RANGE        = -16, /**< Out of range argument */
-    TAO_SYSTEM_ERROR        = -17, /**< Unknown system error */
-    TAO_UNCLOSED_STRING     = -18, /**< Unclosed string */
-    TAO_UNREADABLE          = -19, /**< Not readable */
-    TAO_UNWRITABLE          = -20, /**< Not writable */
-    TAO_ALREADY_IN_USE      = -21, /**< Resource already in use */
-    TAO_NOT_FOUND           = -22, /**< Item not found */
-    TAO_NOT_READY           = -23, /**< Device not ready */
-    TAO_NO_ACQUISITION      = -24, /**< Acquisition not started */
-    TAO_ACQUISITION_RUNNING = -25, /**< Acquisition running */
+    TAO_BAD_DEPTH           = -12, /**< Invalid bits per pixel */
+    TAO_BAD_BIAS            = -13, /**< Invalid detector bias */
+    TAO_BAD_GAIN            = -14, /**< Invalid detector gain */
+    TAO_BAD_EXPOSURE        = -15, /**< Invalid exposure time */
+    TAO_BAD_RATE            = -16, /**< Invalid acquistion frame rate */
+    TAO_BAD_ROI             = -17, /**< Invalid region of interest */
+    TAO_CANT_TRACK_ERROR    = -18, /**< Insufficient memory for tracking error */
+    TAO_CORRUPTED           = -19, /**< Corrupted structure */
+    TAO_DESTROYED           = -20, /**< Resource has been destroyed */
+    TAO_MISSING_SEPARATOR   = -21, /**< Separator missing */
+    TAO_OUT_OF_RANGE        = -22, /**< Out of range argument */
+    TAO_SYSTEM_ERROR        = -23, /**< Unknown system error */
+    TAO_UNCLOSED_STRING     = -24, /**< Unclosed string */
+    TAO_UNREADABLE          = -25, /**< Not readable */
+    TAO_UNWRITABLE          = -26, /**< Not writable */
+    TAO_ALREADY_IN_USE      = -27, /**< Resource already in use */
+    TAO_NOT_FOUND           = -28, /**< Item not found */
+    TAO_NOT_READY           = -29, /**< Device not ready */
+    TAO_NO_ACQUISITION      = -30, /**< Acquisition not started */
+    TAO_ACQUISITION_RUNNING = -31, /**< Acquisition running */
 } tao_error_code_t;
 
 

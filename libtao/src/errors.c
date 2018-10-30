@@ -286,6 +286,12 @@ FUNC(int code)
         CASE(TAO_DESTROYED, "Ressource has been destroyed");
         CASE(TAO_CORRUPTED, "Corrupted structure");
         CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory for tracking error");
+        CASE(TAO_BAD_ROI, "Invalid region of interest");
+        CASE(TAO_BAD_RATE, "Invalid acquistion frame rate");
+        CASE(TAO_BAD_EXPOSURE, "Invalid exposure time");
+        CASE(TAO_BAD_GAIN, "Invalid detector gain");
+        CASE(TAO_BAD_BIAS, "Invalid detector bias");
+        CASE(TAO_BAD_DEPTH, "Invalid bits per pixel");
         CASE(TAO_BAD_DEVICE, "Invalid device");
         CASE(TAO_BAD_TYPE, "Invalid type");
         CASE(TAO_BAD_SIZE, "Invalid size");
