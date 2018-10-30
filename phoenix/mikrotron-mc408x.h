@@ -470,7 +470,38 @@
 #define CXP_FILTER_MODE_MONO    1
 #define CXP_FILTER_MODE_COLOR   2
 
-/* Possible values for  CXP_DEVICE_INFORMATION_SELECTOR. */
+/* Acquisition modes (possible values for CXP_ACQUISITION_MODE register). */
+#define CXP_ACQUISITION_MODE_CONTINUOUS 0
+
+/* Trigger selector (possible values for CXP_TRIGGER_SELECTOR register). */
+#define CXP_TRIGGER_SELECTOR_FRAME_START       0
+#define CXP_TRIGGER_SELECTOR_FRAME_BURST_START 1
+
+/* Trigger mode (possible values for CXP_TRIGGER_MODE register). */
+#define CXP_TRIGGER_MODE_OFF  0
+#define CXP_TRIGGER_MODE_ON   1
+
+/* Trigger source (possible values for CXP_TRIGGER_SOURCE register). */
+#define CXP_TRIGGER_SOURCE_SOFTWARE      0x0
+#define CXP_TRIGGER_SOURCE_CXP_TRIGGER   0x4
+#define CXP_TRIGGER_SOURCE_LINE_0        0x8
+#define CXP_TRIGGER_SOURCE_LINE_1        0x9
+
+/* Trigger activation (possible values for CXP_TRIGGER_ACTIVATION register). */
+#define CXP_TRIGGER_ACTIVATION_RISING_EDGE    0x4
+#define CXP_TRIGGER_ACTIVATION_FALLING_EDGE   0x5
+#define CXP_TRIGGER_ACTIVATION_ANY_EDGE       0x6
+
+/* Exposure mode (possible values for CXP_EXPOSURE_MODE register). */
+#define CXP_EXPOSURE_MODE_TRIGGER_WIDTH  0x1
+#define CXP_EXPOSURE_MODE_TIMED          0x2
+
+/* Possible values for CXP_TEST_IMAGE_SELECTOR register. */
+#define CXP_TEST_IMAGE_SELECTOR_OFF                  0x0
+#define CXP_TEST_IMAGE_SELECTOR_GREY_HORIZONTAL_RAMP 0x1
+#define CXP_TEST_IMAGE_SELECTOR_GREY_DIAGONAL_RAMP   0x2
+
+/* Possible values for CXP_DEVICE_INFORMATION_SELECTOR. */
 #define CXP_DEVICE_INFORMATION_SELECTOR_SERIAL_NUMBER      0
 #define CXP_DEVICE_INFORMATION_SELECTOR_DEVICE_TYPE        1
 #define CXP_DEVICE_INFORMATION_SELECTOR_DEVICE_SUBTYPE     2
