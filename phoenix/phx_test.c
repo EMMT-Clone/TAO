@@ -234,30 +234,11 @@ int main(int argc, char* argv[])
   }
   phx_get_configuration(cam, &cfg);
   parse_options(argc, argv, &cfg);
-  //if (bitrate != 0) {
-  //    if (phx_set_coaxpress_speed(cam, bitrate, 4) != 0) {
-  //        if (errs == TAO_NO_ERRORS) {
-  //            fprintf(stderr, "Failed to set bitrate.\n");
-  //        } else {
-  //            tao_report_errors(&errs);
-  //        }
-  //        return 1;
-  //    }
-  //}
-  //cfg.roi.xoff = 311;
-  //cfg.roi.yoff = 407;
-  //cfg.roi.width = 673;
-  //cfg.roi.height = 491;
-  //cfg.exposure = 100e-6; /* 100 µs */
-  //cfg.rate = 100; /* 100 fps */
-  //cfg.bias = 400;
-  //cfg.gain =  50;
-  //cfg.depth =  8;
   if (phx_set_configuration(cam, &cfg) != 0) {
-      if (errs == TAO_NO_ERRORS) {
+      if (cam->errs == TAO_NO_ERRORS) {
           fprintf(stderr, "Failed to configure the camera.\n");
       } else {
-          tao_report_errors(&errs);
+          tao_report_errors(&cam->errs);
       }
       return 1;
   }
