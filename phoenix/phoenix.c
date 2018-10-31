@@ -528,13 +528,12 @@ phx_start(phx_camera_t* cam, int nbufs)
     }
 
     /*
-     * Instruct Phoenix to use the virtual buffers.  The PHX_CACHE_FLUSH here
-     * is to make sure that the new buffers do replace the old ones, if any,
-     * before they may be claimed by the garbage collector.  Note that
-     * (obsolete but still used in the examples and the documentation)
-     * parameter PHX_ACQ_NUM_IMAGES is the same as PHX_ACQ_NUM_BUFFERS.
-     * (FIXME: I am not sure whether this is really needed and I do not known
-     * the effects of the PHX_FORCE_REWRITE flag.)
+     * Instruct Phoenix to use the virtual buffers.  Note that obsolete (but
+     * still used in the examples and the documentation) parameter
+     * PHX_ACQ_NUM_IMAGES is the same as PHX_ACQ_NUM_BUFFERS.  FIXME: Following
+     * the examples in the documentation, the PHX_FORCE_REWRITE flag is set but
+     * its effects are not documented and I am therefore not sure whether this
+     * is really needed.
      */
     if (phx_set(cam,  PHX_ACQ_IMAGES_PER_BUFFER,              1) != 0 ||
         phx_set(cam,  PHX_ACQ_BUFFER_START,                   1) != 0 ||
@@ -603,27 +602,23 @@ phx_start(phx_camera_t* cam, int nbufs)
  * frames.
  */
 
-/*
- * FIXME: Errors in the camera error stack should be checked (perhaps this has
- *        to be signaled).
- */
-
 int
 phx_release_buffer(phx_camera_t* cam)
 {
-    int status = -1;
+    int status;
+
     if (cam == NULL) {
-        return status;
+        return -1;
     }
     phx_lock(cam);
-    if (cam->pending <= 0) {
-        cam->pending = 0;
-        tao_push_error(&cam->errs, __func__, TAO_OUT_OF_RANGE);
-        goto unlock;
+    {
+        if (cam->pending > 0) {
+            --cam->pending;
+            status = phx_read_stream(cam, PHX_BUFFER_RELEASE, NULL);
+        } else {
+            status = -1;
+        }
     }
-    --cam->pending;
-    status = phx_read_stream(cam, PHX_BUFFER_RELEASE, NULL);
- unlock:
     phx_unlock(cam);
     return status;
 }
