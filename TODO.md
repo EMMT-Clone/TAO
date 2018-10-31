@@ -1,3 +1,8 @@
+## Important
+
+* Implement shared images policy (as discussed with Michel).
+
+
 ## Things to do
 
 * Instead of immediately attempt to reflect the configuration of the camera

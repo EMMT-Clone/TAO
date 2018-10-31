@@ -493,6 +493,11 @@ acquisition_callback(phx_handle_t handle, uint32_t events, void* data)
         ++cam->frames;
         ++cam->lostsyncs;
     }
+    if ((PHX_INTRPT_FRAME_LOST & events) != 0) {
+        /* Frame lost. */
+        ++cam->frames;
+        ++cam->lostframes;
+    }
     if (cam->quitting || (cam->events & events) != 0) {
         /* Signal condition for waiting thread. */
         phx_signal_condition(cam);
@@ -552,17 +557,18 @@ phx_start(phx_camera_t* cam, int nbufs)
      * Configure frame grabber for continuous acquisition and enable interrupts
      * for expected events.
      */
-    phx_value_t events = (PHX_INTRPT_GLOBAL_ENABLE |
-                          PHX_INTRPT_BUFFER_READY  |
+    phx_value_t events = (PHX_INTRPT_BUFFER_READY  |
                           PHX_INTRPT_FIFO_OVERFLOW |
+                          PHX_INTRPT_FRAME_LOST    |
                           PHX_INTRPT_SYNC_LOST);
-    if (phx_set(cam, PHX_INTRPT_CLR, ~(phx_value_t)0) != 0 ||
-        phx_set(cam, PHX_INTRPT_SET,          events) != 0 ||
-        phx_set(cam, PHX_ACQ_BLOCKING,    PHX_ENABLE) != 0 ||
-        phx_set(cam, PHX_ACQ_CONTINUOUS,  PHX_ENABLE) != 0 ||
-        phx_set(cam, PHX_COUNT_BUFFER_READY,       1) != 0) {
+    if (phx_set(cam, PHX_INTRPT_CLR,                 ~(phx_value_t)0) != 0 ||
+        phx_set(cam, PHX_INTRPT_SET, PHX_INTRPT_GLOBAL_ENABLE|events) != 0 ||
+        phx_set(cam, PHX_ACQ_BLOCKING,                    PHX_ENABLE) != 0 ||
+        phx_set(cam, PHX_ACQ_CONTINUOUS,                  PHX_ENABLE) != 0 ||
+        phx_set(cam, PHX_COUNT_BUFFER_READY,                       1) != 0) {
         goto unlock;;
     }
+    cam->events = events;
 
     /* Setup callback context. */
     if (phx_set_parameter(cam, PHX_EVENT_CONTEXT, (void*)cam) != 0) {
