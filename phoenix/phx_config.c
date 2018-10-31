@@ -69,6 +69,9 @@ main(int argc, char* argv[])
                 break;
             }
             if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
+                if (pass != 2) {
+                    continue;
+                }
                 fprintf(stderr, "Usage: %s [OPTIONS] [--]\n", progname);
                 fprintf(stderr,
                         "Test configuration of the camera.\n");
