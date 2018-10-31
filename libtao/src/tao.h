@@ -416,7 +416,7 @@ tao_report_errors(tao_error_t** errs);
 /**
  * Clear all tracked errors.
  *
- * This function delete the contents of the error list.
+ * This function deletes the contents of the error stack.
  *
  * @param errs   Address of a variable to track errors.
  */
