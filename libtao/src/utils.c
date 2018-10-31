@@ -243,7 +243,10 @@ tao_get_absolute_timeout(tao_error_t** errs, struct timespec* ts, double secs)
         tao_push_system_error(errs, "clock_gettime");
         return -1;
     }
-    ts->tv_sec += incr_s;
-    ts->tv_nsec += incr_ns;
+    long tm_s = ts->tv_sec + incr_s;
+    long tm_ns = ts->tv_nsec + incr_ns;
+    NORMALIZE_TIME(tm_s, tm_ns);
+    ts->tv_sec = tm_s;
+    ts->tv_nsec = tm_ns;
     return 0;
 }
