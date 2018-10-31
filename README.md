@@ -9,6 +9,11 @@ exchanges of data, TAO uses [shared objects](./docs/sharedobjects.md) whose
 contents is stored in shared memory.  For fast synchronization, TAO uses
 semaphores.
 
+## Documentation
+
+* [Shared objects](./docs/sharedobjects.md).
+* [Commands](./docs/commands.md).
+
 
 ## Installation
 
