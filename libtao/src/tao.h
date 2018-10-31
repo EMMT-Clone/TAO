@@ -212,6 +212,7 @@ typedef enum tao_error_code {
     TAO_NOT_READY           = -31, /**< Device not ready */
     TAO_NO_ACQUISITION      = -32, /**< Acquisition not started */
     TAO_ACQUISITION_RUNNING = -33, /**< Acquisition running */
+    TAO_UNSUPPORTED         = -34, /**< Unsupported feature */
 } tao_error_code_t;
 
 
