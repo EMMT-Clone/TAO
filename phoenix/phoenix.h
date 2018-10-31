@@ -89,6 +89,9 @@ struct phx_camera {
     int (*start)(phx_camera_t*); /**< Start hook */
     int (*stop)(phx_camera_t*);  /**< Stop hook */
     int (*update_temperature)(phx_camera_t*);  /**< Update temperature hook */
+    int (*update_config)(phx_camera_t*);
+                            /**< Hook to retrieve the camera current device
+                                 settings (and update dev_cfg) */
     int (*set_config)(phx_camera_t*);
                             /**< Hook to set the camera settings according to
                                  the configuration chosen by the user */
@@ -225,6 +228,9 @@ phx_create(tao_error_t** errs,
  */
 extern void
 phx_destroy(phx_camera_t* cam);
+
+extern int
+phx_print_camera_info(phx_camera_t* cam, FILE* stream);
 
 extern int
 phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream);

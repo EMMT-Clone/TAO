@@ -730,9 +730,7 @@ stop_acquisition(phx_camera_t* cam, phx_acquisition_t command)
     if (cam->state != 2) {
         tao_push_error(&cam->errs,
                        (command == PHX_STOP ? "phx_stop" : "phx_abort"),
-                       (cam->state < 2 ?
-                        TAO_NO_ACQUISITION :
-                        TAO_CORRUPTED));
+                       (cam->state < 2 ? TAO_NO_ACQUISITION : TAO_CORRUPTED));
         status = -1;
         goto unlock;
     }
@@ -1270,6 +1268,59 @@ cxp_read_indirect_uint32(phx_camera_t* cam, uint32_t addr, uint32_t* value)
 
 /*--------------------------------------------------------------------------*/
 /* UTILITIES */
+
+int
+phx_print_camera_info(phx_camera_t* cam, FILE* stream)
+{
+    int status = 0;
+
+    /* Minimal checks and set defaults. */
+    if (cam == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
+    if (stream == NULL) {
+        stream = stdout;
+    }
+
+    /* Print information and settings. */
+    fprintf(stream, "Camera vendor: %s\n",
+            (cam->vendor[0] != '\0' ? cam->vendor : "Unknown"));
+    fprintf(stream, "Camera model: %s\n",
+            (cam->model[0] != '\0' ? cam->model : "Unknown"));
+    fprintf(stream, "CoaXPress camera: %s\n",
+            (cam->coaxpress ? "yes" : "no"));
+    fprintf(stream, "Board information:\n");
+    if (phx_print_board_info(cam, "  ", stream) != 0) {
+        status = -1;
+    }
+    fprintf(stream, "Connection channels: %u\n",
+            cam->dev_cfg.connection.channels);
+    fprintf(stream, "Connection speed: %u Mbps\n",
+            cam->dev_cfg.connection.speed);
+    fprintf(stream, "Bits per pixel: %d\n", (int)cam->dev_cfg.depth);
+    fprintf(stream, "Sensor size: %d × %d pixels\n",
+            (int)cam->fullwidth,  (int)cam->fullheight);
+    fprintf(stream, "Region of interest: %d × %d at (%d,%d)\n",
+            (int)cam->usr_cfg.roi.width,  (int)cam->usr_cfg.roi.height,
+            (int)cam->usr_cfg.roi.xoff, (int)cam->usr_cfg.roi.yoff);
+    fprintf(stream, "Active region:      %d × %d at (%d,%d)\n",
+            (int)cam->dev_cfg.roi.width,  (int)cam->dev_cfg.roi.height,
+            (int)cam->dev_cfg.roi.xoff, (int)cam->dev_cfg.roi.yoff);
+    fprintf(stream, "Detector bias: %5.1f\n", cam->dev_cfg.bias);
+    fprintf(stream, "Detector gain: %5.1f\n", cam->dev_cfg.gain);
+    fprintf(stream, "Exposure time: %g s\n", cam->dev_cfg.exposure);
+    fprintf(stream, "Frame rate: %.1f Hz\n", cam->dev_cfg.rate);
+    if (cam->update_temperature != NULL) {
+        if (cam->update_temperature(cam) == 0) {
+            fprintf(stream, "Detector temperature: %.1f °C\n",
+                    cam->temperature);
+        } else {
+            status = -1;
+        }
+    }
+    return status;
+}
 
 int
 phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)

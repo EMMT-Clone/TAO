@@ -838,12 +838,13 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     }
 
     /*
-     * Set hooks.
+     * Set hooks (initialize is automatically set by phx_create).
      */
     cam->start = start;
     cam->stop = stop;
     cam->update_temperature = update_temperature;
     cam->set_config = set_config;
+    cam->update_config = update_config;
     cam->save_config = save_config;
     cam->load_config = load_config;
 
