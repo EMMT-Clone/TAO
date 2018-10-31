@@ -135,6 +135,24 @@ struct phx_camera {
 extern "C" {
 #endif
 
+/**
+ * Set the level of verbosity of the default error handler.
+ *
+ * @param level   The level of verbosity: < 1 to print no messages, 1 to print
+ *                brief messages, > 1 to print detailed messages.
+ *
+ * @return The previous value of the verbosity level.
+ */
+extern int phx_set_error_handler_verbosity(int level);
+
+ /**
+ * Get the level of verbosity of the default error handler.
+ *
+ * @return The current verbosity level for error messages printed by the
+ *         default error handler.
+ */
+extern int  phx_get_error_handler_verbosity();
+
 extern void
 phx_push_error(tao_error_t** errs, const char* func, int code);
 

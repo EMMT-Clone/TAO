@@ -135,13 +135,18 @@ static pthread_mutex_t error_handler_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Verbosity of error handler. */
 static int error_handler_level = 1;
 
-void
+int
 phx_set_error_handler_verbosity(int level)
 {
+    int previous;
     if (pthread_mutex_lock(&error_handler_mutex) == 0) {
+        previous = error_handler_level;
         error_handler_level = level;
         (void)pthread_mutex_unlock(&error_handler_mutex);
+    } else {
+        previous = 1;
     }
+    return previous;
 }
 
 int
