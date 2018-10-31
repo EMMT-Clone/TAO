@@ -708,8 +708,8 @@ load_config(phx_camera_t* cam, int id)
     return 0;
 }
 
-/* Save current camera settings. My guess here is that the default
-   configuration cannot be overwritten. */
+/* Save current camera settings. My understanding is that the default
+   configuration (factory settings) cannot be overwritten. */
 static int
 save_config(phx_camera_t* cam, int id)
 {
