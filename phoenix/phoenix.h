@@ -264,7 +264,7 @@ phx_discard_errors(phx_camera_t* cam);
  * responsible of eventually calling phx_unlock().
  *
  * Locking a camera is needed before changing anything in the camera instance
- * because the camera instance is shared between the thread handling frame
+ * because the camera instance may be shared between the thread handling frame
  * grabber events and the other threads.  The following high level functions
  * take care of locking/unlocking the camera: phx_start(), phx_stop(),
  * phx_abort(), phx_wait(), phx_release_buffer(), phx_print_board_info().  All

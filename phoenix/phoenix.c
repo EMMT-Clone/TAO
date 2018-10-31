@@ -630,8 +630,8 @@ phx_wait(phx_camera_t* cam, double secs, int drop)
     int forever, code;
 
     /*
-     * Lock camera and check state.  Assume failure because any early returns
-     * mean something wrong happens.
+     * Lock camera and check state.  Assume failure (index = -1) because any
+     * early returns mean that something wrong happens.
      */
     int index = -1;
     if (cam == NULL) {
