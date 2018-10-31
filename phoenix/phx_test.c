@@ -391,6 +391,8 @@ main(int argc, char* argv[])
     }
 
     if (count > 0) {
+        tao_time_t t0, t1, dt;
+        double secs;
         long errors = 0;
         long frames = 0;
         long timeouts = 0;
@@ -400,6 +402,7 @@ main(int argc, char* argv[])
             phx_report_errors(cam);
             return 1;
         }
+        tao_get_monotonic_time(NULL, &t0);
         while (1) {
             int index = phx_wait(cam, timeout, drop);
             if (index < 0) {
@@ -440,7 +443,10 @@ main(int argc, char* argv[])
             }
             previous = index;
         }
-
+        tao_get_monotonic_time(NULL, &t1);
+        secs = tao_time_to_seconds(tao_subtract_times(&dt, &t1, &t0));
+        fprintf(stdout, "Processing time: %.6f s\n", secs);
+        fprintf(stdout, "Frame rate: %.3f fps\n", frames/secs);
         fprintf(stdout, "Processed frames: %10ld\n", frames);
         fprintf(stdout, "Errors:           %10ld\n", errors);
         fprintf(stdout, "Timeouts:         %10ld\n", timeouts);
