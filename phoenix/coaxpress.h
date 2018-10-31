@@ -18,8 +18,9 @@
 /*
  * Possible kind of registers (member __kind):
  *
- *  - Address
- *  - Value
+ *  - Address: the register stores the address of the register storing the
+ *    value;
+ *  - Value: the register stores a value;
  *
  * Possible types (member __type):
  *

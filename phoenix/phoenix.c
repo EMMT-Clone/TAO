@@ -919,6 +919,8 @@ phx_create(tao_error_t** errs,
             if (known_cameras[k].initialize(cam) != 0) {
                 goto error;
             }
+            cam->initialize = known_cameras[k].initialize;
+            break;
         }
     }
 
@@ -1143,23 +1145,63 @@ cxp_read(phx_camera_t* cam, uint32_t addr, uint8_t* data, uint32_t* size)
                                           &addr, data, size, cam->timeout);
     if (status != PHX_OK) {
         phx_push_error(&cam->errs, "PHX_ControlRead", status);
-       return -1;
-   } else {
-       return 0;
-   }
+        return -1;
+    }
+    return 0;
 }
 
+/*
+ * Unfortunately, setting some parameters (as the pixel format or the gamma
+ * correction) returns an error with an absurd code (PHX_ERROR_MALLOC_FAILED)
+ * even if the value has been correctly set.  The error cannot be just ignored
+ * as further reads of registers yields wrong values.  The strategy is to close
+ * and re-open the camera when such an error occurs which solves the problem in
+ * practice to the cost of the time spent to close and re-open (0.4 sec.).  To
+ * avoid alarming the user, printing of error messages is disabled during this
+ * process.
+ *
+ * I have tried many different things:
+ *
+ * - Calling PHX_ControlReset yields a PHX_ERROR_BAD_HANDLE error.
+ *
+ * - Re-reading the register until its value is OK (this does not work for
+ *   write-only registers).
+ */
 int
 cxp_write(phx_camera_t* cam, uint32_t addr, uint8_t* data, uint32_t* size)
 {
+    int result = 0;
+    int level = phx_set_error_handler_verbosity(0);
     phx_status_t status = PHX_ControlWrite(cam->handle, PHX_REGISTER_DEVICE,
                                            &addr, data, size, cam->timeout);
-    if (status != PHX_OK) {
+    if (status == PHX_ERROR_MALLOC_FAILED) {
+        /* This is probably a bogus register. */
+        status = PHX_Close(&cam->handle);
+        cam->state = 0;
+        if (status != PHX_OK) {
+            phx_push_error(&cam->errs, "PHX_Close", status);
+            result = -1;
+        }
+        if (result == 0) {
+            status = PHX_Open(cam->handle);
+            if (status != PHX_OK) {
+                phx_push_error(&cam->errs, "PHX_Open", status);
+                result = -1;
+            } else {
+                cam->state = 1;
+            }
+        }
+        if (result == 0) {
+            if (cam->initialize != NULL && cam->initialize(cam) != 0) {
+                result = -1;
+            }
+        }
+        phx_set_error_handler_verbosity(level);
+    } else if (status != PHX_OK) {
         phx_push_error(&cam->errs, "PHX_ControlWrite", status);
-       return -1;
-   } else {
-       return 0;
-   }
+        result = -1;
+    }
+    return result;
 }
 
 int
@@ -1169,10 +1211,9 @@ cxp_reset(phx_camera_t* cam, uint32_t addr)
                                            &addr, cam->timeout);
     if (status != PHX_OK) {
         phx_push_error(&cam->errs, "PHX_ControlReset", status);
-       return -1;
-   } else {
-       return 0;
-   }
+        return -1;
+    }
+    return 0;
 }
 
 #define FUNCTIONS(S,T,N)                                                \

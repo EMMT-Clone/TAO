@@ -84,6 +84,8 @@ struct phx_camera {
     pthread_cond_t cond;    /**< Condition variable to signal events */
     tao_error_t* errs;      /**< Error stack */
     phx_handle_t handle;    /**< Camera handle */
+    int (*initialize)(phx_camera_t*);
+                            /**< Hook to (re-)initialize the camara */
     int (*start)(phx_camera_t*); /**< Start hook */
     int (*stop)(phx_camera_t*);  /**< Stop hook */
     int (*update_temperature)(phx_camera_t*);  /**< Update temperature hook */
