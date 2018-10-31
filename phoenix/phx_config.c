@@ -39,6 +39,18 @@ fatal(const char* format, ...)
     exit(1);
 }
 
+static void
+missing_argument(const char* opt)
+{
+    fatal("missing argument for option `-%s`", opt);
+}
+
+static void
+invalid_argument(const char* opt)
+{
+    fatal("invalid argument for option `-%s`", opt);
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -60,15 +72,21 @@ main(int argc, char* argv[])
     for (int pass = 1; pass <= 2; ++pass) {
         int i = 0;
         while (++i < argc) {
+            const char* opt;
             const char* arg = argv[i];
             if (arg[0] != '-') {
                 break;
             }
-            if (strcmp(arg, "--") == 0) {
-                ++i;
-                break;
+            if (arg[1] == '-') {
+                if (arg[2] == '\0') {
+                    ++i;
+                    break;
+                }
+                opt = arg + 2;
+            } else {
+                opt = arg + 1;
             }
-            if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
+            if (strcmp(opt, "help") == 0) {
                 if (pass != 2) {
                     continue;
                 }
@@ -76,26 +94,24 @@ main(int argc, char* argv[])
                 fprintf(stderr,
                         "Change and/or show camera configuration.\n");
                 fprintf(stderr, "Options:\n");
-                fprintf(stderr, "  --roi XOFF,YOFF,WIDTH,HEIGHT  "
-                        "Region of interest [");
-                fprintf(stderr, "%d,%d,%d,%d",
+                fprintf(stderr, "  -roi XOFF,YOFF,WIDTH,HEIGHT  "
+                        "Region of interest [%d,%d,%d,%d]?\n",
                         cfg.roi.xoff, cfg.roi.yoff,
                         cfg.roi.width, cfg.roi.height);
-                fputs("].\n", stderr);
-                fprintf(stderr, "  --load ID                     "
+                fprintf(stderr, "  -load ID                     "
                         "Load configuration.\n");
-                fprintf(stderr, "  --save ID                     "
+                fprintf(stderr, "  -save ID                     "
                         "Save configuration.\n");
-                fprintf(stderr, "  --depth BITS                  "
+                fprintf(stderr, "  -depth BITS                  "
                         "Bits per pixel [%d bits].\n", cfg.depth);
-                fprintf(stderr, "  --rate FPS                    "
+                fprintf(stderr, "  -rate FPS                    "
                         "Frames per second [%g Hz].\n", cfg.rate);
-                fprintf(stderr, "  --exposure TIME               "
+                fprintf(stderr, "  -exposure TIME               "
                         "Exposure duration in seconds [%g s].\n",
                         cfg.exposure);
-                fprintf(stderr, "  --bias LEVEL                  "
+                fprintf(stderr, "  -bias LEVEL                  "
                         "Black level [%g].\n", cfg.bias);
-                fprintf(stderr, "  --gain VALUE                  "
+                fprintf(stderr, "  -gain VALUE                  "
                         "Gain [%g].\n", cfg.gain);
                 if (cfg.connection.speed != 0) {
                     sprintf(buffer, "%u Mbps",
@@ -103,7 +119,7 @@ main(int argc, char* argv[])
                 } else {
                     strcpy(buffer, "auto");
                 }
-                fprintf(stderr, "  --bitrate VALUE|auto          "
+                fprintf(stderr, "  -bitrate VALUE|auto          "
                         "CoaXPress bitrate [%s].\n", buffer);
                 if (cfg.connection.channels != 0) {
                     sprintf(buffer, "%u",
@@ -111,38 +127,38 @@ main(int argc, char* argv[])
                 } else {
                     strcpy(buffer, "auto");
                 }
-                fprintf(stderr, "  --channels NUMBER|auto        "
+                fprintf(stderr, "  -channels NUMBER|auto        "
                         "Number of CoaXPress channels [%s].\n", buffer);
-                fprintf(stderr, "  --quiet                       "
+                fprintf(stderr, "  -quiet                       "
                         "Quiet (non-verbose) mode.\n");
-                fprintf(stderr, "  -h, --help                    "
+                fprintf(stderr, "  -help                        "
                         "Print this help.\n");
                 exit(0);
-            } else if (strcmp(arg, "--load") == 0) {
+            } else if (strcmp(opt, "load") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--load`");
+                    missing_argument(opt);
                 }
                 if (pass != 1) {
                     continue;
                 }
                 if (sscanf(argv[i], "%d %c", &load_id, &c) != 1 ||
                     load_id < 0) {
-                    fatal("bad argument for option `--load ID`");
+                    invalid_argument(opt);
                 }
-            } else if (strcmp(arg, "--save") == 0) {
+            } else if (strcmp(opt, "save") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--save`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
                 }
                 if (sscanf(argv[i], "%d %c", &save_id, &c) != 1 ||
                     save_id < 0) {
-                    fatal("bad argument for option `--save ID`");
+                    invalid_argument(opt);
                 }
-            } else if (strcmp(arg, "--roi") == 0) {
+            } else if (strcmp(opt, "roi") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--roi`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
@@ -150,67 +166,67 @@ main(int argc, char* argv[])
                 if (sscanf(argv[i], " %d , %d , %d , %d %c",
                            &cfg.roi.xoff, &cfg.roi.yoff,
                            &cfg.roi.width, &cfg.roi.height, &c) != 4) {
-                    fatal("bad argument for option `--roi`, "
+                    fatal("invalid argument for option `-roi`, "
                           "should be `XOFF,YOFF,WIDTH,HEIGHT`");
                 }
-            } else if (strcmp(arg, "--depth") == 0) {
+            } else if (strcmp(opt, "depth") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--depth`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
                 }
                 if (sscanf(argv[i], " %d %c", &cfg.depth, &c) != 1 ||
                     cfg.depth < 1) {
-                    fatal("bad value for option `--depth`");
+                    invalid_argument(opt);
                 }
-            } else if (strcmp(arg, "--rate") == 0) {
+            } else if (strcmp(opt, "rate") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--rate`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
                 }
                 if (sscanf(argv[i], " %lf %c", &cfg.rate, &c) != 1 ||
                     cfg.rate <= 0 || cfg.rate > INT32_MAX) {
-                    fatal("bad value for option `--rate`");
+                    invalid_argument(opt);
                 }
-            } else if (strcmp(arg, "--exposure") == 0) {
+            } else if (strcmp(opt, "exposure") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--exposure`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
                 }
                 if (sscanf(argv[i], " %lf %c", &cfg.exposure, &c) != 1 ||
                     cfg.exposure < 0 || cfg.exposure > INT32_MAX) {
-                    fatal("bad value for option `--exposure`");
+                    invalid_argument(opt);
                 }
-            } else if (strcmp(arg, "--bias") == 0) {
+            } else if (strcmp(opt, "bias") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--bias`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
                 }
                 if (sscanf(argv[i], " %lf %c", &cfg.bias, &c) != 1 ||
                     cfg.bias < 0) {
-                    fatal("bad value for option `--bias`");
+                    invalid_argument(opt);
                 }
-            } else if (strcmp(arg, "--gain") == 0) {
+            } else if (strcmp(opt, "gain") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--gain`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
                 }
                 if (sscanf(argv[i], " %lf %c", &cfg.gain, &c) != 1 ||
                     cfg.gain < 1) {
-                    fatal("bad value for option `--gain`");
+                    invalid_argument(opt);
                 }
-            } else if (strcmp(arg, "--bitrate") == 0) {
+            } else if (strcmp(opt, "bitrate") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--bitrate`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
@@ -221,13 +237,13 @@ main(int argc, char* argv[])
                     unsigned int bitrate;
                     if (sscanf(argv[i], " %u %c", &bitrate, &c) != 1 ||
                         bitrate < 1) {
-                        fatal("bad value for option `--bitrate`");
+                        invalid_argument(opt);
                     }
                     cfg.connection.speed = bitrate;
                 }
-            } else if (strcmp(arg, "--channels") == 0) {
+            } else if (strcmp(opt, "channels") == 0) {
                 if (++i >= argc) {
-                    fatal("missing argument to option `--channels`");
+                    missing_argument(opt);
                 }
                 if (pass != 2) {
                     continue;
@@ -238,14 +254,15 @@ main(int argc, char* argv[])
                     unsigned int channels;
                     if (sscanf(argv[i], " %u %c", &channels, &c) != 1 ||
                         channels < 1 || channels > 4) {
-                        fatal("bad value for option `--channels`");
+                        invalid_argument(opt);
                     }
                     cfg.connection.channels = channels;
                 }
-            } else if (strcmp(arg, "--quiet") == 0) {
+            } else if (strcmp(opt, "quiet") == 0) {
                 quiet = 1;
             } else {
-                fatal("unknown option `%s`", argv[i]);
+                fatal("unknown option `%s`, try `-help` for a short help",
+                      argv[i]);
             }
         }
         if (i < argc) {
