@@ -125,6 +125,7 @@ struct phx_camera {
     int nbufs;             /**< Number of acquisition buffers */
     int last;              /**< Index of last captured image buffer */
     int pending;           /**< Number of pending image buffers */
+    int quitting;          /**< Acquisition is about to finish */
     size_t bufsize;        /**< Size of acquisition buffers */
     uint32_t events;       /**< Mask of events to be signaled */
 };
@@ -257,6 +258,64 @@ extern void
 phx_discard_errors(phx_camera_t* cam);
 
 /**
+ * Lock a camera.
+ *
+ * This function locks the mutex of the camera @p cam.  The caller is
+ * responsible of eventually calling phx_unlock().
+ *
+ * Locking a camera is needed before changing anything in the camera instance
+ * because the camera instance is shared between the thread handling frame
+ * grabber events and the other threads.  The following high level functions
+ * take care of locking/unlocking the camera: phx_start(), phx_stop(),
+ * phx_abort(), phx_wait(), phx_release_buffer(), phx_print_board_info().  All
+ * other functions which take a camera instance as their argument should only
+ * be called while the caller has locked the camera.
+ *
+ * @param cam    Address of camera instance (must be non-`NULL`).
+ */
+extern void
+phx_lock(phx_camera_t* cam);
+
+/**
+ * Try to lock a camera.
+ *
+ * This function attempts to lock the mutex of the camera @p cam.  If the call
+ * is successful, the caller is responsible of eventually calling phx_unlock().
+ *
+ * @param cam    Address of camera instance (must be non-`NULL`).
+ *
+ * @return `1` if camera has been locked by the caller; `0` otherwise (that is,
+ * if the camera is already locked by some other thread/process).
+ */
+extern int
+phx_try_lock(phx_camera_t* cam);
+
+/**
+ * Unlock a camera.
+ *
+ * This function unlocks the mutex of the camera @p cam.  The caller must
+ * have locked the camera @p cam with phx_lock() or phx_try_lock().
+ *
+ * @param cam    Address of camera instance (must be non-`NULL`).
+ */
+extern void
+phx_unlock(phx_camera_t* cam);
+
+/**
+ * Signal the condition variable of a camera.
+ *
+ * This function restarts one of the threads that are waiting on the condition
+ * variable of the camera @p cam.  Nothing happens, if no threads are waiting
+ * on the condition variable of @p cam.  The caller is assumed to have locked
+ * the camera before calling this function and to unlock the camera soon after
+ * calling this function.
+ *
+ * @param cam    Address of camera instance (must be non-`NULL`).
+ */
+extern void
+phx_signal_condition(phx_camera_t* cam);
+
+/**
  * Start continuous acquisition.
  *
  * This function starts continuous acquisition with a given number of virtual
@@ -285,9 +344,10 @@ phx_start(phx_camera_t* cam, int nbufs);
  *
  * @return The index (starting at 1) of the next image available in the ring of
  * virtual buffers.  0 is returned if timeout expired before a new image is
- * available, -1 is returned in case of errors.  If a valid index (>= 1) is
- * returned, the caller shall use the contents of the acquisition buffer as
- * soon as possible and call phx_release_buffer() when this is done.
+ * available or if acquisition of last image was aborted, -1 is returned in
+ * case of errors.  If a valid index (>= 1) is returned, the caller shall use
+ * the contents of the acquisition buffer as soon as possible and call
+ * phx_release_buffer() when this is done.
  *
  * @see phx_release_buffer().
  */

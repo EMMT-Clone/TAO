@@ -10,4 +10,5 @@
   a certain kind of errors happens to fix spurious errors when setting
   some parameters like the pixel format.
 
-* PHX errors are juste printed not added to the error stack.
+* The way the end of acquisition is signaled makes the "stop" command behaves
+  as the "abort" one.

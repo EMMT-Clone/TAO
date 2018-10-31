@@ -43,14 +43,66 @@ static struct {
     {NULL, NULL, NULL}
 };
 
-#define lock_mutex(cam) tao_lock_mutex(&(cam)->errs, &(cam)->mutex)
+/*---------------------------------------------------------------------------*/
+/* LOCKS */
 
-#define unlock_mutex(cam) tao_unlock_mutex(&(cam)->errs, &(cam)->mutex)
+/*
+ * We should not modify anything in the camera instance unless we own the
+ * camera lock.  As a consequence errors cannot be safely tracked by means of
+ * the camera error stack while locking/unlocking the camera.  We have to
+ * assume that any errors occuring during theese operations are fatal.  In
+ * fact, any errors occuring while locking/unlocking are an indication of bugs
+ * and aborting the program is the best we can do.
+ *
+ * Note that pthread_cond_init, pthread_cond_signal, pthread_cond_broadcast,
+ * and pthread_cond_wait never return an error code.  The
+ * pthread_cond_timedwait function may return ETIMEDOUT is the condition
+ * variable was not signaled until the specified timeout or EINTR if the call
+ * was interrupted by a signal.
+ */
 
-#define try_lock_mutex(cam) tao_try_lock_mutex(&(cam)->errs, &(cam)->mutex)
+void
+phx_lock(phx_camera_t* cam)
+{
+    int code = pthread_mutex_lock(&cam->mutex);
+    if (code != 0) {
+        /* This is a fatal error. */
+        tao_push_error(NULL, "pthread_mutex_lock", code);
+    }
+}
 
-#define signal_condition(cam)                       \
-    tao_signal_condition(&(cam)->errs, &(cam)->cond)
+int
+phx_try_lock(phx_camera_t* cam)
+{
+    int code = pthread_mutex_trylock(&cam->mutex);
+    if (code == 0) {
+        return 1;
+    } else if (code == EBUSY) {
+        return 0;
+    } else {
+        /* This is a fatal error. */
+        tao_push_error(NULL, "pthread_mutex_trylock", code);
+        return -1;
+    }
+}
+
+void
+phx_unlock(phx_camera_t* cam)
+{
+    int code = pthread_mutex_unlock(&cam->mutex);
+    if (code != 0) {
+        /* This is a fatal error. */
+        tao_push_error(NULL, "pthread_mutex_unlock", code);
+    }
+}
+
+void
+phx_signal_condition(phx_camera_t* cam)
+{
+    /* Manual pages say that pthread_cond_signal never returns an error
+       code. */
+    (void)pthread_cond_signal(&cam->cond);
+}
 
 /*---------------------------------------------------------------------------*/
 /* ERROR MANAGEMENT */
@@ -396,10 +448,8 @@ acquisition_callback(phx_handle_t handle, uint32_t events, void* data)
     phx_imgbuf_t imgbuf;
     struct timespec ts;
 
-    /* Lock the context and make minimal sanity check. */
-    if (lock_mutex(cam) != 0) {
-        return;
-    }
+    /* Lock the camera and make minimal sanity check. */
+    phx_lock(cam);
     if (cam->handle != handle) {
         tao_push_error(&cam->errs, __func__, TAO_ASSERTION_FAILED);
         goto unlock;
@@ -439,35 +489,42 @@ acquisition_callback(phx_handle_t handle, uint32_t events, void* data)
         ++cam->frames;
         ++cam->lostsyncs;
     }
-    if ((cam->events & events) != 0) {
+    if (cam->quitting || (cam->events & events) != 0) {
         /* Signal condition for waiting thread. */
-        signal_condition(cam);
+        phx_signal_condition(cam);
     }
 
     /* Unlock the context. */
  unlock:
-    unlock_mutex(cam);
+    phx_unlock(cam);
 }
 
 int
 phx_start(phx_camera_t* cam, int nbufs)
 {
+    /*
+     * Assume failure because any early returns mean something wrong happens.
+     */
+    int status = -1;
 
     /* Minimal checks. */
     if (cam == NULL) {
-        return -1;
+        return status;
     }
+
+    /* Lock the camera and check state. */
+    phx_lock(cam);
     if (cam->state != 1) {
         tao_push_error(&cam->errs, __func__,
                        (cam->state == 0 ? TAO_NOT_READY :
                         (cam->state == 2 ? TAO_ACQUISITION_RUNNING :
                          TAO_CORRUPTED)));
-        return -1;
+        goto unlock;
     }
 
     /* Allocate virtual buffers. */
     if (allocate_virtual_buffers(cam, nbufs) != 0) {
-        return -1;
+        goto unlock;;
     }
 
     /*
@@ -485,7 +542,7 @@ phx_start(phx_camera_t* cam, int nbufs)
         phx_set_parameter(cam,  PHX_DST_PTRS_VIRT,    cam->bufs) != 0 ||
         phx_set(cam, (PHX_DST_PTR_TYPE|PHX_CACHE_FLUSH|
                       PHX_FORCE_REWRITE), PHX_DST_PTR_USER_VIRT) != 0) {
-        return -1;
+        goto unlock;;
     }
 
     /*
@@ -501,29 +558,38 @@ phx_start(phx_camera_t* cam, int nbufs)
         phx_set(cam, PHX_ACQ_BLOCKING,    PHX_ENABLE) != 0 ||
         phx_set(cam, PHX_ACQ_CONTINUOUS,  PHX_ENABLE) != 0 ||
         phx_set(cam, PHX_COUNT_BUFFER_READY,       1) != 0) {
-        return -1;
+        goto unlock;;
     }
 
     /* Setup callback context. */
     if (phx_set_parameter(cam, PHX_EVENT_CONTEXT, (void*)cam) != 0) {
-        return -1;
+        goto unlock;;
     }
 
     /* Start acquisition with given callback. */
     if (phx_read_stream(cam, PHX_START, acquisition_callback) != 0) {
-        return -1;
+        goto unlock;;
     }
 
     /* Send specific start command. */
     if (cam->start != NULL && cam->start(cam) != 0) {
         phx_read_stream(cam, PHX_ABORT, NULL);
         phx_read_stream(cam, PHX_UNLOCK, NULL);
-        return -1;
+        goto unlock;;
     }
 
-    /* Update state and return. */
+    /*
+     * Update state and quitting status.  Then change status to reflect
+     * success.
+     */
     cam->state = 2;
-    return 0;
+    cam->quitting = 0;
+    status = 0;
+
+    /* Unlock the camera and return status. */
+ unlock:
+    phx_unlock(cam);
+    return status;
 }
 
 /*
@@ -545,57 +611,65 @@ phx_start(phx_camera_t* cam, int nbufs)
 int
 phx_release_buffer(phx_camera_t* cam)
 {
+    int status = -1;
+    if (cam == NULL) {
+        return status;
+    }
+    phx_lock(cam);
     if (cam->pending <= 0) {
         cam->pending = 0;
         tao_push_error(&cam->errs, __func__, TAO_OUT_OF_RANGE);
-        return -1;
+        goto unlock;
     }
     --cam->pending;
-    return phx_read_stream(cam, PHX_BUFFER_RELEASE, NULL);
+    status = phx_read_stream(cam, PHX_BUFFER_RELEASE, NULL);
+ unlock:
+    phx_unlock(cam);
+    return status;
 }
 
 int
 phx_wait(phx_camera_t* cam, double secs, int drop)
 {
     struct timespec ts;
-    int forever, code, index = -1;
+    int forever, code;
 
-    /* Check state. */
+    /*
+     * Lock camera and check state.  Assume failure because any early returns
+     * mean something wrong happens.
+     */
+    int index = -1;
+    if (cam == NULL) {
+        return index;
+    }
+    phx_lock(cam);
     if (cam->state != 2) {
         tao_push_error(&cam->errs, __func__,
                        ((cam->state == 0 || cam->state == 1) ?
                         TAO_NO_ACQUISITION : TAO_CORRUPTED));
-        return index;
+        goto unlock;
     }
 
     /* Compute absolute time for time-out. */
     if (isnan(secs) || secs < 0) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
-        return index;
+        goto unlock;
     }
     if (secs > TAO_YEAR) {
         forever = TRUE;
     } else {
         if (tao_get_absolute_timeout(&cam->errs, &ts, secs) != 0) {
-            return index;
+            goto unlock;
         }
         forever = FALSE;
     }
 
     /*
-     * Lock mutex and wait for next image, taking care to not throw anything
-     * while the mutex is locked.
+     * While there are no pending frames, wait for the condition to be signaled
+     * or an error to occur.  This is done in a `while` loop to cope with
+     * spurious signaled conditions.
      */
-    if (lock_mutex(cam) != 0) {
-        return index;
-    }
-
-    /*
-     * While there are no pending frames, wait for the condition to be
-     * signaled or an error to occur.  This is done in a `while` loop to
-     * cope with spurious signaled conditions.
-     */
-    while (cam->pending < 1) {
+    while (! cam->quitting && cam->pending < 1) {
         if (forever) {
             code = pthread_cond_wait(&cam->cond, &cam->mutex);
             if (code != 0) {
@@ -615,47 +689,52 @@ phx_wait(phx_camera_t* cam, double secs, int drop)
         }
     }
 
-    if (drop) {
-        /* Get rid of unprocessed pending image buffers. */
-        while (cam->pending > 1) {
-            ++cam->overflows;
-            if (phx_release_buffer(cam) != 0) {
-                goto unlock;
+    if (! cam->quitting) {
+        /*
+         * If requested, get rid of unprocessed pending image buffers.
+         */
+        if (drop) {
+            while (cam->pending > 1) {
+                ++cam->overflows;
+                if (phx_release_buffer(cam) != 0) {
+                    goto unlock;
+                }
             }
         }
-    }
 
-    /*
-     * At least one image buffer is unprocessed, manage to return the 1-based
-     * index of this buffer.
-     */
-    int k = (cam->last + 1 - cam->pending)%cam->nbufs;
-    index = k + (k >= 0 ? 1 : 1 + cam->nbufs);
+        /*
+         * At least one image buffer is unprocessed, manage to return the
+         * 1-based index of this buffer.
+         */
+        int k = (cam->last + 1 - cam->pending)%cam->nbufs;
+        index = k + (k >= 0 ? 1 : 1 + cam->nbufs);
+    }
 
     /* Unlock the mutex (whatever the errors so far). */
  unlock:
-    if (unlock_mutex(cam) != 0) {
-        index = -1;
-    }
+    phx_unlock(cam);
     return index;
 }
 
 static int
 stop_acquisition(phx_camera_t* cam, phx_acquisition_t command)
 {
-    int status = 0;
-
     /* Minimal checks. */
     if (cam == NULL) {
         return -1;
     }
+
+    /* Assume success and lock the camera. */
+    int status = 0;
+    phx_lock(cam);
     if (cam->state != 2) {
         tao_push_error(&cam->errs,
                        (command == PHX_STOP ? "phx_stop" : "phx_abort"),
                        (cam->state < 2 ?
                         TAO_NO_ACQUISITION :
                         TAO_CORRUPTED));
-        return -1;
+        status = -1;
+        goto unlock;
     }
 
     /* Stop/abort acquisition. */
@@ -672,7 +751,14 @@ stop_acquisition(phx_camera_t* cam, phx_acquisition_t command)
     if (cam->stop != NULL && cam->stop(cam) != 0) {
         status = -1;
     }
+
+    /* Change camera state and signal the end of the acquisition to others. */
     cam->state = 1;
+    cam->quitting = 1;
+    phx_signal_condition(cam);
+
+ unlock:
+    phx_unlock(cam);
     return status;
 }
 
@@ -896,7 +982,9 @@ phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg)
         if (cam == NULL) {
             memset(cfg, 0, sizeof(phx_config_t));
         } else {
+            // FIXME: phx_lock(cam);
             memcpy(cfg, &cam->dev_cfg, sizeof(phx_config_t));
+            // FIXME: phx_unlock(cam);
         }
     }
 }
@@ -1103,15 +1191,26 @@ cxp_read_indirect_uint32(phx_camera_t* cam, uint32_t addr, uint32_t* value)
 int
 phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
 {
-    phx_value_t bits;
+    /* Minimal checks and set defaults. */
+    if (cam == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
     if (pfx == NULL) {
         pfx = "";
     }
     if (stream == NULL) {
         stream = stdout;
     }
-    if (phx_get(cam, PHX_BOARD_INFO, &bits) != 0) {
-        return -1;
+
+    /* Assume failure and lock the camera. */
+    int status = -1;
+    phx_lock(cam);
+
+    /* Retrieve information. */
+    phx_value_t bits;
+     if (phx_get(cam, PHX_BOARD_INFO, &bits) != 0) {
+        goto unlock;;
     }
 #define PRT(msk, txt)                                   \
     do {                                                \
@@ -1132,7 +1231,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
     if ((bits & PHX_BOARD_INFO_PCI_EXPRESS) != PHX_BOARD_INFO_PCI_EXPRESS) {
         phx_value_t val;
         if (phx_get(cam, PHX_PCIE_INFO, &val) != 0) {
-            return -1;
+            goto unlock;;
         }
         switch ((int)(val & PHX_EMASK_PCIE_INFO_LINK_GEN)) {
             CASE(PHX_PCIE_INFO_LINK_GEN1,
@@ -1210,7 +1309,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
 
     /* CoaXPress information. */
     if (phx_get(cam, PHX_CXP_INFO, &bits) != 0) {
-        return -1;
+        goto unlock;;
     }
     PRT(PHX_CXP_CAMERA_DISCOVERED,
         "The CoaXPress camera has completed discovery");
@@ -1233,7 +1332,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
     if (bits != 0) {
         phx_value_t val;
         if (phx_get(cam, PHX_CXP_BITRATE, &val) != 0) {
-            return -1;
+            goto unlock;;
         }
         switch ((int)val) {
             CASE(PHX_CXP_BITRATE_UNKNOWN, "No CoaXPress camera is connected, "
@@ -1245,7 +1344,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
             CASE(PHX_CXP_BITRATE_CXP6, "The high speed bitrate is 6.25 Gbps");
         }
         if (phx_get(cam, PHX_CXP_BITRATE_MODE, &val) != 0) {
-            return -1;
+            goto unlock;;
         }
         switch ((int)val) {
             CASE1(PHX_CXP_BITRATE_MODE_AUTO);
@@ -1256,7 +1355,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
             CASE1(PHX_CXP_BITRATE_MODE_CXP6);
         }
         if (phx_get(cam, PHX_CXP_DISCOVERY, &val) != 0) {
-            return -1;
+            goto unlock;;
         }
         switch ((int)val) {
             CASE(PHX_CXP_DISCOVERY_UNKNOWN, "No CoaXPress camera is connected, "
@@ -1269,7 +1368,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
                  "The camera is using four CoaXPress links");
         }
         if (phx_get(cam, PHX_CXP_DISCOVERY_MODE, &val) != 0) {
-            return -1;
+            goto unlock;;
         }
         switch ((int)val) {
             CASE1(PHX_CXP_DISCOVERY_MODE_AUTO);
@@ -1278,7 +1377,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
             CASE1(PHX_CXP_DISCOVERY_MODE_4X);
         }
         if (phx_get(cam, PHX_CXP_POCXP_MODE, &val) != 0) {
-            return -1;
+            goto unlock;;
         }
         switch ((int)val) {
             CASE1(PHX_CXP_POCXP_MODE_AUTO);
@@ -1290,7 +1389,10 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
 #undef CASE
 #undef CASE1
 #undef PRT
-    return 0;
+    status = 0;
+ unlock:
+    phx_unlock(cam);
+    return status;
 }
 
 int
