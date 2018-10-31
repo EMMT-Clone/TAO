@@ -1291,7 +1291,7 @@ phx_print_camera_info(phx_camera_t* cam, FILE* stream)
     fprintf(stream, "CoaXPress camera: %s\n",
             (cam->coaxpress ? "yes" : "no"));
     fprintf(stream, "Board information:\n");
-    if (phx_print_board_info(cam, "  ", stream) != 0) {
+    if (phx_print_board_info(cam, "    ", stream) != 0) {
         status = -1;
     }
     fprintf(stream, "Connection channels: %u\n",
@@ -1355,13 +1355,29 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
 #define CASE(cst, txt) case cst: fprintf(stream, "%s%s\n", pfx, txt); break
 #define CASE1(cst) CASE(cst, #cst)
 
-    PRT(PHX_BOARD_INFO_PCI_3V, "PC slot is PCI 3.3V");
-    PRT(PHX_BOARD_INFO_PCI_5V, "PC slot is PCI 5V");
-    PRT(PHX_BOARD_INFO_PCI_33M, "PC slot is PCI 33 MHz");
-    PRT(PHX_BOARD_INFO_PCI_66M, "PC slot is PCI 66 MHz");
-    PRT(PHX_BOARD_INFO_PCI_32B, "PC slot is PCI 32 bit");
-    PRT(PHX_BOARD_INFO_PCI_64B, "PC slot is PCI 64 bit");
-    PRT(PHX_BOARD_INFO_PCI_EXPRESS, "PC slot is PCI Express");
+    PRT(PHX_BOARD_INFO_LVDS, "Board has LVDS camera interface");
+    PRT(PHX_BOARD_INFO_CL, "Board has Camera Link interface");
+    PRT(PHX_BOARD_INFO_CL_BASE,
+        "Board is using Camera Link Base interface only");
+    PRT(PHX_BOARD_INFO_CL_MEDIUM,
+        "Board is using Camera Link Medium interface");
+    PRT(PHX_BOARD_INFO_CL_FULL, "Board is using Camera Link Full interface");
+    PRT(PHX_BOARD_INFO_PCI_EXPRESS, "Board has PCI Express interface");
+    PRT(PHX_BOARD_INFO_PCI_3V, "3V PCI Interface");
+    PRT(PHX_BOARD_INFO_PCI_5V, "5V PCI Interface");
+    PRT(PHX_BOARD_INFO_PCI_33M, "33MHz PCI Interface");
+    PRT(PHX_BOARD_INFO_PCI_66M, "66MHz PCI Interface");
+    PRT(PHX_BOARD_INFO_PCI_32B, "32bit PCI Interface");
+    PRT(PHX_BOARD_INFO_PCI_64B, "64bit PCI Interface");
+    PRT(PHX_BOARD_INFO_BOARD_3V, "Board is 3V compatible");
+    PRT(PHX_BOARD_INFO_BOARD_5V, "Board is 5V compatible");
+    PRT(PHX_BOARD_INFO_BOARD_33M, "Board is 33MHz compatible");
+    PRT(PHX_BOARD_INFO_BOARD_66M, "Board is 66MHz compatible");
+    PRT(PHX_BOARD_INFO_BOARD_32B, "Board is 32bit compatible");
+    PRT(PHX_BOARD_INFO_BOARD_64B, "Board is 64bit compatible");
+    PRT(PHX_BOARD_INFO_CHAIN_MASTER, "Board has chaining jumper set to Master");
+    PRT(PHX_BOARD_INFO_CHAIN_SLAVE, "Board has chaining jumper set to Slave");
+
     if ((bits & PHX_BOARD_INFO_PCI_EXPRESS) != PHX_BOARD_INFO_PCI_EXPRESS) {
         phx_value_t val;
         if (phx_get(cam, PHX_PCIE_INFO, &val) != 0) {
@@ -1427,19 +1443,6 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
             CASE(PHX_PCIE_INFO_SLOT_X32, "Slot x32");
         }
     }
-    PRT(PHX_BOARD_INFO_LVDS, "Board has LVDS camera interface");
-    PRT(PHX_BOARD_INFO_CL, "Board has Camera Link interface");
-    PRT(PHX_BOARD_INFO_CL_BASE, "Board using Camera Link Base interface");
-    PRT(PHX_BOARD_INFO_CL_MEDIUM, "Board using Camera Link Medium interface");
-    PRT(PHX_BOARD_INFO_CL_FULL, "Board using Camera Link Full interface");
-    PRT(PHX_BOARD_INFO_CHAIN_MASTER, "Board has chaining jumper set to Master");
-    PRT(PHX_BOARD_INFO_CHAIN_SLAVE, "Board has chaining jumper set to Slave");
-    PRT(PHX_BOARD_INFO_BOARD_3V, "Board is PCI 3.3V compatible");
-    PRT(PHX_BOARD_INFO_BOARD_5V, "Board is PCI 5V compatible");
-    PRT(PHX_BOARD_INFO_BOARD_33M, "Board is PCI 33 MHz compatible");
-    PRT(PHX_BOARD_INFO_BOARD_66M, "Board is PCI 66 MHz compatible");
-    PRT(PHX_BOARD_INFO_BOARD_32B, "Board is PCI 32 bit compatible");
-    PRT(PHX_BOARD_INFO_BOARD_64B, "Board is PCI 64 bit compatible");
 
     /* CoaXPress information. */
     if (phx_get(cam, PHX_CXP_INFO, &bits) != 0) {
@@ -1454,10 +1457,31 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
     PRT(PHX_CXP_POCXP_TRIPPED,
         "The PoCXP supply to the camera has been shutdown because high "
         "current was detected");
-    PRT(PHX_CXP_LINK1_USED, "CoaXPress link 1 is in use");
-    PRT(PHX_CXP_LINK2_USED, "CoaXPress link 2 is in use");
-    PRT(PHX_CXP_LINK3_USED, "CoaXPress link 3 is in use");
-    PRT(PHX_CXP_LINK4_USED, "CoaXPress link 4 is in use");
+    int links[4], nlinks = 0;
+    if ((bits & PHX_CXP_LINK1_USED) != 0) {
+        links[nlinks++] = 1;
+    }
+    if ((bits & PHX_CXP_LINK2_USED) != 0) {
+        links[nlinks++] = 2;
+    }
+    if ((bits & PHX_CXP_LINK3_USED) != 0) {
+        links[nlinks++] = 3;
+    }
+    if ((bits & PHX_CXP_LINK4_USED) != 0) {
+        links[nlinks++] = 4;
+    }
+    if (nlinks == 0) {
+        fprintf(stream, "%sNo CoaXPress links in use\n", pfx);
+    } else if (nlinks == 1) {
+        fprintf(stream, "%sCoaXPress link %d in use\n", pfx, links[0]);
+    } else {
+        fprintf(stream, "%sCoaXPress links ", pfx);
+        for (int i = 0; i < nlinks; ++i) {
+            fprintf(stream, "%d%s", links[i],
+                    (i < nlinks - 2 ? ", " :
+                     (i == nlinks - 2 ? " and " : " are in use\n")));
+        }
+    }
     PRT(PHX_CXP_LINK1_MASTER, "CoaXPress link 1 is the master link");
     PRT(PHX_CXP_LINK2_MASTER, "CoaXPress link 2 is the master link");
     PRT(PHX_CXP_LINK3_MASTER, "CoaXPress link 3 is the master link");
@@ -1471,22 +1495,11 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
         switch ((int)val) {
             CASE(PHX_CXP_BITRATE_UNKNOWN, "No CoaXPress camera is connected, "
                  "or a camera has not completed discovery");
-            CASE(PHX_CXP_BITRATE_CXP1, "The high speed bitrate is 1.25 Gbps");
-            CASE(PHX_CXP_BITRATE_CXP2, "The high speed bitrate is 2.5 Gbps");
-            CASE(PHX_CXP_BITRATE_CXP3, "The high speed bitrate is 3.125 Gbps");
-            CASE(PHX_CXP_BITRATE_CXP5, "The high speed bitrate is 5 Gbps");
-            CASE(PHX_CXP_BITRATE_CXP6, "The high speed bitrate is 6.25 Gbps");
-        }
-        if (phx_get(cam, PHX_CXP_BITRATE_MODE, &val) != 0) {
-            goto unlock;;
-        }
-        switch ((int)val) {
-            CASE1(PHX_CXP_BITRATE_MODE_AUTO);
-            CASE1(PHX_CXP_BITRATE_MODE_CXP1);
-            CASE1(PHX_CXP_BITRATE_MODE_CXP2);
-            CASE1(PHX_CXP_BITRATE_MODE_CXP3);
-            CASE1(PHX_CXP_BITRATE_MODE_CXP5);
-            CASE1(PHX_CXP_BITRATE_MODE_CXP6);
+            CASE(PHX_CXP_BITRATE_CXP1, "Bitrate is 1250 Mbps");
+            CASE(PHX_CXP_BITRATE_CXP2, "Bitrate is 2500 Mbps");
+            CASE(PHX_CXP_BITRATE_CXP3, "Bitrate is 3125 Mbps");
+            CASE(PHX_CXP_BITRATE_CXP5, "Bitrate is 5000 Mbps");
+            CASE(PHX_CXP_BITRATE_CXP6, "Bitrate is 6250 Mbps");
         }
         if (phx_get(cam, PHX_CXP_DISCOVERY, &val) != 0) {
             goto unlock;;
@@ -1500,6 +1513,17 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
                  "The camera is using two CoaXPress links");
             CASE(PHX_CXP_DISCOVERY_4X,
                  "The camera is using four CoaXPress links");
+        }
+        if (phx_get(cam, PHX_CXP_BITRATE_MODE, &val) != 0) {
+            goto unlock;;
+        }
+        switch ((int)val) {
+            CASE1(PHX_CXP_BITRATE_MODE_AUTO);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP1);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP2);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP3);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP5);
+            CASE1(PHX_CXP_BITRATE_MODE_CXP6);
         }
         if (phx_get(cam, PHX_CXP_DISCOVERY_MODE, &val) != 0) {
             goto unlock;;
