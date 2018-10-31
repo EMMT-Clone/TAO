@@ -112,5 +112,5 @@ phx_status_description(phx_status_t status)\n\
     default: return \"Unknown error\";\n\
     }\n\
 }\n", output);
-  return 0;
+    return 0;
 }

@@ -86,38 +86,38 @@ static int error_handler_level = 1;
 void
 phx_set_error_handler_verbosity(int level)
 {
-  if (pthread_mutex_lock(&error_handler_mutex) == 0) {
-    error_handler_level = level;
-    (void)pthread_mutex_unlock(&error_handler_mutex);
-  }
+    if (pthread_mutex_lock(&error_handler_mutex) == 0) {
+        error_handler_level = level;
+        (void)pthread_mutex_unlock(&error_handler_mutex);
+    }
 }
 
 int
 phx_get_error_handler_verbosity()
 {
-  int level = -1;
-  if (pthread_mutex_lock(&error_handler_mutex) == 0) {
-    level = error_handler_level;
-    (void)pthread_mutex_unlock(&error_handler_mutex);
-  }
-  return level;
+    int level = -1;
+    if (pthread_mutex_lock(&error_handler_mutex) == 0) {
+        level = error_handler_level;
+        (void)pthread_mutex_unlock(&error_handler_mutex);
+    }
+    return level;
 }
 
 static void
 error_handler(const char* funcname, phx_status_t errcode, const char* reason)
 {
-  if (errcode != PHX_OK) {
-    int level = phx_get_error_handler_verbosity();
-    if (level >= 2) {
-        if (reason != NULL && reason[0] != '\0') {
-            fprintf(stderr, "Function %s failed with code 0x%08x.\n%s\n",
-                    funcname, (unsigned int)errcode, reason);
-        } else {
-            fprintf(stderr, "Function %s failed with code 0x%08x.\n",
-                    funcname, (unsigned int)errcode);
+    if (errcode != PHX_OK) {
+        int level = phx_get_error_handler_verbosity();
+        if (level >= 2) {
+            if (reason != NULL && reason[0] != '\0') {
+                fprintf(stderr, "Function %s failed with code 0x%08x.\n%s\n",
+                        funcname, (unsigned int)errcode, reason);
+            } else {
+                fprintf(stderr, "Function %s failed with code 0x%08x.\n",
+                        funcname, (unsigned int)errcode);
+            }
         }
     }
-  }
 }
 
 const char*
@@ -189,37 +189,37 @@ swap2(void* ptr)
 static void
 swap4(void* ptr)
 {
-  uint8_t* buf = ptr;
-  uint8_t c0 = buf[0];
-  uint8_t c1 = buf[1];
-  uint8_t c2 = buf[2];
-  uint8_t c3 = buf[3];
-  buf[0] = c3;
-  buf[1] = c2;
-  buf[2] = c1;
-  buf[3] = c0;
+    uint8_t* buf = ptr;
+    uint8_t c0 = buf[0];
+    uint8_t c1 = buf[1];
+    uint8_t c2 = buf[2];
+    uint8_t c3 = buf[3];
+    buf[0] = c3;
+    buf[1] = c2;
+    buf[2] = c1;
+    buf[3] = c0;
 }
 
 static void
 swap8(void* ptr)
 {
-  uint8_t* buf = ptr;
-  uint8_t c0 = buf[0];
-  uint8_t c1 = buf[1];
-  uint8_t c2 = buf[2];
-  uint8_t c3 = buf[3];
-  uint8_t c4 = buf[4];
-  uint8_t c5 = buf[5];
-  uint8_t c6 = buf[6];
-  uint8_t c7 = buf[7];
-  buf[0] = c7;
-  buf[1] = c6;
-  buf[2] = c5;
-  buf[3] = c4;
-  buf[4] = c3;
-  buf[5] = c2;
-  buf[6] = c1;
-  buf[7] = c0;
+    uint8_t* buf = ptr;
+    uint8_t c0 = buf[0];
+    uint8_t c1 = buf[1];
+    uint8_t c2 = buf[2];
+    uint8_t c3 = buf[3];
+    uint8_t c4 = buf[4];
+    uint8_t c5 = buf[5];
+    uint8_t c6 = buf[6];
+    uint8_t c7 = buf[7];
+    buf[0] = c7;
+    buf[1] = c6;
+    buf[2] = c5;
+    buf[3] = c4;
+    buf[4] = c3;
+    buf[5] = c2;
+    buf[6] = c1;
+    buf[7] = c0;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -466,42 +466,42 @@ phx_start(phx_camera_t* cam, int nbufs)
         return -1;
     }
 
-  /*
-   * Configure frame grabber for continuous acquisition and enable interrupts
-   * for expected events.
-   */
-  phx_value_t events = (PHX_INTRPT_GLOBAL_ENABLE |
-                        PHX_INTRPT_BUFFER_READY  |
-                        PHX_INTRPT_FIFO_OVERFLOW |
-                        PHX_INTRPT_SYNC_LOST);
-  if (phx_set(cam, PHX_INTRPT_CLR, ~(phx_value_t)0) != 0 ||
-      phx_set(cam, PHX_INTRPT_SET,          events) != 0 ||
-      phx_set(cam, PHX_ACQ_BLOCKING,    PHX_ENABLE) != 0 ||
-      phx_set(cam, PHX_ACQ_CONTINUOUS,  PHX_ENABLE) != 0 ||
-      phx_set(cam, PHX_COUNT_BUFFER_READY,       1) != 0) {
-      return -1;
-  }
+    /*
+     * Configure frame grabber for continuous acquisition and enable interrupts
+     * for expected events.
+     */
+    phx_value_t events = (PHX_INTRPT_GLOBAL_ENABLE |
+                          PHX_INTRPT_BUFFER_READY  |
+                          PHX_INTRPT_FIFO_OVERFLOW |
+                          PHX_INTRPT_SYNC_LOST);
+    if (phx_set(cam, PHX_INTRPT_CLR, ~(phx_value_t)0) != 0 ||
+        phx_set(cam, PHX_INTRPT_SET,          events) != 0 ||
+        phx_set(cam, PHX_ACQ_BLOCKING,    PHX_ENABLE) != 0 ||
+        phx_set(cam, PHX_ACQ_CONTINUOUS,  PHX_ENABLE) != 0 ||
+        phx_set(cam, PHX_COUNT_BUFFER_READY,       1) != 0) {
+        return -1;
+    }
 
-  /* Setup callback context. */
-  if (phx_set_parameter(cam, PHX_EVENT_CONTEXT, (void*)cam) != 0) {
-      return -1;
-  }
+    /* Setup callback context. */
+    if (phx_set_parameter(cam, PHX_EVENT_CONTEXT, (void*)cam) != 0) {
+        return -1;
+    }
 
-  /* Start acquisition with given callback. */
-  if (phx_read_stream(cam, PHX_START, acquisition_callback) != 0) {
-      return -1;
-  }
+    /* Start acquisition with given callback. */
+    if (phx_read_stream(cam, PHX_START, acquisition_callback) != 0) {
+        return -1;
+    }
 
-  /* Send specific start command. */
-  if (cam->start != NULL && cam->start(cam) != 0) {
-      phx_read_stream(cam, PHX_ABORT, NULL);
-      phx_read_stream(cam, PHX_UNLOCK, NULL);
-      return -1;
-  }
+    /* Send specific start command. */
+    if (cam->start != NULL && cam->start(cam) != 0) {
+        phx_read_stream(cam, PHX_ABORT, NULL);
+        phx_read_stream(cam, PHX_UNLOCK, NULL);
+        return -1;
+    }
 
-  /* Update state and return. */
-  cam->state = 2;
-  return 0;
+    /* Update state and return. */
+    cam->state = 2;
+    return 0;
 }
 
 /*
@@ -672,52 +672,52 @@ phx_abort(phx_camera_t* cam)
 static int
 check_coaxpress(phx_camera_t* cam)
 {
-  phx_value_t info;
-  uint32_t magic, width, height, pixel_format;
+    phx_value_t info;
+    uint32_t magic, width, height, pixel_format;
 
-  if (phx_get_parameter(cam, PHX_CXP_INFO, &info) != 0) {
-      return -1;
-  }
-  cam->coaxpress = FALSE;
-  if ((info & PHX_CXP_CAMERA_DISCOVERED) != 0) {
-      /*
-       * The frame grabber thinks that we have a CoaXPress camera.  We check
-       * the magic number and set the byte order for CoaXPress communication.
-       */
-      if (cxp_get(cam, STANDARD, &magic) != 0) {
-      bad_magic:
-          tao_push_error(&cam->errs, __func__, TAO_BAD_MAGIC);
-          return -1;
-      }
-      if (magic != CXP_MAGIC) {
-          swap4(&magic);
-          if (magic != CXP_MAGIC) {
-              goto bad_magic;
-          }
-          cam->swap = ! cam->swap;
-      }
-      cam->coaxpress = TRUE;
+    if (phx_get_parameter(cam, PHX_CXP_INFO, &info) != 0) {
+        return -1;
+    }
+    cam->coaxpress = FALSE;
+    if ((info & PHX_CXP_CAMERA_DISCOVERED) != 0) {
+        /*
+         * The frame grabber thinks that we have a CoaXPress camera.  We check
+         * the magic number and set the byte order for CoaXPress communication.
+         */
+        if (cxp_get(cam, STANDARD, &magic) != 0) {
+        bad_magic:
+            tao_push_error(&cam->errs, __func__, TAO_BAD_MAGIC);
+            return -1;
+        }
+        if (magic != CXP_MAGIC) {
+            swap4(&magic);
+            if (magic != CXP_MAGIC) {
+                goto bad_magic;
+            }
+            cam->swap = ! cam->swap;
+        }
+        cam->coaxpress = TRUE;
 
-      /*
-       * Get pixel format, current image size (full width and full height must
-       * be correctly set later), device vendor name and device model name.
-       */
-      if (cxp_get(cam, PIXEL_FORMAT_ADDRESS, &pixel_format) != 0 ||
-          cxp_get(cam, WIDTH_ADDRESS,               &width) != 0 ||
-          cxp_get(cam, HEIGHT_ADDRESS,             &height) != 0 ||
-          cxp_get(cam, DEVICE_VENDOR_NAME,     cam->vendor) != 0 ||
-          cxp_get(cam, DEVICE_MODEL_NAME,       cam->model) != 0) {
-          return -1;
-      }
-      cam->pixel_format        = pixel_format;
-      cam->dev_cfg.roi.xoff    = 0;
-      cam->dev_cfg.roi.yoff    = 0;
-      cam->dev_cfg.roi.width   = width;
-      cam->dev_cfg.roi.height  = height;
-      cam->fullwidth           = width;
-      cam->fullheight          = height;
-  }
-  return 0;
+        /*
+         * Get pixel format, current image size (full width and full height must
+         * be correctly set later), device vendor name and device model name.
+         */
+        if (cxp_get(cam, PIXEL_FORMAT_ADDRESS, &pixel_format) != 0 ||
+            cxp_get(cam, WIDTH_ADDRESS,               &width) != 0 ||
+            cxp_get(cam, HEIGHT_ADDRESS,             &height) != 0 ||
+            cxp_get(cam, DEVICE_VENDOR_NAME,     cam->vendor) != 0 ||
+            cxp_get(cam, DEVICE_MODEL_NAME,       cam->model) != 0) {
+            return -1;
+        }
+        cam->pixel_format        = pixel_format;
+        cam->dev_cfg.roi.xoff    = 0;
+        cam->dev_cfg.roi.yoff    = 0;
+        cam->dev_cfg.roi.width   = width;
+        cam->dev_cfg.roi.height  = height;
+        cam->fullwidth           = width;
+        cam->fullheight          = height;
+    }
+    return 0;
 }
 
 phx_camera_t*
@@ -1053,26 +1053,26 @@ FUNCTIONS(float64, float64_t, 8)
 int
 cxp_read_string(phx_camera_t* cam, uint32_t addr, uint32_t len, char* buf)
 {
-  uint32_t count = len;
-  if (cxp_read(cam, addr, (uint8_t*)buf, &count) != 0) {
-      return -1;
-  }
-  buf[MIN(len, count)] = '\0';
-  return 0;
+    uint32_t count = len;
+    if (cxp_read(cam, addr, (uint8_t*)buf, &count) != 0) {
+        return -1;
+    }
+    buf[MIN(len, count)] = '\0';
+    return 0;
 }
 
 int
 cxp_read_indirect_uint32(phx_camera_t* cam, uint32_t addr, uint32_t* value)
 {
-  uint32_t regaddr;
+    uint32_t regaddr;
 
-  /* Get the address of the register. */
-  if (cxp_read_uint32(cam, addr, &regaddr) != 0) {
-      return -1;
-  }
+    /* Get the address of the register. */
+    if (cxp_read_uint32(cam, addr, &regaddr) != 0) {
+        return -1;
+    }
 
-  /* Get the value at that address. */
-  return cxp_read_uint32(cam, regaddr, value);
+    /* Get the value at that address. */
+    return cxp_read_uint32(cam, regaddr, value);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1395,18 +1395,18 @@ void
 phx_keyboard_init(void)
 {
 #ifdef _PHX_POSIX
-  tcgetattr(0, &initial_settings);
-  new_settings = initial_settings;
-  new_settings.c_lflag    &= ~ICANON;
-  new_settings.c_lflag    &= ~ECHO;
-  new_settings.c_lflag    &= ~ISIG;
-  new_settings.c_cc[VMIN]  = 1;
-  new_settings.c_cc[VTIME] = 0;
-  tcsetattr(0, TCSANOW, &new_settings);
+    tcgetattr(0, &initial_settings);
+    new_settings = initial_settings;
+    new_settings.c_lflag    &= ~ICANON;
+    new_settings.c_lflag    &= ~ECHO;
+    new_settings.c_lflag    &= ~ISIG;
+    new_settings.c_cc[VMIN]  = 1;
+    new_settings.c_cc[VTIME] = 0;
+    tcsetattr(0, TCSANOW, &new_settings);
 #elif defined _PHX_VXWORKS
-  gnKbHitCount = 0;
+    gnKbHitCount = 0;
 #else
-   /* Nothing to do */
+    /* Nothing to do */
 #endif
 }
 
@@ -1414,29 +1414,29 @@ int
 phx_keyboard_hit()
 {
 #if defined _PHX_POSIX
-  char  ch;
-  int   nread;
+    char  ch;
+    int   nread;
 
-  if (peek_character != -1) {
-    return 1;
-  }
-  new_settings.c_cc[VMIN] = 0;
-  tcsetattr(0, TCSANOW, &new_settings);
-  nread = read(0, &ch, 1);
-  new_settings.c_cc[VMIN] = 1;
-  tcsetattr(0, TCSANOW, &new_settings);
+    if (peek_character != -1) {
+        return 1;
+    }
+    new_settings.c_cc[VMIN] = 0;
+    tcsetattr(0, TCSANOW, &new_settings);
+    nread = read(0, &ch, 1);
+    new_settings.c_cc[VMIN] = 1;
+    tcsetattr(0, TCSANOW, &new_settings);
 
-  if (nread == 1) {
-    peek_character = ch;
-    return 1;
-  }
-  return 0;
+    if (nread == 1) {
+        peek_character = ch;
+        return 1;
+    }
+    return 0;
 #elif defined _PHX_VXWORKS
-  return (gnKbHitCount++ > gnKbHitCountMax);
+    return (gnKbHitCount++ > gnKbHitCountMax);
 #elif defined _MSC_VER
-  return _kbhit();
+    return _kbhit();
 #else
-  return kbhit();
+    return kbhit();
 #endif
 }
 
@@ -1444,11 +1444,11 @@ void
 phx_keyboard_final(void)
 {
 #ifdef _PHX_POSIX
-  tcsetattr(0, TCSANOW, &initial_settings);
+    tcsetattr(0, TCSANOW, &initial_settings);
 #elif defined _PHX_VXWORKS
-  /* TODO */
+    /* TODO */
 #else
-  /* Nothing to do */
+    /* Nothing to do */
 #endif
 }
 
@@ -1456,21 +1456,21 @@ int
 phx_keyboard_read(void)
 {
 #ifdef _PHX_POSIX
-  char ch;
-  int nBytes;
+    char ch;
+    int nBytes;
 
-  if (peek_character != -1) {
-    ch = peek_character;
-    peek_character = -1;
-    return ch;
-  }
-  nBytes = read(0, &ch, 1);
-  return (nBytes == 1 ? ch : '\0');
+    if (peek_character != -1) {
+        ch = peek_character;
+        peek_character = -1;
+        return ch;
+    }
+    nBytes = read(0, &ch, 1);
+    return (nBytes == 1 ? ch : '\0');
 #elif defined _PHX_VXWORKS
-  /* TODO */
+    /* TODO */
 #elif defined _MSC_VER
-  return _getch();
+    return _getch();
 #else
-  return getch();
+    return getch();
 #endif
 }

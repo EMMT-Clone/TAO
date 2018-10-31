@@ -24,8 +24,8 @@
 
 /* Byte order. */
 static const union {
-  uint8_t bytes[4];
-  uint32_t BOM;
+    uint8_t bytes[4];
+    uint32_t BOM;
 } NATIVE_ENDIAN = {{1, 2, 3, 4}};
 #define NATIVE_ENDIAN_BOM (NATIVE_ENDIAN.BOM)
 #define LITTLE_ENDIAN_BOM 0x04030201
@@ -276,7 +276,7 @@ set_connection(phx_camera_t* cam, const phx_connection_t* con)
     if (phx_set_coaxpress_connection(cam, con) != 0) {
         return -1;
     }
-    if (update_connection(cam)  != 0) {
+    if (update_connection(cam) != 0) {
         return -1;
     }
     if (con->channels != 0 &&

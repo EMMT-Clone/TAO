@@ -53,13 +53,13 @@ _TAO_BEGIN_DECLS
  */
 
 typedef enum tao_message_type {
-  /* Values must be in ascending order. */
-  TAO_DEBUG  = 0,  /**< Debug message */
-  TAO_INFO   = 1,  /**< Information message */
-  TAO_WARN   = 2,  /**< Warning message */
-  TAO_ERROR  = 3,  /**< Runtime error */
-  TAO_ASSERT = 4,  /**< Assertion error or bug */
-  TAO_QUIET  = 5   /**< Suppress all messages */
+    /* Values must be in ascending order. */
+    TAO_DEBUG  = 0,  /**< Debug message */
+    TAO_INFO   = 1,  /**< Information message */
+    TAO_WARN   = 2,  /**< Warning message */
+    TAO_ERROR  = 3,  /**< Runtime error */
+    TAO_ASSERT = 4,  /**< Assertion error or bug */
+    TAO_QUIET  = 5   /**< Suppress all messages */
 } tao_message_type_t;
 
 /**
@@ -79,7 +79,7 @@ typedef enum tao_message_type {
  * @param ...     The arguments.
  */
 extern void tao_inform(tao_message_type_t type, const char* format, ...)
-  __attribute__ ((format (printf, 2, 3)));
+    __attribute__ ((format (printf, 2, 3)));
 
 /**
  * Get the minimum level of printed messages.
