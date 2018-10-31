@@ -171,6 +171,28 @@ phx_status_identifier(phx_status_t status)
     }
 }
 
+int
+phx_any_errors(const phx_camera_t* cam)
+{
+    return (cam != NULL && cam->errs != TAO_NO_ERRORS);
+}
+
+void
+phx_report_errors(phx_camera_t* cam)
+{
+    if (cam != NULL && cam->errs != TAO_NO_ERRORS) {
+        tao_report_errors(&cam->errs);
+    }
+}
+
+void
+phx_discard_errors(phx_camera_t* cam)
+{
+    if (cam != NULL && cam->errs != TAO_NO_ERRORS) {
+        tao_discard_errors(&cam->errs);
+    }
+}
+
 /*--------------------------------------------------------------------------*/
 /* BYTYE SWAPPING ROUTINES */
 

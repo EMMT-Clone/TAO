@@ -235,10 +235,10 @@ int main(int argc, char* argv[])
     phx_get_configuration(cam, &cfg);
     parse_options(argc, argv, &cfg);
     if (phx_set_configuration(cam, &cfg) != 0) {
-        if (cam->errs == TAO_NO_ERRORS) {
-            fprintf(stderr, "Failed to configure the camera.\n");
+        if (phx_any_errors(cam)) {
+            phx_report_errors(cam);
         } else {
-            tao_report_errors(&cam->errs);
+            fprintf(stderr, "Failed to configure the camera.\n");
         }
         return 1;
     }

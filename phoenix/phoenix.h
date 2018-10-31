@@ -217,6 +217,46 @@ extern int
 phx_set_coaxpress_connection(phx_camera_t* cam, const phx_connection_t* con);
 
 /**
+ * Check whether there are any errors with a camera.
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @return `1` (true) if there are errors in the error stack of the camera @p
+ * cam; `0` (false) otherwise.
+ *
+ * @see phx_create(), phx_report_errors(), phx_discard_errors().
+ */
+extern int
+phx_any_errors(const phx_camera_t* cam);
+
+/**
+ * Report all tracked errors of a camera.
+ *
+ * This function prints to the standard error stream the errors in the error
+ * stack of the camera @p cam, deleting the errors in the process.
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @see tao_report_errors(), phx_create(), phx_any_errors(),
+ * phx_discard_errors().
+ */
+extern void
+phx_report_errors(phx_camera_t* cam);
+
+/**
+ * Clear all tracked errors of a camera.
+ *
+ * This function deletes the contents of the error stack of the camera @p cam.
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @see tao_discard_errors(), phx_any_errors(), phx_report_errors(),
+ * phx_create().
+ */
+extern void
+phx_discard_errors(phx_camera_t* cam);
+
+/**
  * Start continuous acquisition.
  *
  * This function starts continuous acquisition with a given number of virtual
@@ -226,9 +266,10 @@ phx_set_coaxpress_connection(phx_camera_t* cam, const phx_connection_t* con);
  * @param nbufs  Number of virtual buffers (must be larger than 2 to avoid
  *               oveflows).
  *
- * @return `0` on success, `-1` on failure.
+ * @return `0` on success, `-1` on failure.  Errors, if any, are stacked in
+ *         camera instance.
  *
- * @see phx_stop(), phx_abort(), phx_wait().
+ * @see phx_stop(), phx_abort(), phx_wait(), phx_any_errors().
  */
 extern int
 phx_start(phx_camera_t* cam, int nbufs);
