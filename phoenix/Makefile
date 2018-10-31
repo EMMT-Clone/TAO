@@ -52,7 +52,7 @@ PHOENIX_LIBS = $(PHOENIX_STATIC_LIBRARY) $(PHX_LIBS) $(TAO_LIBS)
 CFITSIO_LIBS = -lcfitsio
 CFITSIO_DEFS =
 
-TOOLS = phx_info phx_test
+TOOLS = phx_info phx_config
 
 default: all
 
@@ -75,7 +75,7 @@ $(PHOENIX_SHARED_LIBRARY): $(PHOENIX_OBJECTS)
 phx_info: ${srcdir}/phx_info.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
-phx_test: ${srcdir}/phx_test.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
+phx_config: ${srcdir}/phx_config.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
 phx_live: ${srcdir}/phx_live.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)

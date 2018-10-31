@@ -1,7 +1,8 @@
 /*
- * phx_test.c -
+ * phx_config.c -
  *
- * Simple program to test acquisition with ActiveSilicon Phoenix frame grabber.
+ * Program to configure a camera connected to an ActiveSilicon Phoenix frame
+ * grabber.
  *
  *-----------------------------------------------------------------------------
  *
@@ -17,7 +18,7 @@
 
 #include "phoenix.h"
 
-static const char* progname = "phx_test";
+static const char* progname = "phx_config";
 
 static void
 fatal(const char* format, ...)
