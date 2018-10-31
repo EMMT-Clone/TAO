@@ -970,6 +970,48 @@ phx_destroy(phx_camera_t* cam)
     }
 }
 
+int
+phx_load_configuration(phx_camera_t* cam, int id)
+{
+    int status = -1;
+    if (cam == NULL) {
+        errno = EFAULT;
+        return status;
+    }
+    phx_lock(cam);
+    if (cam->load_config == NULL) {
+        tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
+    } else {
+        status = cam->load_config(cam, id);
+    }
+    phx_unlock(cam);
+    return status;
+}
+
+int
+phx_save_configuration(phx_camera_t* cam, int id)
+{
+    int status = -1;
+    if (cam == NULL) {
+        errno = EFAULT;
+        return status;
+    }
+    phx_lock(cam);
+    if (cam->save_config == NULL) {
+        tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
+    } else {
+        status = cam->save_config(cam, id);
+    }
+    phx_unlock(cam);
+    return status;
+}
+
+extern void
+phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg);
+
+extern int
+phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg);
+
 void
 phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg)
 {

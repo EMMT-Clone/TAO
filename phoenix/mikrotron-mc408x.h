@@ -166,14 +166,14 @@
 #define CXP_USER_SET_LOAD__size    4
 #define CXP_USER_SET_LOAD__mode    WriteOnly
 #define CXP_USER_SET_LOAD__addr    0x8824
-#define CXP_USER_SET_LOAD__comm    1
+#define CXP_USER_SET_LOAD__comm    0
 
 #define CXP_USER_SET_SAVE__kind    Value
 #define CXP_USER_SET_SAVE__type    Command
 #define CXP_USER_SET_SAVE__size    4
 #define CXP_USER_SET_SAVE__mode    WriteOnly
 #define CXP_USER_SET_SAVE__addr    0x8828
-#define CXP_USER_SET_SAVE__comm    1
+#define CXP_USER_SET_SAVE__comm    0
 
 #define CXP_USER_SET_DEFAULT_SELECTOR__kind    Value
 #define CXP_USER_SET_DEFAULT_SELECTOR__type    Enumeration
@@ -512,5 +512,11 @@
 #define CXP_DEVICE_INFORMATION_SELECTOR_POWER_CONSUMPTION 21
 #define CXP_DEVICE_INFORMATION_SELECTOR_POWER_VOLTAGE     22
 #define CXP_DEVICE_INFORMATION_SELECTOR_TEMPERATURE       23
+
+/* Possible values for CXP_USER_SET_SELECTOR */
+#define CXP_USER_SET_SELECTOR_DEFAULT    0x80000000
+#define CXP_USER_SET_SELECTOR_USER_SET_1 0x0
+#define CXP_USER_SET_SELECTOR_USER_SET_2 0x1
+#define CXP_USER_SET_SELECTOR_USER_SET_3 0x2
 
 #endif /* _MIKROTRON_MC408X_H */

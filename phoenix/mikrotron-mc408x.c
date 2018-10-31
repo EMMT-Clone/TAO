@@ -570,20 +570,25 @@ set_config(phx_camera_t* cam)
     /* Check configuration parameters. */
     if (isnan(usr->bias)) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_BIAS);
+        return -1;
     }
     if (isnan(usr->gain)) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_GAIN);
+        return -1;
     }
     if (isnan(usr->exposure)) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
-    }
+         return -1;
+   }
     if (isnan(usr->rate)) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_RATE);
+        return -1;
     }
     if (usr->connection.channels < 1 || usr->connection.channels > 4 ||
         usr->connection.speed < 1250 || usr->connection.speed > 6250) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_SPEED);
-    }
+         return -1;
+   }
 
     /* Change black level and gain if requested. */
     if (usr->bias != dev->bias) {
@@ -672,6 +677,51 @@ set_config(phx_camera_t* cam)
         dev->connection.speed = usr->connection.speed;
     }
 
+    return 0;
+}
+
+static uint32_t
+get_config_number(int id)
+{
+    switch (id) {
+    case 0: return CXP_USER_SET_SELECTOR_DEFAULT;
+    case 1: return CXP_USER_SET_SELECTOR_USER_SET_1;
+    case 2: return CXP_USER_SET_SELECTOR_USER_SET_2;
+    case 3: return CXP_USER_SET_SELECTOR_USER_SET_3;
+    default: return ~(uint32_t)0;
+    }
+}
+
+/* Load one of the configurations memorized by the camera. */
+static int
+load_config(phx_camera_t* cam, int id)
+{
+    uint32_t sel = get_config_number(id);
+    if (sel == ~(uint32_t)0) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+        return -1;
+    }
+    if (cxp_set(cam, USER_SET_DEFAULT_SELECTOR, sel) != 0 ||
+        cxp_exec(cam, USER_SET_LOAD) != 0) {
+        return -1;
+    }
+    return 0;
+}
+
+/* Save current camera settings. My guess here is that the default
+   configuration cannot be overwritten. */
+static int
+save_config(phx_camera_t* cam, int id)
+{
+    uint32_t sel = get_config_number(id);
+    if (sel == ~(uint32_t)0 || sel == CXP_USER_SET_SELECTOR_DEFAULT) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+        return -1;
+    }
+    if (cxp_set(cam, USER_SET_DEFAULT_SELECTOR, sel) != 0 ||
+        cxp_exec(cam, USER_SET_SAVE) != 0) {
+        return -1;
+    }
     return 0;
 }
 
@@ -794,6 +844,8 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     cam->stop = stop;
     cam->update_temperature = update_temperature;
     cam->set_config = set_config;
+    cam->save_config = save_config;
+    cam->load_config = load_config;
 
     /*
      * Make user settings identical to that of the device.

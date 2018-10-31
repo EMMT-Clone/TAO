@@ -90,9 +90,10 @@ struct phx_camera {
     int (*set_config)(phx_camera_t*);
                             /**< Hook to set the camera settings according to
                                  the configuration chosen by the user */
-    int (*get_config)(phx_camera_t*);
-                            /**< Hook to get the camera settings according to
-                                 the configuration chosen by the user */
+    int (*save_config)(phx_camera_t*, int);
+                            /**< Hook to save the camera settings */
+    int (*load_config)(phx_camera_t*, int);
+                            /**< Hook to load the camera settings */
     double temperature;     /**< Camera temperature (in degrees Celsius) */
     phx_config_t dev_cfg;   /**< Current device settings */
     phx_config_t usr_cfg;   /**< User chosen camera settings */
@@ -207,6 +208,12 @@ phx_destroy(phx_camera_t* cam);
 
 extern int
 phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream);
+
+extern int
+phx_load_configuration(phx_camera_t* cam, int id);
+
+extern int
+phx_save_configuration(phx_camera_t* cam, int id);
 
 extern void
 phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg);
