@@ -377,8 +377,8 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
         phx_set(cam, PHX_CAM_ACTIVE_YLENGTH, active_ylength) != 0 ||
         phx_set(cam, PHX_CAM_XBINNING,                    1) != 0 ||
         phx_set(cam, PHX_CAM_YBINNING,                    1) != 0 ||
-        phx_set(cam, PHX_ACQ_XSUB,                        1) != 0 ||
-        phx_set(cam, PHX_ACQ_YSUB,                        1) != 0 ||
+        phx_set(cam, PHX_ACQ_XSUB,               PHX_ACQ_X1) != 0 ||
+        phx_set(cam, PHX_ACQ_YSUB,               PHX_ACQ_X1) != 0 ||
         phx_set(cam, PHX_ROI_SRC_XOFFSET,       src_xoffset) != 0 ||
         phx_set(cam, PHX_ROI_SRC_YOFFSET,       src_yoffset) != 0 ||
         phx_set(cam, PHX_ROI_XLENGTH,           roi_xlength) != 0 ||
@@ -430,9 +430,8 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
         free_virtual_buffers(cam); /* FIXME: we can keep the virtual buffers? */
         return -1;
     }
-    phx_value_t value = PHX_DST_PTR_USER_VIRT;
-    if (phx_set_parameter(cam, (PHX_DST_PTR_TYPE|PHX_CACHE_FLUSH|
-                                PHX_FORCE_REWRITE), &value) != 0) {
+    if (phx_set(cam, (PHX_DST_PTR_TYPE|PHX_CACHE_FLUSH|
+                      PHX_FORCE_REWRITE), PHX_DST_PTR_USER_VIRT) != 0) {
         free_virtual_buffers(cam); /* FIXME: we can keep the virtual buffers? */
         return -1;
     }
