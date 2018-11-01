@@ -1216,6 +1216,8 @@ tao_time_to_seconds(const tao_time_t* t);
  * @param dest   Address to store the result.
  * @param secs   A fractional number of seconds.
  *
+ * @return The address @p dest.
+ *
  * @warning This function never fails.  If @p secs is too large (in amplitude)
  * to be represented, `INT64_MAX` or `INT64_MIN` seconds and 0 nanoseconds are
  * assumed.  If @p secs is a NaN (Not a Number), 0 seconds and -1 nanoseconds
@@ -1225,7 +1227,7 @@ tao_time_to_seconds(const tao_time_t* t);
  * It is therefore always possible guess from the stored time whether @p secs
  * was representable as a time structure with nanosecond precision.
  */
-extern void
+extern tao_time_t*
 tao_seconds_to_time(tao_time_t* dest, double secs);
 
 /**
@@ -1234,8 +1236,10 @@ tao_seconds_to_time(tao_time_t* dest, double secs);
  * @param str    Destination string (must have at least 32 characters
  *               including the terminating null).
  * @param ts     Time stamp.
+ *
+ * @return The address @p str.
  */
-extern void
+extern char*
 tao_sprintf_time(char* str, const tao_time_t* ts);
 
 /**

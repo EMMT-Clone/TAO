@@ -157,7 +157,7 @@ tao_time_to_seconds(const tao_time_t* t)
     return (double)t->s + 1E-9*(double)t->ns;
 }
 
-void
+tao_time_t*
 tao_seconds_to_time(tao_time_t* dest, double secs)
 {
     /*
@@ -189,9 +189,10 @@ tao_seconds_to_time(tao_time_t* dest, double secs)
         dest->s = (int64_t)s;
         dest->ns = ns;
     }
+    return dest;
 }
 
-void
+char*
 tao_sprintf_time(char* str, const tao_time_t* ts)
 {
     int64_t s  = ts->s;
@@ -204,6 +205,7 @@ tao_sprintf_time(char* str, const tao_time_t* ts)
         NORMALIZE_TIME(s, ns);
     }
     sprintf(str, "%s%ld.%09d", (negate ? "-" : ""), (long)s, (int)ns);
+    return str;
 }
 
 size_t
