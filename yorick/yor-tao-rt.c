@@ -87,7 +87,9 @@ report_errors(tao_error_t** errs)
             resize_buffer(buflen + len + 1);
         }
     }
-    y_error(buffer);
+    if (buflen > 0) {
+        y_error(buffer);
+    }
 }
 
 static void push_array_data(tao_shared_array_t* arr)
@@ -294,7 +296,7 @@ free_shared_object(void* addr)
     tao_error_t* errs = TAO_NO_ERRORS;
     tao_detach_shared_object(&errs, obj);
     if (errs != TAO_NO_ERRORS) {
-        /* At this point, we can just print the errors if nay. */
+        /* At this point, we can just print the errors if any. */
         tao_report_errors(&errs);
     }
 }
@@ -348,6 +350,7 @@ eval_shared_object(void* addr, int argc)
     if (errs != TAO_NO_ERRORS) {
         report_errors(&errs);
     }
+    yarg_drop(argc);
     ypush_int(ident);
 }
 
