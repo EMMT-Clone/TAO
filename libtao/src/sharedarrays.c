@@ -16,35 +16,6 @@
 #include "macros.h"
 #include "tao-private.h"
 
-/*
- * Alignment of data for vectorization depends on the chosen compilation
- * settings.  The following table summarizes the value of macro
- * `__BIGGEST_ALIGNMENT__` with different settings:
- *
- * ---------------------------------------
- * Alignment (bytes)   Compilation Options
- * ---------------------------------------
- *      16             -ffast-math -msse
- *      16             -ffast-math -msse2
- *      16             -ffast-math -msse3
- *      16             -ffast-math -msse4
- *      16             -ffast-math -mavx
- *      32             -ffast-math -mavx2
- * ---------------------------------------
- *
- * The address of attached shared memory is a multiple of memory page size
- * (PAGE_SIZE which is 4096 on the Linux machine I tested) and so much
- * larger than ALIGNMENT (defined below).  So, in principle, it is sufficient
- * to align the shared array data to a multiple of ALIGNMENT relative to the
- * address of the attached shared memory to have correct alignment for all
- * processes.
- */
-#define ALIGNMENT 32
-#if defined(__BIGGEST_ALIGNMENT__) && __BIGGEST_ALIGNMENT__ > ALIGNMENT
-#  undef ALIGNMENT
-#  define ALIGNMENT __BIGGEST_ALIGNMENT__
-#endif
-
 size_t
 tao_get_element_size(int eltype)
 {
