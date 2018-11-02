@@ -163,7 +163,7 @@ copy_5d(void* dstdata, const long dstdims[],
 #endif
 
 #if TAO_MAX_NDIMS > 5
-#  error code more more than 5 dimensions is not yet implemented
+#  error code for more than 5 dimensions is not yet implemented
 #endif
 
 #define FASTCOPY_PROCS(t) \

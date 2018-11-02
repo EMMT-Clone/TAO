@@ -230,7 +230,7 @@ typedef enum tao_error_code {
  * @param info     Address of string pointer to store the textual equivalent of
  *                 the error code.
  *
- * The callback shall set the value pointed by @p reason and/or @p info to the
+ * The callback shall set the value pointed by @b reason and/or @b info to the
  * address of a static string if the corresponding information can be provided
  * and to `NULL` otherwise.  Any of these pointers can be `NULL` to indicate
  * that the corresponding information is not requested.
@@ -246,13 +246,13 @@ typedef enum tao_error_code {
  *
  * The following example shows such a callback:
  *
- * @code{.c}
+ * ```.c
  * void get_error_details(int code, const char** reason, const char** info)
  * {
  *     *reason = "Some frame grabber error occured";
  *     *info = NULL; // textual value of error code will be used
  * }
- * @endcode
+ * ```
  *
  * @see tao_retrieve_error_details.
  */
@@ -263,18 +263,18 @@ typedef void tao_error_getter_t(int code, const char** reason,
  * Register an error due to a foreign function call.
  *
  * This function is called to register the information related to the occurence
- * of an error.  This information consist in the name of the function @p func
- * where the error occured and the numerical identifier @p code of the error.
- * If @p errs is non-`NULL`, it is assumed to be that of the variable provided
+ * of an error.  This information consist in the name of the function @b func
+ * where the error occured and the numerical identifier @b code of the error.
+ * If @b errs is non-`NULL`, it is assumed to be that of the variable provided
  * by the caller to track errors and the error information is added there;
- * othwerise (that is, if @p errs is `NULL`), the error is immediately reported
- * and the process is aborted.  If argument @p proc is `NULL`, it is assumed
+ * othwerise (that is, if @b errs is `NULL`), the error is immediately reported
+ * and the process is aborted.  If argument @b proc is `NULL`, it is assumed
  * that the error code follows the convention in TAO library (nonnegative codes
  * are for system errors while strictly negative codes are for errors in TAO
- * functions); otherwise, @p proc is the callback which can be called to
+ * functions); otherwise, @b proc is the callback which can be called to
  * retrieve error details from the error code.
  *
- * @warning @p func must be a static strings.
+ * @warning @b func must be a static string.
  *
  * @param errs   Address of a variable to track errors.
  * @param func   Name of the function where the error occured.
@@ -290,11 +290,11 @@ tao_push_other_error(tao_error_t** errs, const char* func, int code,
  *
  * This function is equivalent to:
  *
- * @code{.c}
+ * ```.c
  * tao_push_other_error(errs, func, code, NULL);
- * @encode
+ * ```
  *
- * @warning @p func must be a static string.
+ * @warning @b func must be a static string.
  *
  * @param errs   Address of a variable to track errors.
  * @param func   Name of the function where the error occured.
@@ -325,7 +325,7 @@ tao_push_system_error(tao_error_t** errs, const char* func);
  * Pop last tracked error.
  *
  * This function pops information about the most recent error remaining in the
- * list of errors tracked by the variable at address @p errs.  The errors are
+ * list of errors tracked by the variable at address @b errs.  The errors are
  * popped in reverse temporal order.  That is, the last occuring error is
  * retrieved first.  Resources associated with the popped error are freed.
  *
@@ -356,8 +356,8 @@ tao_push_system_error(tao_error_t** errs, const char* func);
  *
  * @return A boolean value (that is, `0` or `1`) indicating whether there was
  * some error information to retrieve.  When there are no errors, the value at
- * @p codeptr is set to `0` and the values at @p funcptr and @p procptr are set
- * to `NULL` (respectively providing that @p codeptr, @p funcptr and @p procptr
+ * @b codeptr is set to `0` and the values at @b funcptr and @b procptr are set
+ * to `NULL` (respectively providing that @b codeptr, @b funcptr and @b procptr
  * are not `NULL`).
  */
 extern int
@@ -367,9 +367,9 @@ tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,
 /**
  * Transfer errors between two error stacks.
  *
- * This function removes the errors from @p src and stack them int @p dest.  If
- * there are any errors in @p src and @p dest is `NULL`, it is assumed that the
- * caller has declined to store error informations and all errors in @p src are
+ * This function removes the errors from @b src and stack them int @b dest.  If
+ * there are any errors in @b src and @b dest is `NULL`, it is assumed that the
+ * caller has declined to store error informations and all errors in @b src are
  * reported and the process aborted.
 
  * @param dest      Address of a variable tracking errors (can be `NULL`).
@@ -394,7 +394,7 @@ tao_transfer_errors(tao_error_t** dest, tao_error_t** src);
  *                  negative codes are for errors in TAO functions).
  * @param buffer    Address of a small text buffer to print the decimal value
  *                  of the error code if no better description can be obtained.
- *                  Providing this buffer is only useful if @p infoptr is not
+ *                  Providing this buffer is only useful if @b infoptr is not
  *                  `NULL`.  Can be `NULL` to not use this fallback; otherwise
  *                  must have at least 20 characters (enough to print any value
  *                  of a 64-bit signed integer in decimal form).
@@ -529,13 +529,13 @@ tao_create_buffer(tao_error_t** errs, size_t size);
 /**
  * Destroy dynamic resources of an i/o buffer.
  *
- * This function frees any dynamic resources used by the i/o buffer @p buf.
+ * This function frees any dynamic resources used by the i/o buffer @b buf.
  * If the buffer has been initialized by tao_initialize_static_buffer(), only
  * the contents of the buffer may be destroyed and the buffer is reset to have
  * an empty contents, just as done by tao_initialize_static_buffer(), and can
  * be safely re-used.  If the buffer has been created by tao_create_buffer(),
  * the contents and the container (that is, the structure itself) are destroyed
- * and @p buf must no longer be used.
+ * and @b buf must no longer be used.
  *
  * @param buf    Address of the i/o buffer to destroy (can be `NULL`).
  */
@@ -741,12 +741,12 @@ tao_adjust_buffer_contents_size(tao_error_t** errs, tao_buffer_t* buf,
  * @param cnt    Number of bytes to read.
  *
  * @return The number of bytes actually read, `-1` in case of errors.  The
- * number of bytes read may be different from @p cnt: it may be smaller if the
+ * number of bytes read may be different from @b cnt: it may be smaller if the
  * number of available bytes is insufficient (for instance because we are close
  * to the end of the file or because the peer did not write that much on the
  * other end of the bidirectional communication channel); it may also be larger
  * because, for efficiency reasons, the function attempts to fill the space
- * available in the buffer @p buf.
+ * available in the buffer @b buf.
  *
  * @see tao_write_bytes.
  */
@@ -787,7 +787,7 @@ tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
  * Multi-dimensional arrays.
  *
  * Multi-dimensional arrays have homogeneous element type and may have up to
- * `TAO_MAX_NDIMS` dimensions.  Elements of a multi-dimensional array are
+ * @ref TAO_MAX_NDIMS dimensions.  Elements of a multi-dimensional array are
  * contiguous in memory and are stored in
  * [column-major](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
  * order (that is the index along the first dimension varies the fastest).
@@ -816,8 +816,8 @@ typedef enum tao_element_type {
  *
  * @param eltype Identifier of the type of the elements of an array.
  *
- * @return A strictly positive number of bytes if @p eltype is valid;
- * `0` is @p eltype is not valid.
+ * @return A strictly positive number of bytes if @b eltype is valid;
+ * `0` is @b eltype is not valid.
  *
  * @see tao_element_type_t.
  */
@@ -835,7 +835,7 @@ tao_get_element_size(int eltype);
  * @param ndims  Number of dimensions of the array.
  * @param dims   Lengths of the dimensions of the array.
  *
- * @return The product of the dimensions in @p dims, assuming that a
+ * @return The product of the dimensions in @b dims, assuming that a
  *         zer-dimensional array has just one element.  Normally, this value is
  *         at least `1`; `0` is returned in case of errors.
  *
@@ -949,7 +949,7 @@ tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
  * a provided memory area.  The returned array has a reference count of 1, the
  * caller is responsible for unreferencing the array when no longer needed by
  * calling tao_unreference_array().  When the array is eventually destroyed,
- * the callback @p free is called with the context argument @p ctx.
+ * the callback @b free is called with the context argument @b ctx.
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -957,7 +957,7 @@ tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
  * @param dims   Lengths of the dimensions of the array.
  * @param data   Address of the first element of the array in memory.
  * @param free   Function to call to release the provided resources.
- * @param ctx    Argument of @p free to release the provided resources.
+ * @param ctx    Argument of @b free to release the provided resources.
  *
  * @return The address of a new wrapped array; `NULL` in case of errors.
  *
@@ -977,14 +977,14 @@ tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
  * a provided memory area.  The returned array has a reference count of 1, the
  * caller is responsible for unreferencing the array when no longer needed by
  * calling tao_unreference_array().  When the array is eventually destroyed,
- * the callback @p free is called with the context argument @p ctx.
+ * the callback @b free is called with the context argument @b ctx.
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
  * @param dim    Length of the mono-dimensional array.
  * @param data   Address of the first element of the array in memory.
  * @param free   Function to call to release the provided resources.
- * @param ctx    Argument of @p free to release the provided resources.
+ * @param ctx    Argument of @b free to release the provided resources.
  *
  * @return The address of a new wrapped array; `NULL` in case of errors.
  *
@@ -1001,7 +1001,7 @@ tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
  * provided memory area.  The returned array has a reference count of 1, the
  * caller is responsible for unreferencing the array when no longer needed by
  * calling tao_unreference_array().  When the array is eventually destroyed,
- * the callback @p free is called with the context argument @p ctx.
+ * the callback @b free is called with the context argument @b ctx.
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -1009,7 +1009,7 @@ tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
  * @param dim2   Length of the second dimension.
  * @param data   Address of the first element of the array in memory.
  * @param free   Function to call to release the provided resources.
- * @param ctx    Argument of @p free to release the provided resources.
+ * @param ctx    Argument of @b free to release the provided resources.
  *
  * @return The address of a new wrapped array; `NULL` in case of errors.
  *
@@ -1027,7 +1027,7 @@ tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
  * a provided memory area.  The returned array has a reference count of 1, the
  * caller is responsible for unreferencing the array when no longer needed by
  * calling tao_unreference_array().  When the array is eventually destroyed,
- * the callback @p free is called with the context argument @p ctx.
+ * the callback @b free is called with the context argument @b ctx.
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -1036,7 +1036,7 @@ tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
  * @param dim3   Length of the third dimension.
  * @param data   Address of the first element of the array in memory.
  * @param free   Function to call to release the provided resources.
- * @param ctx    Argument of @p free to release the provided resources.
+ * @param ctx    Argument of @b free to release the provided resources.
  *
  * @return The address of a new wrapped array; `NULL` in case of errors.
  *
@@ -1056,7 +1056,7 @@ tao_wrap_3d_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @param arr Pointer to an array (must not be `NULL`).
  *
- * @return The address of the array @p arr.
+ * @return The address of the array @b arr.
  *
  * @see tao_create_array(), tao_wrap_array(), tao_unreference_array().
  */
@@ -1110,16 +1110,16 @@ tao_get_array_ndims(const tao_array_t* arr);
 /**
  * Get the length of a dimension of an array.
  *
- * All dimensions beyond the number of dimensions of @p arr are assumed to have
+ * All dimensions beyond the number of dimensions of @b arr are assumed to have
  * unit length.
  *
  * @param arr    Pointer to an array referenced by the caller.
  * @param d      Index of dimension of interest (`1` is the first dimension).
  *
- * @return The number of elements along the given dimension if @p d is greater
- *         or equal `1` and less or equal the number of dimensions of @p arr;
- *         `0` if @p d is less than `1` and `1` if @p d is greater than the
- *         number of dimensions of @p arr.
+ * @return The number of elements along the given dimension if @b d is greater
+ *         or equal `1` and less or equal the number of dimensions of @b arr;
+ *         `0` if @b d is less than `1` and `1` if @b d is greater than the
+ *         number of dimensions of @b arr.
  */
 extern long
 tao_get_array_size(const tao_array_t* arr, int d);
@@ -1247,7 +1247,7 @@ tao_save_array_to_fits_handle(tao_error_t** errs, const tao_array_t* arr,
  *
  * @param str   String.
  *
- * @return The length of the string; 0 if @p str is `NULL`.
+ * @return The length of the string; 0 if @b str is `NULL`.
  *
  * @see strlen.
  */
@@ -1345,9 +1345,9 @@ tao_strlen(const char* str);
  * @param list   Address of a variable to store the list.  The list and its
  *               constitutive words are stored in a single block of memory.
  * @param cmd    Command line string to split.
- * @param len    Optional length of @p cmd.  If @p len is nonnegative, it is
+ * @param len    Optional length of @b cmd.  If @b len is nonnegative, it is
  *               assumed to give the number of characters of the command line
- *               (which must not then be null-terminated).  Otherwise, @p len
+ *               (which must not then be null-terminated).  Otherwise, @b len
  *               may be equal to `-1` and the command line must be
  *               null-terminated.
  *
@@ -1377,21 +1377,21 @@ tao_split_command(tao_error_t** errs, const char*** list,
  *
  * @param errs   Address of a variable to track errors.
  * @param dest   Address of an i/o buffer to store the result.  The resulting
- *               command-line is appended to any existing contents of @p dest.
+ *               command-line is appended to any existing contents of @b dest.
  * @param argv   List of words.  The elements of the list must be non-null
  *               pointers to ordinary C-strings terminated by a null character.
- *               If @p argc is equal to `-1`, the list must have one more
+ *               If @b argc is equal to `-1`, the list must have one more
  *               pointer then the number of words, this last pointer being set
  *               to `NULL` to mark the end of the list.
- * @param argc   Optional number of words in @p argv.  If @p argc is
+ * @param argc   Optional number of words in @b argv.  If @b argc is
  *               nonnegative, it is assumed to give the number of words in the
- *               list.  Otherwise, @p argc can be equal to `-1` to indicate
- *               that the first null-pointer in @p argv marks the end of the
+ *               list.  Otherwise, @b argc can be equal to `-1` to indicate
+ *               that the first null-pointer in @b argv marks the end of the
  *               list.
  *
  * @return `0` on success; `-1` on failure.
  *
- * @note In case of failure, the contents of @p dest existing prior to the call
+ * @note In case of failure, the contents of @b dest existing prior to the call
  * is untouched but its location may have change.
  *
  * @see tao_unpack_words.
@@ -1459,7 +1459,7 @@ extern int tao_parse_double(const char* str, double* ptr);
  * Allocate dynamic memory.
  *
  * This function behaves as malloc() except that error information may be
- * tracked in @p errs.  The caller is responsible for calling free() or
+ * tracked in @b errs.  The caller is responsible for calling free() or
  * tao_free() to free the allocated memory when no longer needed.
  *
  * @param errs   Address of a variable to track errors.
@@ -1476,7 +1476,7 @@ tao_malloc(tao_error_t** errs, size_t size);
  * Allocate dynamic memory.
  *
  * This function behaves as calloc() except that error information may be
- * tracked in @p errs.  The caller is responsible for calling free() or
+ * tracked in @b errs.  The caller is responsible for calling free() or
  * tao_free() to free the allocated memory when no longer needed.
  *
  * @param errs   Address of a variable to track errors.
@@ -1583,7 +1583,7 @@ typedef struct tao_time {
  * @param dest   Address to store the time.
  *
  * @return `0` on success, `-1` on error.  In case of error, 0 seconds and -1
- * nanoseconds are stored in @p dest.
+ * nanoseconds are stored in @b dest.
  */
 extern int
 tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest);
@@ -1659,7 +1659,7 @@ tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
  *
  * @param t      Address of time value.
  *
- * @return The number of seconds given by the time stored in @p t.
+ * @return The number of seconds given by the time stored in @b t.
  */
 extern double
 tao_time_to_seconds(const tao_time_t* t);
@@ -1670,15 +1670,15 @@ tao_time_to_seconds(const tao_time_t* t);
  * @param dest   Address to store the result.
  * @param secs   A fractional number of seconds.
  *
- * @return The address @p dest.
+ * @return The address @b dest.
  *
- * @warning This function never fails.  If @p secs is too large (in amplitude)
+ * @warning This function never fails.  If @b secs is too large (in amplitude)
  * to be represented, `INT64_MAX` or `INT64_MIN` seconds and 0 nanoseconds are
- * assumed.  If @p secs is a NaN (Not a Number), 0 seconds and -1 nanoseconds
- * are assumed.  Otherwise, the number of seconds stored in @p dest is strictly
+ * assumed.  If @b secs is a NaN (Not a Number), 0 seconds and -1 nanoseconds
+ * are assumed.  Otherwise, the number of seconds stored in @b dest is strictly
  * greater than `INT64_MIN` and strictly less than `INT64_MAX` while the number
  * of nanoseconds is greater or equal 0 and strictly less than 1,000,000,000.
- * It is therefore always possible guess from the stored time whether @p secs
+ * It is therefore always possible guess from the stored time whether @b secs
  * was representable as a time structure with nanosecond precision.
  */
 extern tao_time_t*
@@ -1691,7 +1691,7 @@ tao_seconds_to_time(tao_time_t* dest, double secs);
  *               including the terminating null).
  * @param ts     Time stamp.
  *
- * @return The address @p str.
+ * @return The address @b str.
  */
 extern char*
 tao_sprintf_time(char* str, const tao_time_t* ts);
@@ -1816,7 +1816,7 @@ extern int tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
  * Signal a condition variable.
  *
  * This function restarts one of the threads that are waiting on the condition
- * variable @p cond.  Nothing happens, if no threads are waiting on @p cond.
+ * variable @b cond.  Nothing happens, if no threads are waiting on @b cond.
  *
  * @param errs   Address of a variable to track errors.
  * @param cond   Pointer to the condition variable to signal.
@@ -3128,8 +3128,8 @@ tao_preprocess_image_u16_to_f64(double* d, double* w, const uint16_t* r, int n,
  * @param srcoffs  Offsets of source region (can be `NULL` if there are
  *                 no offsets).
  * @param lens     Dimensions of region to copy.
- * @param ndims    Number of dimensions (length of @p dstdims, @p dstoffs,
- *                 @p srcdims, @p srcoffs and @p lens).
+ * @param ndims    Number of dimensions (length of @b dstdims, @b dstoffs,
+ *                 @b srcdims, @b srcoffs and @b lens).
  *
  * @return `0` on success, `-1` on error.
  *
@@ -3160,8 +3160,8 @@ tao_copy(tao_error_t** errs,
  * @param srcoffs  Offsets of source region (can be `NULL` if there are
  *                 no offsets).
  * @param lens     Dimensions of region to copy.
- * @param ndims    Number of dimensions (length of @p dstdims, @p dstoffs,
- *                 @p srcdims, @p srcoffs and @p lens).
+ * @param ndims    Number of dimensions (length of @b dstdims, @b dstoffs,
+ *                 @b srcdims, @b srcoffs and @b lens).
  *
  * @see tao_copy().
  */
