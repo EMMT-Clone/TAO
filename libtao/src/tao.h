@@ -1156,7 +1156,7 @@ tao_get_array_data(const tao_array_t* arr);
  *         errors.
  *
  * @see tao_create_array(), tao_unreference_array(),
- *      tao_load_array_from_fits_handle().
+ *      tao_save_array_to_fits_file(), tao_load_array_from_fits_handle().
  */
 extern tao_array_t*
 tao_load_array_from_fits_file(tao_error_t** errs, const char* filename,
@@ -1171,16 +1171,62 @@ tao_load_array_from_fits_file(tao_error_t** errs, const char* filename,
  * calling tao_unreference_array().
  *
  * @param errs      Address of a variable to track errors.
- * @param fitsfile  FITS file handle.
+ * @param fptr      FITS file handle.
  *
  * @return The address of a new multi-dimensional array; `NULL` in case of
  *         errors.
  *
  * @see tao_create_array(), tao_unreference_array(),
- *      tao_load_array_from_fits_file().
+ *      tao_save_array_to_fits_handle(), tao_load_array_from_fits_file().
  */
 extern tao_array_t*
 tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr);
+
+/**
+ * Save a multi-dimensional array to a FITS file.
+ *
+ * This function writes the contents of the supplied array into a new FITS
+ * file.
+ *
+ * @param errs      Address of a variable to track errors.
+ * @param arr       Pointer to an array referenced by the caller.
+ * @param filename  FITS file handle.
+ * @param overwrite Non-zero to allow for overwritting the destination.
+ *
+ * @return `0` in case of success, `-1` in case of failure.
+ *
+ * @see tao_create_array(), tao_unreference_array(),
+ *      tao_save_array_to_fits_handle(), tao_load_array_from_fits_file().
+ */
+extern int
+tao_save_array_to_fits_file(tao_error_t** errs, const tao_array_t* arr,
+                            const char* filename, int overwrite);
+
+/**
+ * Save a multi-dimensional array to a provided FITS handle.
+ *
+ * This function writes the contents of the supplied array into a new FITS HDU.
+ * After having initialized the basic image information in the new HDU, a user
+ * supplied callback function is called (if nont `NULL`) to let the caller
+ * customize the keywords of the header.
+ *
+ * @param errs      Address of a variable to track errors.
+ * @param arr       Pointer to an array referenced by the caller.
+ * @param fptr      FITS file handle.
+ * @param callback  Function called to update the header of the FITS HDU
+ *                  where is written the array.  May be `NULL` to not use it.
+ * @param ctx       Context argument supplied for the callback function.
+ *
+ * @return `0` in case of success, `-1` in case of failure.
+ *
+ * @see tao_create_array(), tao_unreference_array(),
+ *      tao_save_array_to_fits_file(), tao_load_array_from_fits_handle().
+ */
+extern int
+tao_save_array_to_fits_handle(tao_error_t** errs, const tao_array_t* arr,
+                              fitsfile* fptr,
+                              int (*callback)(tao_error_t**, fitsfile*, void*),
+                              void* ctx);
 
 /** @} */
 
