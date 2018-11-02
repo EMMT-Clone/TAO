@@ -17,7 +17,7 @@
 #undef FALSE
 #undef TRUE
 #define FALSE  0
-#define TRUE  (!FALSE)
+#define TRUE   1
 
 /*
  * Alignment of data for vectorization depends on the chosen compilation
