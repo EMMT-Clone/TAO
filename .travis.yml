@@ -1,0 +1,9 @@
+language: c
+compiler: gcc
+script:
+  - cd libtao;
+    ./bootstrap;
+    mkdir build;
+    cd build;
+    ../configure;
+    make
