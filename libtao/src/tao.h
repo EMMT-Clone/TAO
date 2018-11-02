@@ -512,7 +512,7 @@ tao_initialize_static_buffer(tao_buffer_t* buf);
  *
  * This function creates a new i/o buffer.  Both the container (the buffer
  * structure) and the contents (the data stored by the buffer) will be
- * dynamically allocated.  When no longer needed, the caller is responsible of
+ * dynamically allocated.  When no longer needed, the caller is responsible for
  * calling tao_finalize_buffer() to release all the resources allocated for
  * the buffer (that is, the container and the contents).
  *
@@ -1050,7 +1050,7 @@ tao_wrap_3d_array(tao_error_t** errs, tao_element_type_t eltype,
  * Add a reference to an existing multi-dimensional array.
  *
  * This function increments the reference count of a multi-dimensional array
- * by one.  The caller is responsible to eventually unreference the array by
+ * by one.  The caller is responsible for eventually unreferencing the array by
  * calling tao_unreference_array().
  *
  * @param arr Pointer to an array (must not be `NULL`).
@@ -1304,7 +1304,7 @@ tao_strlen(const char* str);
  *               may be equal to `-1` and the command line must be
  *               null-terminated.
  *
- * The caller is responsible of properly initializing the list pointer to
+ * The caller is responsible for properly initializing the list pointer to
  * `NULL` and calling free() when the list is no longer needed.  The list
  * argument can be re-used several times to parse different command lines.
  *
@@ -1412,8 +1412,8 @@ extern int tao_parse_double(const char* str, double* ptr);
  * Allocate dynamic memory.
  *
  * This function behaves as malloc() except that error information may be
- * tracked in @p errs.  The caller is responsible to call free() or tao_free()
- * to free the allocated memory when no longer needed.
+ * tracked in @p errs.  The caller is responsible for calling free() or
+ * tao_free() to free the allocated memory when no longer needed.
  *
  * @param errs   Address of a variable to track errors.
  * @param size   Number of bytes to allocate.
@@ -1429,8 +1429,8 @@ tao_malloc(tao_error_t** errs, size_t size);
  * Allocate dynamic memory.
  *
  * This function behaves as calloc() except that error information may be
- * tracked in @p errs.  The caller is responsible to call free() or tao_free()
- * to free the allocated memory when no longer needed.
+ * tracked in @p errs.  The caller is responsible for calling free() or
+ * tao_free() to free the allocated memory when no longer needed.
  *
  * @param errs   Address of a variable to track errors.
  * @param nelem  Number of elements to allocate.
@@ -2013,7 +2013,7 @@ tao_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
  * address space of the caller.  If the object is not currently locked, it
  * becomes locked by the caller and `1` is returned by the call; otherwise, `0`
  * is returned.  This function never blocks.  If `1` is returned, the caller is
- * responsible of eventually unlocking the object by calling
+ * responsible for eventually unlocking the object by calling
  * tao_unlock_shared_object().
  *
  * @warning The same thread/process must not attempt to lock the same object
@@ -2077,8 +2077,8 @@ typedef struct tao_shared_array tao_shared_array_t;
  *
  * This function creates a new multi-dimensional array whose contents can be
  * shared between processes.  The returned array is attached to the address
- * space of the caller which is responsible to detach the shared array when no
- * longer needed by calling tao_detach_shared_array().
+ * space of the caller which is responsible for detaching the shared array when
+ * no longer needed by calling tao_detach_shared_array().
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -2099,8 +2099,8 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * This function creates a new mono-dimensional array whose contents can be
  * shared between processes.  The returned array is attached to the address
- * space of the caller which is responsible to detach the shared array when no
- * longer needed by calling tao_detach_shared_array().
+ * space of the caller which is responsible for detaching the shared array when
+ * no longer needed by calling tao_detach_shared_array().
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -2120,8 +2120,8 @@ tao_create_1d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * This function creates a new two-dimensional array whose contents can be
  * shared between processes.  The returned array is attached to the address
- * space of the caller which is responsible to detach the shared array when no
- * longer needed by calling tao_detach_shared_array().
+ * space of the caller which is responsible for detaching the shared array when
+ * no longer needed by calling tao_detach_shared_array().
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -2142,8 +2142,8 @@ tao_create_2d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * This function creates a new three-dimensional array whose contents can be
  * shared between processes.  The returned array is attached to the address
- * space of the caller which is responsible to detach the shared array when no
- * longer needed by calling tao_detach_shared_array().
+ * space of the caller which is responsible for detaching the shared array when
+ * no longer needed by calling tao_detach_shared_array().
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -2500,7 +2500,7 @@ typedef struct tao_camera tao_camera_t;
 /**
  * Create a camera structure for a frame grabber server.
  *
- * The caller is responsible to eventually call tao_finalize_camera().
+ * The caller is responsible for eventually calling tao_finalize_camera().
  *
  * @param errs     Address of a variable to track errors.
  * @param nframes  Maximum number of shared arrays to memorize (at least 2).
