@@ -46,6 +46,14 @@
 #define TAO_ROUND_UP(a, b)  ((((a) + ((b) - 1))/(b))*(b))
 
 /**
+ * Boolean value.
+ */
+typedef enum {
+    TAO_FALSE = 0,
+    TAO_TRUE  = 1
+} tao_boolean_t;
+
+/**
  * Private structure to store a shared array.
  *
  * The definition of this structure is exposed in `"tao-private.h"` but its
