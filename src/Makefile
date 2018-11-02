@@ -1,19 +1,26 @@
 srcdir=.
 
 CC = gcc
-CFLAGS = -O2
-CPPFLAGS = $(LIBTAO_DEFS) $(LIBXPA_DEFS)
-LDFLAGS = $(LIBTAO_LIBS) $(LIBXPA_LIBS) -lm
+CFLAGS = -O2 -Wall -Werror
+CPPFLAGS = -I.
+LDFLAGS =
+LIBS = -lm
 
-LIBTAO_DEFS = -I${srcdir}/../libtao/src
-#LIBTAO_LIBS = -L${srcdir}/../build/src/.libs/ -ltao
-LIBTAO_LIBS = ${srcdir}/../build/src/.libs/libtao.a -lpthread
+FITSIO_DEFS =
+FITSIO_LIBS = -lcfitsio
 
-LIBXPA_DEFS =
-LIBXPA_LIBS = -lxpa
+TAO_DEFS = -I${srcdir}/../libtao/src
+#TAO_LIBS = -L${srcdir}/../build/src/.libs/ -ltao
+TAO_LIBS = ${srcdir}/../build/src/.libs/libtao.a -lpthread
+
+XPA_DEFS =
+XPA_LIBS = -lxpa
 
 default: all
-all: virtualcamera
+all: virtualcamera test-fits
 
 virtualcamera: virtualcamera.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) "$<" -o "$@" $(LDFLAGS)
+	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(XPA_DEFS) $(CFLAGS) $(LDFLAGS) "$<" -o "$@" $(TAO_LIBS) $(XPA_LIBS) $(LIBS)
+
+test-fits: test-fits.c
+	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(FITSIO_DEFS) $(CFLAGS) $(LDFLAGS) "$<" -o "$@" $(TAO_LIBS) $(FITSIO_LIBS) $(LIBS)
