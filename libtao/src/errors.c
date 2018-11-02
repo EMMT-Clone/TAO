@@ -272,6 +272,7 @@ const char*
 FUNC(int code)
 {
     switch (code) {
+        CASE(TAO_ALREADY_EXIST, "Destination already exists");
         CASE(TAO_UNSUPPORTED, "Unsupported feature");
         CASE(TAO_ACQUISITION_RUNNING, "Acquisition running");
         CASE(TAO_NO_ACQUISITION, "Acquisition not started");

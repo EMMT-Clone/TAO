@@ -215,6 +215,7 @@ typedef enum tao_error_code {
     TAO_NO_ACQUISITION      = -32, /**< Acquisition not started */
     TAO_ACQUISITION_RUNNING = -33, /**< Acquisition running */
     TAO_UNSUPPORTED         = -34, /**< Unsupported feature */
+    TAO_ALREADY_EXIST       = -35, /**< Destination already exists */
 } tao_error_code_t;
 
 
