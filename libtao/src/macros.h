@@ -14,6 +14,9 @@
 #ifndef _TAO_MACROS_H_
 #define _TAO_MACROS_H_ 1
 
+#define float32_t  float
+#define float64_t  double
+
 #undef FALSE
 #undef TRUE
 #define FALSE  0

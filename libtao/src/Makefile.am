@@ -4,6 +4,7 @@ libtao_la_SOURCES = \
     arrays.c \
     buffers.c \
     cmdline.c \
+    copy.c \
     errors.c \
     fitsfiles.c \
     mutexes.c \

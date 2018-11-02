@@ -1743,6 +1743,70 @@ tao_get_absolute_timeout(tao_error_t** errs, struct timespec* ts, double secs);
 /** @} */
 
 /**
+ * @addtogroup CopyConvert
+ *
+ * @{
+ */
+
+/**
+ * Copy/convert regions of multi-dimensional arrays.
+ *
+ * This function copies (and possibly converts) the elements of a rectangular
+ * region between two multi-dimensional arrays.
+ *
+ * @param errs     Address of a variable to track errors.
+ * @param dstptr   Address of first element in destination array.
+ * @param dsttype  Type of elements in destination array.
+ * @param dstdims  Dimensions of destination array.
+ * @param dstoffs  Offsets of destination region.
+ * @param srcptr   Address of first element in source array.
+ * @param srctype  Type of elements in source array.
+ * @param srcdims  Dimensions of source array.
+ * @param srcoffs  Offsets of source region.
+ * @param lens     Dimensions of region to copy.
+ *
+ * @return `0` on success, `-1` on error.
+ *
+ * @see tao_copy_checked_args().
+ */
+extern int
+tao_copy(tao_error_t** errs,
+         void* dstptr, tao_element_type_t dsttype,
+         const long dstdims[], const long dstoffs[],
+         const void* srcptr, tao_element_type_t srctype,
+         const long srcdims[], const long srcoffs[],
+         const long lens[], int ndims);
+
+/**
+ * Copy/convert regions of multi-dimensional arrays.
+ *
+ * This function is the same as tao_copy() except that no checking of the
+ * arguments is performed.
+ *
+ * @param errs     Address of a variable to track errors.
+ * @param dstptr   Address of first element in destination array.
+ * @param dsttype  Type of elements in destination array.
+ * @param dstdims  Dimensions of destination array.
+ * @param dstoffs  Offsets of destination region.
+ * @param srcptr   Address of first element in source array.
+ * @param srctype  Type of elements in source array.
+ * @param srcdims  Dimensions of source array.
+ * @param srcoffs  Offsets of source region.
+ * @param lens     Dimensions of region to copy.
+ *
+ * @see tao_copy().
+ */
+extern void
+tao_copy_checked_args(tao_error_t** errs,
+                      void* dstptr, tao_element_type_t dsttype,
+                      const long dstdims[], const long dstoffs[],
+                      const void* srcptr, tao_element_type_t srctype,
+                      const long srcdims[], const long srcoffs[],
+                      const long lens[], int ndims);
+
+/** @} */
+
+/**
  * @addtogroup Locks
  *
  * Mutexes, conditions variables and semaphores.
