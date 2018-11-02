@@ -2,10 +2,10 @@ language: c
 compiler: gcc
 before_install:
   - sudo apt-get install automake autoconf autotools-dev libtool
-  - sudo apt-get install libcfitsio-dev
+#  - sudo apt-get install libcfitsio-dev
 script:
   - ./bootstrap;
     mkdir build;
     cd build;
-    ../libtao/configure;
-    make
+    ../libtao/configure
+#    make
