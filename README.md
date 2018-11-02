@@ -1,4 +1,6 @@
 # A framework for real-time software
+[![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
+[![Build Status](https://travis-ci.org/emmt/TAO.svg?branch=master)](https://travis-ci.org/emmt/TAO)
 
 TAO was initially designed as a software framework to carry the real-time
 processing needed by adaptive optics (AO) systems.
