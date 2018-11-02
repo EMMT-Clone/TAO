@@ -2,6 +2,13 @@
 
 * Implement shared images policy (as discussed with Michel).
 
+* Choosing a sub-image with ActiveSilicon Phoenix frame grabber is not yet
+  fully working (chosen ROI must respect hardware constraints: horizontal
+  offset and width must be multiples of 16, vertical offset and height must be
+  multiples of 2).
+
+* Setting connection speed with ActiveSilicon Phoenix frame grabber is not yet
+  fully working (but will be possible).
 
 ## Things to do
 

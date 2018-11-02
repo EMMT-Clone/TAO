@@ -16,6 +16,7 @@
 #include "macros.h"
 #include "tao-private.h"
 
+#include <limits.h>
 #include <string.h>
 
 /*---------------------------------------------------------------------------*/
@@ -38,10 +39,9 @@ tao_get_element_size(int eltype)
     }
 }
 
-size_t
-tao_count_elements(tao_error_t** errs, int ndims, const size_t dims[])
+long
+tao_count_elements(tao_error_t** errs, int ndims, const long dims[])
 {
-    const size_t maxsize = ~(size_t)0;
     if (ndims < 0 || ndims > TAO_MAX_NDIMS) {
         tao_push_error(errs, __func__, TAO_BAD_RANK);
         return 0;
@@ -50,16 +50,16 @@ tao_count_elements(tao_error_t** errs, int ndims, const size_t dims[])
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return 0;
     }
-    size_t nelem = 1;
+    long nelem = 1;
     for (int d = 0; d < ndims; ++d) {
-        size_t dim = dims[d];
+        long dim = dims[d];
         if (dim <= 0) {
             tao_push_error(errs, __func__, TAO_BAD_SIZE);
             return 0;
         }
         if (dim > 1) {
             /* Count number of elements and check for overflows. */
-            if (nelem > maxsize/dim) {
+            if (nelem > LONG_MAX/dim) {
                 tao_push_error(errs, __func__, TAO_BAD_SIZE);
                 return 0;
             }
@@ -71,9 +71,9 @@ tao_count_elements(tao_error_t** errs, int ndims, const size_t dims[])
 
 tao_array_t*
 tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
-                 int ndims, const size_t dims[])
+                 int ndims, const long dims[])
 {
-    size_t nelem = tao_count_elements(errs, ndims, dims);
+    long nelem = tao_count_elements(errs, ndims, dims);
     if (nelem < 1) {
         return NULL;
     }
@@ -96,6 +96,9 @@ tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
     for (int i = 0; i < ndims; ++i) {
         arr->dims[i] = dims[i];
     }
+    for (int d = ndims; d < TAO_MAX_NDIMS; ++d) {
+        arr->dims[d] = 1;
+    }
     size_t address = (char*)arr - (char*)0;
     arr->data = (void*)TAO_ROUND_UP(address + header, ALIGNMENT);
     return arr;
@@ -103,10 +106,10 @@ tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
 
 tao_array_t*
 tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
-               int ndims, const size_t dims[], void* data,
+               int ndims, const long dims[], void* data,
                void (*free)(void*), void* ctx)
 {
-    size_t nelem = tao_count_elements(errs, ndims, dims);
+    long nelem = tao_count_elements(errs, ndims, dims);
     if (nelem < 1) {
         return NULL;
     }
@@ -127,6 +130,9 @@ tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
     for (int i = 0; i < ndims; ++i) {
         arr->dims[i] = dims[i];
     }
+    for (int d = ndims; d < TAO_MAX_NDIMS; ++d) {
+        arr->dims[d] = 1;
+    }
     arr->data = data;
     arr->free = free;
     arr->ctx = ctx;
@@ -135,18 +141,18 @@ tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
 
 tao_array_t*
 tao_create_1d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    size_t dim1)
+                    long dim1)
 {
-    size_t dims[1];
+    long dims[1];
     dims[0] = dim1;
     return tao_create_array(errs, eltype, 1, dims);
 }
 
 tao_array_t*
 tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    size_t dim1, size_t dim2)
+                    long dim1, long dim2)
 {
-    size_t dims[2];
+    long dims[2];
     dims[0] = dim1;
     dims[1] = dim2;
     return tao_create_array(errs, eltype, 2, dims);
@@ -154,9 +160,9 @@ tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
 
 tao_array_t*
 tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    size_t dim1, size_t dim2, size_t dim3)
+                    long dim1, long dim2, long dim3)
 {
-    size_t dims[3];
+    long dims[3];
     dims[0] = dim1;
     dims[1] = dim2;
     dims[2] = dim3;
@@ -165,19 +171,19 @@ tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
 
 tao_array_t*
 tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  size_t dim1, void* data, void (*free)(void*), void* ctx)
+                  long dim1, void* data, void (*free)(void*), void* ctx)
 {
-    size_t dims[1];
+    long dims[1];
     dims[0] = dim1;
     return tao_wrap_array(errs, eltype, 1, dims, data, free, ctx);
 }
 
 tao_array_t*
 tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  size_t dim1, size_t dim2, void* data,
+                  long dim1, long dim2, void* data,
                   void (*free)(void*), void* ctx)
 {
-    size_t dims[2];
+    long dims[2];
     dims[0] = dim1;
     dims[1] = dim2;
     return tao_wrap_array(errs, eltype, 2, dims, data, free, ctx);
@@ -185,10 +191,10 @@ tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
 
 tao_array_t*
 tao_wrap_3d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  size_t dim1, size_t dim2, size_t dim3, void* data,
+                  long dim1, long dim2, long dim3, void* data,
                   void (*free)(void*), void* ctx)
 {
-    size_t dims[3];
+    long dims[3];
     dims[0] = dim1;
     dims[1] = dim2;
     dims[2] = dim3;
@@ -225,7 +231,7 @@ tao_get_array_eltype(const tao_array_t* arr)
     return (likely(arr != NULL) ? arr->eltype : -1);
 }
 
-size_t
+long
 tao_get_array_length(const tao_array_t* arr)
 {
     return (likely(arr != NULL) ? arr->nelem : 0);
@@ -237,7 +243,7 @@ tao_get_array_ndims(const tao_array_t* arr)
     return (likely(arr != NULL) ? arr->ndims : 0);
 }
 
-size_t
+long
 tao_get_array_size(const tao_array_t* arr, int d)
 {
     return (likely(arr != NULL) ?

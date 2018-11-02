@@ -173,8 +173,7 @@ tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr)
 {
     int bitpix, ndims;
     int status = 0;
-    long fitsdims[TAO_MAX_NDIMS];
-    size_t arrdims[TAO_MAX_NDIMS];
+    long dims[TAO_MAX_NDIMS];
 
     /* Get the type of the elements. */
     if (fits_get_img_equivtype(fptr, &bitpix, &status) != 0) {
@@ -197,16 +196,13 @@ tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr)
         tao_push_error(errs, __func__, TAO_BAD_RANK);
         return NULL;
     }
-    if (fits_get_img_size(fptr, ndims, fitsdims, &status) != 0) {
+    if (fits_get_img_size(fptr, ndims, dims, &status) != 0) {
         tao_push_fits_error(errs, "fits_get_img_size", status);
         return NULL;
     }
 
     /* Create the array. */
-    for (int i = 0; i < ndims; ++i) {
-        arrdims[i] = fitsdims[i];
-    }
-    tao_array_t* arr = tao_create_array(errs, eltype, ndims, arrdims);
+    tao_array_t* arr = tao_create_array(errs, eltype, ndims, dims);
     if (arr == NULL) {
         return NULL;
     }

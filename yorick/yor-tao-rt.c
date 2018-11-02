@@ -808,7 +808,7 @@ Y_tao_set_data(int argc)
         y_error("not same number of dimensions");
     }
     for (d = 1; d <= ndims; ++d) {
-        size_t dim = tao_get_shared_array_size(arr, d);
+        long dim = tao_get_shared_array_size(arr, d);
         if (dims[d] != dim) {
             y_error("not same number of dimensions");
         }

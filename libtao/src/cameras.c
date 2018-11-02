@@ -162,7 +162,7 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
             continue;
         }
         if (arr->eltype != shared->pixel_type || arr->ndims != 2 ||
-            arr->size[0] != shared->width || arr->size[1] != shared->height) {
+            arr->dims[0] != shared->width || arr->dims[1] != shared->height) {
             /* This frame does not have the correct format, discard it. */
             frame_list[i] = NULL;
             if (tao_detach_shared_array(errs, arr) != 0) {

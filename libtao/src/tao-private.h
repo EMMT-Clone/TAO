@@ -54,18 +54,18 @@ typedef enum {
 } tao_boolean_t;
 
 /**
- * Private structure to store an array.
+ * Private structure to store a multi-dimensional array.
  *
  * The definition of this structure is exposed in `"tao-private.h"` but its
  * members should be considered as read-only.  It is recommended to use the
- * public API to manipulate a shared array.
+ * public API to manipulate a multi-dimensional array.
  */
 struct tao_array {
     int nrefs;                  /**< Number of references on the object */
     int ndims;                  /**< Number of dimensions */
     void* data;                 /**< Address of first array element */
-    size_t nelem;               /**< Number of elements */
-    size_t dims[TAO_MAX_NDIMS]; /**< Length of each dimension (dimensions
+    long nelem;                 /**< Number of elements */
+    long dims[TAO_MAX_NDIMS];   /**< Length of each dimension (dimensions
                                      beyong `ndims` are assumed to be `1`) */
     tao_element_type_t  eltype; /**< Type of the elements of the shared
                                      array */
@@ -87,9 +87,9 @@ struct tao_shared_array {
     size_t offset;                /**< Offset of data part in bytes and
                                        relative to the base address of the
                                        object */
-    size_t nelem;                 /**< Number of elements */
-    uint32_t ndims;               /**< Number of dimensions */
-    uint32_t size[TAO_MAX_NDIMS]; /**< Length of each dimension (dimensions
+    long nelem;                   /**< Number of elements */
+    int ndims;                    /**< Number of dimensions */
+    long dims[TAO_MAX_NDIMS];     /**< Length of each dimension (dimensions
                                        beyong `ndims` are assumed to be `1`) */
     tao_element_type_t  eltype;   /**< Type of the elements of the shared
                                        array */

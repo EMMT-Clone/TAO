@@ -57,8 +57,8 @@ function create(::Type{SharedArray{T,N}},
     eltype = SHARED_ARRAY_ELTYPES[T]
     errs = Errors()
     ptr = ccall((:tao_create_shared_array, taolib), Ptr{Cvoid},
-                (Ref{Errors}, Cint, Cint, Ptr{Csize_t}, Cuint),
-                errs, eltype, N, Csize_t[dims...], perms)
+                (Ref{Errors}, Cint, Cint, Ptr{Clong}, Cuint),
+                errs, eltype, N, Clong[dims...], perms)
     _check(ptr != C_NULL, errs)
     return _wrap(SharedArray{T,N}, ptr, dims)
 end
@@ -78,7 +78,7 @@ function attach(::Type{SharedArray}, ident::Integer)
         _detach_on_error(ptr, "Bad number of dimensions")
     dims = Array{Int}(undef, N)
     for d in 1:N
-        dims[d] = ccall((:tao_get_shared_array_size, taolib), Csize_t,
+        dims[d] = ccall((:tao_get_shared_array_size, taolib), Clong,
                         (Ptr{Cvoid}, Cint), ptr, d)
         dims[d] ≥ 1 || _detach_on_error(ptr, "Bad dimension $d")
     end

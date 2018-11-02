@@ -843,8 +843,8 @@ tao_get_element_size(int eltype);
  *      tao_get_array_length(), tao_get_array_ndims(), tao_get_array_size(),
  *      tao_get_array_data().
  */
-extern size_t
-tao_count_elements(tao_error_t** errs, int ndims, const size_t dims[]);
+extern long
+tao_count_elements(tao_error_t** errs, int ndims, const long dims[]);
 
 /**
  * Maximun number of dimensions of (shared) arrays.
@@ -880,7 +880,7 @@ typedef struct tao_array tao_array_t;
  */
 extern tao_array_t*
 tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
-                 int ndims, const size_t dims[]);
+                 int ndims, const long dims[]);
 
 /**
  * Create a new mono-dimensional shared array.
@@ -899,7 +899,7 @@ tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_array_t*
 tao_create_1d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    size_t dim);
+                    long dim);
 
 /**
  * Create a new two-dimensional array.
@@ -919,7 +919,7 @@ tao_create_1d_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_array_t*
 tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    size_t dim1, size_t dim2);
+                    long dim1, long dim2);
 
 /**
  * Create a new three-dimensional array.
@@ -940,7 +940,7 @@ tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_array_t*
 tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    size_t dim1, size_t dim2, size_t dim3);
+                    long dim1, long dim2, long dim3);
 
 /**
  * Wrap existing data into a multi-dimensional array.
@@ -967,7 +967,7 @@ tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_array_t*
 tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
-               int ndims, const size_t dims[], void* data,
+               int ndims, const long dims[], void* data,
                void (*free)(void*), void* ctx);
 
 /**
@@ -992,7 +992,7 @@ tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_array_t*
 tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  size_t dim, void* data, void (*free)(void*), void* ctx);
+                  long dim, void* data, void (*free)(void*), void* ctx);
 
 /**
  * Wrap existing data into a two-dimensional array.
@@ -1017,7 +1017,7 @@ tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_array_t*
 tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  size_t dim1, size_t dim2, void* data,
+                  long dim1, long dim2, void* data,
                   void (*free)(void*), void* ctx);
 
 /**
@@ -1044,7 +1044,7 @@ tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_array_t*
 tao_wrap_3d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  size_t dim1, size_t dim2, size_t dim3, void* data,
+                  long dim1, long dim2, long dim3, void* data,
                   void (*free)(void*), void* ctx);
 
 /**
@@ -1094,7 +1094,7 @@ tao_get_array_eltype(const tao_array_t* arr);
  *
  * @return The number of elements in the array.
  */
-extern size_t
+extern long
 tao_get_array_length(const tao_array_t* arr);
 
 /**
@@ -1121,7 +1121,7 @@ tao_get_array_ndims(const tao_array_t* arr);
  *         `0` if @p d is less than `1` and `1` if @p d is greater than the
  *         number of dimensions of @p arr.
  */
-extern size_t
+extern long
 tao_get_array_size(const tao_array_t* arr, int d);
 
 /**
@@ -2194,7 +2194,7 @@ typedef struct tao_shared_array tao_shared_array_t;
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
  * @param ndims  Number of dimensions of the array.
- * @param size   Lengths of the dimensions of the array.
+ * @param dims   Lengths of the dimensions of the array.
  * @param perms  Permissions granted to the group and to the others.
  *
  * @return The address of a new shared array; `NULL` in case of errors.
@@ -2203,7 +2203,7 @@ typedef struct tao_shared_array tao_shared_array_t;
  */
 extern tao_shared_array_t*
 tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
-                        int ndims, const size_t size[], unsigned int perms);
+                        int ndims, const long dims[], unsigned int perms);
 
 /**
  * Create a new mono-dimensional shared array.
@@ -2224,7 +2224,7 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_shared_array_t*
 tao_create_1d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
-                           size_t dim, unsigned int perms);
+                           long dim, unsigned int perms);
 
 /**
  * Create a new two-dimensional shared array.
@@ -2246,7 +2246,7 @@ tao_create_1d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_shared_array_t*
 tao_create_2d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
-                           size_t dim1, size_t dim2, unsigned int perms);
+                           long dim1, long dim2, unsigned int perms);
 
 /**
  * Create a new three-dimensional shared array.
@@ -2269,7 +2269,7 @@ tao_create_2d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  */
 extern tao_shared_array_t*
 tao_create_3d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
-                           size_t dim1, size_t dim2, size_t dim3,
+                           long dim1, long dim2, long dim3,
                            unsigned int perms);
 
 /**
@@ -2338,7 +2338,7 @@ tao_get_shared_array_eltype(const tao_shared_array_t* arr);
  *
  * @return The number of elements in the array.
  */
-extern size_t
+extern long
 tao_get_shared_array_length(const tao_shared_array_t* arr);
 
 /**
@@ -2361,7 +2361,7 @@ tao_get_shared_array_ndims(const tao_shared_array_t* arr);
  *
  * @return The number of elements along the given dimension.
  */
-extern size_t
+extern long
 tao_get_shared_array_size(const tao_shared_array_t* arr, int d);
 
 /**
