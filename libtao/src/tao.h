@@ -1743,68 +1743,6 @@ tao_get_absolute_timeout(tao_error_t** errs, struct timespec* ts, double secs);
 /** @} */
 
 /**
- * @addtogroup CopyConvert
- *
- * @{
- */
-
-/**
- * Copy/convert regions of multi-dimensional arrays.
- *
- * This function copies (and possibly converts) the elements of a rectangular
- * region between two multi-dimensional arrays.
- *
- * @param errs     Address of a variable to track errors.
- * @param dstptr   Address of first element in destination array.
- * @param dsttype  Type of elements in destination array.
- * @param dstdims  Dimensions of destination array.
- * @param dstoffs  Offsets of destination region.
- * @param srcptr   Address of first element in source array.
- * @param srctype  Type of elements in source array.
- * @param srcdims  Dimensions of source array.
- * @param srcoffs  Offsets of source region.
- * @param lens     Dimensions of region to copy.
- *
- * @return `0` on success, `-1` on error.
- *
- * @see tao_copy_checked_args().
- */
-extern int
-tao_copy(tao_error_t** errs,
-         void* dstptr, tao_element_type_t dsttype,
-         const long dstdims[], const long dstoffs[],
-         const void* srcptr, tao_element_type_t srctype,
-         const long srcdims[], const long srcoffs[],
-         const long lens[], int ndims);
-
-/**
- * Copy/convert regions of multi-dimensional arrays.
- *
- * This function is the same as tao_copy() except that no checking of the
- * arguments is performed.
- *
- * @param dstptr   Address of first element in destination array.
- * @param dsttype  Type of elements in destination array.
- * @param dstdims  Dimensions of destination array.
- * @param dstoffs  Offsets of destination region.
- * @param srcptr   Address of first element in source array.
- * @param srctype  Type of elements in source array.
- * @param srcdims  Dimensions of source array.
- * @param srcoffs  Offsets of source region.
- * @param lens     Dimensions of region to copy.
- *
- * @see tao_copy().
- */
-extern void
-tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
-                      const long dstdims[], const long dstoffs[],
-                      const void* srcptr, tao_element_type_t srctype,
-                      const long srcdims[], const long srcoffs[],
-                      const long lens[], int ndims);
-
-/** @} */
-
-/**
  * @addtogroup Locks
  *
  * Mutexes, conditions variables and semaphores.
@@ -3161,6 +3099,134 @@ tao_preprocess_image_u16_to_f64(double* d, double* w, const uint16_t* r, int n,
                                 const double* a, const double* b,
                                 const double* u, const double* v);
 /** @} */
+
+/**
+ * @addtogroup Utilities
+ *
+ * @{
+ *
+ *     @addtogroup CopyConvert
+ *
+ *     @{
+ */
+
+/**
+ * Copy/convert regions of multi-dimensional arrays.
+ *
+ * This function copies (and possibly converts) the elements of a rectangular
+ * region between two multi-dimensional arrays.
+ *
+ * @param errs     Address of a variable to track errors.
+ * @param dstptr   Address of first element in destination array.
+ * @param dsttype  Type of elements in destination array.
+ * @param dstdims  Dimensions of destination array.
+ * @param dstoffs  Offsets of destination region.
+ * @param srcptr   Address of first element in source array.
+ * @param srctype  Type of elements in source array.
+ * @param srcdims  Dimensions of source array.
+ * @param srcoffs  Offsets of source region.
+ * @param lens     Dimensions of region to copy.
+ * @param ndims    Number of dimensions (length of @p dstdims, @p dstoffs,
+ *                 @p srcdims, @p srcoffs and @p lens).
+ *
+ * @return `0` on success, `-1` on error.
+ *
+ * @see tao_copy_checked_args().
+ */
+extern int
+tao_copy(tao_error_t** errs,
+         void* dstptr, tao_element_type_t dsttype,
+         const long dstdims[], const long dstoffs[],
+         const void* srcptr, tao_element_type_t srctype,
+         const long srcdims[], const long srcoffs[],
+         const long lens[], int ndims);
+
+/**
+ * Copy/convert regions of multi-dimensional arrays.
+ *
+ * This function is the same as tao_copy() except that no checking of the
+ * arguments is performed.
+ *
+ * @param dstptr   Address of first element in destination array.
+ * @param dsttype  Type of elements in destination array.
+ * @param dstdims  Dimensions of destination array.
+ * @param dstoffs  Offsets of destination region.
+ * @param srcptr   Address of first element in source array.
+ * @param srctype  Type of elements in source array.
+ * @param srcdims  Dimensions of source array.
+ * @param srcoffs  Offsets of source region.
+ * @param lens     Dimensions of region to copy.
+ * @param ndims    Number of dimensions (length of @p dstdims, @p dstoffs,
+ *                 @p srcdims, @p srcoffs and @p lens).
+ *
+ * @see tao_copy().
+ */
+extern void
+tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
+                      const long dstdims[], const long dstoffs[],
+                      const void* srcptr, tao_element_type_t srctype,
+                      const long srcdims[], const long srcoffs[],
+                      const long lens[], int ndims);
+
+extern int
+tao_copy_to_array(tao_error_t** errs,
+                  tao_array_t* dst, const long dstoffs[],
+                  const void* srcptr, tao_element_type_t srctype,
+                  const long srcdims[], const long srcoffs[],
+                  const long lens[], int ndims);
+
+extern int
+tao_copy_to_shared_array(tao_error_t** errs,
+                         tao_shared_array_t* dst, const long dstoffs[],
+                         const void* srcptr, tao_element_type_t srctype,
+                         const long srcdims[], const long srcoffs[],
+                         const long lens[], int ndims);
+
+extern int
+tao_copy_from_array(tao_error_t** errs,
+                    void* dstptr, tao_element_type_t dsttype,
+                    const long dstdims[], const long dstoffs[],
+                    tao_array_t* src, const long srcoffs[],
+                    const long lens[], int ndims);
+
+extern int
+tao_copy_from_shared_array(tao_error_t** errs,
+                           void* dstptr, tao_element_type_t dsttype,
+                           const long dstdims[], const long dstoffs[],
+                           tao_shared_array_t* src, const long srcoffs[],
+                           const long lens[], int ndims);
+
+extern int
+tao_copy_array_to_array(tao_error_t** errs,
+                        tao_array_t* dst, const long dstoffs[],
+                        tao_array_t* src, const long srcoffs[],
+                        const long lens[], int ndims);
+
+extern int
+tao_copy_array_to_shared_array(tao_error_t** errs,
+                               tao_shared_array_t* dst, const long dstoffs[],
+                               tao_array_t* src, const long srcoffs[],
+                               const long lens[], int ndims);
+
+extern int
+tao_copy_shared_array_to_array(tao_error_t** errs,
+                               tao_array_t* dst, const long dstoffs[],
+                               tao_shared_array_t* src, const long srcoffs[],
+                               const long lens[], int ndims);
+
+extern int
+tao_copy_shared_array_to_shared_array(tao_error_t** errs,
+                                      tao_shared_array_t* dst,
+                                      const long dstoffs[],
+                                      tao_shared_array_t* src,
+                                      const long srcoffs[],
+                                      const long lens[], int ndims);
+
+/**
+ *     @}
+ *
+ * @}
+ */
 
 _TAO_END_DECLS
 

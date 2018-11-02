@@ -220,14 +220,14 @@ tao_copy(tao_error_t** errs,
          const long srcdims[], const long srcoffs[],
          const long lens[], int ndims)
 {
-    if (ndims < 0 || ndims > TAO_MAX_NDIMS) {
-        tao_push_error(errs, __func__, TAO_BAD_RANK);
-        return -1;
-    }
     if (dstptr == NULL || dstdims == NULL || dstoffs == NULL ||
         srcptr == NULL || srcdims == NULL || srcoffs == NULL ||
         lens == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (ndims < 0 || ndims > TAO_MAX_NDIMS) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
         return -1;
     }
     if (dsttype < TAO_INT8 || dsttype > TAO_FLOAT64 ||
@@ -310,4 +310,170 @@ tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
                                       srcptr, srcdims,
                                       lens, fastcopy_proc_table[k1]);
     }
+}
+
+#define DATA(arr) (void*)((uint8_t*)(arr) + (arr)->offset)
+
+int
+tao_copy_to_array(tao_error_t** errs,
+                  tao_array_t* dst, const long dstoffs[],
+                  const void* srcptr, tao_element_type_t srctype,
+                  const long srcdims[], const long srcoffs[],
+                  const long lens[], int ndims)
+{
+    if (dst == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (dst->ndims != ndims) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
+        return -1;
+    }
+    return tao_copy(errs, dst->data, dst->eltype, dst->dims, dstoffs,
+                    srcptr, srctype, srcdims, srcoffs,
+                    lens, ndims);
+}
+
+int
+tao_copy_to_shared_array(tao_error_t** errs,
+                         tao_shared_array_t* dst, const long dstoffs[],
+                         const void* srcptr, tao_element_type_t srctype,
+                         const long srcdims[], const long srcoffs[],
+                         const long lens[], int ndims)
+{
+    if (dst == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (dst->ndims != ndims) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
+        return -1;
+    }
+    return tao_copy(errs, DATA(dst), dst->eltype, dst->dims, dstoffs,
+                    srcptr, srctype, srcdims, srcoffs,
+                    lens, ndims);
+}
+
+int
+tao_copy_from_array(tao_error_t** errs,
+                    void* dstptr, tao_element_type_t dsttype,
+                    const long dstdims[], const long dstoffs[],
+                    tao_array_t* src, const long srcoffs[],
+                    const long lens[], int ndims)
+{
+    if (src == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (src->ndims != ndims) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
+        return -1;
+    }
+    return tao_copy(errs,
+                    dstptr, dsttype, dstdims, dstoffs,
+                    src->data, src->eltype, src->dims, srcoffs,
+                    lens, ndims);
+}
+
+int
+tao_copy_from_shared_array(tao_error_t** errs,
+                           void* dstptr, tao_element_type_t dsttype,
+                           const long dstdims[], const long dstoffs[],
+                           tao_shared_array_t* src, const long srcoffs[],
+                           const long lens[], int ndims)
+{
+    if (src == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (src->ndims != ndims) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
+        return -1;
+    }
+    return tao_copy(errs,
+                    dstptr, dsttype, dstdims, dstoffs,
+                    DATA(src), src->eltype, src->dims, srcoffs,
+                    lens, ndims);
+}
+
+int
+tao_copy_array_to_array(tao_error_t** errs,
+                        tao_array_t* dst, const long dstoffs[],
+                        tao_array_t* src, const long srcoffs[],
+                        const long lens[], int ndims)
+{
+    if (dst == NULL || src == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (dst->ndims != ndims || src->ndims != ndims) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
+        return -1;
+    }
+    return tao_copy(errs,
+                    dst->data, dst->eltype, dst->dims, dstoffs,
+                    src->data, src->eltype, src->dims, srcoffs,
+                    lens, ndims);
+}
+
+int
+tao_copy_array_to_shared_array(tao_error_t** errs,
+                               tao_shared_array_t* dst, const long dstoffs[],
+                               tao_array_t* src, const long srcoffs[],
+                               const long lens[], int ndims)
+{
+    if (dst == NULL || src == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (dst->ndims != ndims || src->ndims != ndims) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
+        return -1;
+    }
+    return tao_copy(errs,
+                    DATA(dst), dst->eltype, dst->dims, dstoffs,
+                    src->data, src->eltype, src->dims, srcoffs,
+                    lens, ndims);
+}
+
+int
+tao_copy_shared_array_to_array(tao_error_t** errs,
+                               tao_array_t* dst, const long dstoffs[],
+                               tao_shared_array_t* src, const long srcoffs[],
+                               const long lens[], int ndims)
+{
+    if (dst == NULL || src == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (dst->ndims != ndims || src->ndims != ndims) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
+        return -1;
+    }
+    return tao_copy(errs,
+                    dst->data, dst->eltype, dst->dims, dstoffs,
+                    DATA(src), src->eltype, src->dims, srcoffs,
+                    lens, ndims);
+}
+
+int
+tao_copy_shared_array_to_shared_array(tao_error_t** errs,
+                                      tao_shared_array_t* dst,
+                                      const long dstoffs[],
+                                      tao_shared_array_t* src,
+                                      const long srcoffs[],
+                                      const long lens[], int ndims)
+{
+    if (dst == NULL || src == NULL) {
+        tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
+        return -1;
+    }
+    if (dst->ndims != ndims || src->ndims != ndims) {
+        tao_push_error(errs, __func__, TAO_BAD_RANK);
+        return -1;
+    }
+    return tao_copy(errs,
+                    DATA(dst), dst->eltype, dst->dims, dstoffs,
+                    DATA(src), src->eltype, src->dims, srcoffs,
+                    lens, ndims);
 }
