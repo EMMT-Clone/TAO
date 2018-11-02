@@ -22,7 +22,7 @@ tao_get_shared_array_ident(const tao_shared_array_t* arr)
     return (likely(arr != NULL) ? arr->base.ident : -1);
 }
 
-int
+tao_element_type_t
 tao_get_shared_array_eltype(const tao_shared_array_t* arr)
 {
     return (likely(arr != NULL) ? arr->eltype : -1);

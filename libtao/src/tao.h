@@ -2263,7 +2263,7 @@ tao_get_shared_array_ident(const tao_shared_array_t* arr);
  *
  * @return One of the `tao_element_type_t` values.
  */
-extern int
+extern tao_element_type_t
 tao_get_shared_array_eltype(const tao_shared_array_t* arr);
 
 /**
