@@ -3117,12 +3117,12 @@ tao_preprocess_image_u16_to_f64(double* d, double* w, const uint16_t* r, int n,
  * region between two multi-dimensional arrays.
  *
  * @param errs     Address of a variable to track errors.
- * @param dstptr   Address of first element in destination array.
+ * @param dstdata  Address of first element in destination array.
  * @param dsttype  Type of elements in destination array.
  * @param dstdims  Dimensions of destination array.
  * @param dstoffs  Offsets of destination region (can be `NULL` if there are
  *                 no offsets).
- * @param srcptr   Address of first element in source array.
+ * @param srcdata  Address of first element in source array.
  * @param srctype  Type of elements in source array.
  * @param srcdims  Dimensions of source array.
  * @param srcoffs  Offsets of source region (can be `NULL` if there are
@@ -3137,9 +3137,9 @@ tao_preprocess_image_u16_to_f64(double* d, double* w, const uint16_t* r, int n,
  */
 extern int
 tao_copy(tao_error_t** errs,
-         void* dstptr, tao_element_type_t dsttype,
+         void* dstdata, tao_element_type_t dsttype,
          const long dstdims[], const long dstoffs[],
-         const void* srcptr, tao_element_type_t srctype,
+         const void* srcdata, tao_element_type_t srctype,
          const long srcdims[], const long srcoffs[],
          const long lens[], int ndims);
 
@@ -3149,12 +3149,12 @@ tao_copy(tao_error_t** errs,
  * This function is the same as tao_copy() except that no checking of the
  * arguments is performed.
  *
- * @param dstptr   Address of first element in destination array.
+ * @param dstdata  Address of first element in destination array.
  * @param dsttype  Type of elements in destination array.
  * @param dstdims  Dimensions of destination array.
  * @param dstoffs  Offsets of destination region (can be `NULL` if there are
  *                 no offsets).
- * @param srcptr   Address of first element in source array.
+ * @param srcdata  Address of first element in source array.
  * @param srctype  Type of elements in source array.
  * @param srcdims  Dimensions of source array.
  * @param srcoffs  Offsets of source region (can be `NULL` if there are
@@ -3166,36 +3166,36 @@ tao_copy(tao_error_t** errs,
  * @see tao_copy().
  */
 extern void
-tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
+tao_copy_checked_args(void* dstdata, tao_element_type_t dsttype,
                       const long dstdims[], const long dstoffs[],
-                      const void* srcptr, tao_element_type_t srctype,
+                      const void* srcdata, tao_element_type_t srctype,
                       const long srcdims[], const long srcoffs[],
                       const long lens[], int ndims);
 
 extern int
 tao_copy_to_array(tao_error_t** errs,
                   tao_array_t* dst, const long dstoffs[],
-                  const void* srcptr, tao_element_type_t srctype,
+                  const void* srcdata, tao_element_type_t srctype,
                   const long srcdims[], const long srcoffs[],
                   const long lens[], int ndims);
 
 extern int
 tao_copy_to_shared_array(tao_error_t** errs,
                          tao_shared_array_t* dst, const long dstoffs[],
-                         const void* srcptr, tao_element_type_t srctype,
+                         const void* srcdata, tao_element_type_t srctype,
                          const long srcdims[], const long srcoffs[],
                          const long lens[], int ndims);
 
 extern int
 tao_copy_from_array(tao_error_t** errs,
-                    void* dstptr, tao_element_type_t dsttype,
+                    void* dstdata, tao_element_type_t dsttype,
                     const long dstdims[], const long dstoffs[],
                     tao_array_t* src, const long srcoffs[],
                     const long lens[], int ndims);
 
 extern int
 tao_copy_from_shared_array(tao_error_t** errs,
-                           void* dstptr, tao_element_type_t dsttype,
+                           void* dstdata, tao_element_type_t dsttype,
                            const long dstdims[], const long dstoffs[],
                            tao_shared_array_t* src, const long srcoffs[],
                            const long lens[], int ndims);

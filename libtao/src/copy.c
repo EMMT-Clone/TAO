@@ -38,24 +38,24 @@
 typedef void fastcopy_proc(void* dst, long dstoff,
                            const void* src, long srcoff, long len);
 
-typedef void copy_proc(void* dstptr, const long dstdims[],
-                       const void* srcptr, const long srcdims[],
+typedef void copy_proc(void* dstdata, const long dstdims[],
+                       const void* srcdata, const long srcdims[],
                        const long lens[], fastcopy_proc *fastcopy);
 
-#define FASTCOPY1(PFX, DST, SRC)                        \
-    static void                                         \
-    fastcopy_##PFX(void* dstptr, long dstoff,           \
-                   const void* srcptr, long srcoff,     \
-                   long len)                            \
-    {                                                   \
-        DST* dst = ((DST*)dstptr) + dstoff;             \
-        const SRC* src = ((const SRC*)srcptr) + srcoff; \
-        for (long i = 0; i < len; ++i) {                \
-            dst[i] = src[i];                            \
-        }                                               \
+#define FASTCOPY1(PFX, DST, SRC)                                \
+    static void                                                 \
+    fastcopy_##PFX(void* dstdata, long dstoff,                  \
+                   const void* srcdata, long srcoff,            \
+                   long len)                                    \
+    {                                                           \
+        DST* dst = ((DST*)dstdata) + dstoff;                    \
+        const SRC* src = ((const SRC*)srcdata) + srcoff;        \
+        for (long i = 0; i < len; ++i) {                        \
+            dst[i] = src[i];                                    \
+        }                                                       \
     }
 
-#define FASTCOPY(from, to) FASTCOPY1(from##_##to, TYPE(from), TYPE(to))
+#define FASTCOPY(from, to) FASTCOPY1(from##_##to, TYPE(to), TYPE(from))
 
 #define FASTCOPY_PROCS(from)                    \
     FASTCOPY(from, i8)                          \
@@ -86,23 +86,23 @@ FASTCOPY_PROCS(f64)
 
 #if TAO_MAX_NDIMS >= 2
 static void
-copy_2d(void* dstptr, const long dstdims[],
-        const void* srcptr, const long srcdims[],
+copy_2d(void* dstdata, const long dstdims[],
+        const void* srcdata, const long srcdims[],
         const long lens[], fastcopy_proc *fastcopy)
 {
     long len1 = lens[0], dstdim1 = dstdims[0], srcdim1 = srcdims[0];
     long len2 = lens[1];
     for (long i2 = 0; i2 < len2; ++i2) {
-        fastcopy(dstptr, OFF2(dst,i2),
-                 srcptr, OFF2(src,i2), len1);
+        fastcopy(dstdata, OFF2(dst,i2),
+                 srcdata, OFF2(src,i2), len1);
     }
 }
 #endif
 
 #if TAO_MAX_NDIMS >= 3
 static void
-copy_3d(void* dstptr, const long dstdims[],
-        const void* srcptr, const long srcdims[],
+copy_3d(void* dstdata, const long dstdims[],
+        const void* srcdata, const long srcdims[],
         const long lens[], fastcopy_proc *fastcopy)
 {
     long len1 = lens[0], dstdim1 = dstdims[0], srcdim1 = srcdims[0];
@@ -110,8 +110,8 @@ copy_3d(void* dstptr, const long dstdims[],
     long len3 = lens[2];
     for (long i3 = 0; i3 < len3; ++i3) {
         for (long i2 = 0; i2 < len2; ++i2) {
-            fastcopy(dstptr, OFF3(dst,i2,i3),
-                     srcptr, OFF3(src,i2,i3), len1);
+            fastcopy(dstdata, OFF3(dst,i2,i3),
+                     srcdata, OFF3(src,i2,i3), len1);
         }
     }
 }
@@ -119,8 +119,8 @@ copy_3d(void* dstptr, const long dstdims[],
 
 #if TAO_MAX_NDIMS >= 4
 static void
-copy_4d(void* dstptr, const long dstdims[],
-        const void* srcptr, const long srcdims[],
+copy_4d(void* dstdata, const long dstdims[],
+        const void* srcdata, const long srcdims[],
         const long lens[], fastcopy_proc *fastcopy)
 {
     long len1 = lens[0], dstdim1 = dstdims[0], srcdim1 = srcdims[0];
@@ -130,8 +130,8 @@ copy_4d(void* dstptr, const long dstdims[],
     for (long i4 = 0; i4 < len4; ++i4) {
         for (long i3 = 0; i3 < len3; ++i3) {
             for (long i2 = 0; i2 < len2; ++i2) {
-                fastcopy(dstptr, OFF4(dst,i2,i3,i4),
-                         srcptr, OFF4(src,i2,i3,i4), len1);
+                fastcopy(dstdata, OFF4(dst,i2,i3,i4),
+                         srcdata, OFF4(src,i2,i3,i4), len1);
             }
         }
     }
@@ -140,8 +140,8 @@ copy_4d(void* dstptr, const long dstdims[],
 
 #if TAO_MAX_NDIMS >= 5
 static void
-copy_5d(void* dstptr, const long dstdims[],
-        const void* srcptr, const long srcdims[],
+copy_5d(void* dstdata, const long dstdims[],
+        const void* srcdata, const long srcdims[],
         const long lens[], fastcopy_proc *fastcopy)
 {
     long len1 = lens[0], dstdim1 = dstdims[0], srcdim1 = srcdims[0];
@@ -153,8 +153,8 @@ copy_5d(void* dstptr, const long dstdims[],
         for (long i4 = 0; i4 < len4; ++i4) {
             for (long i3 = 0; i3 < len3; ++i3) {
                 for (long i2 = 0; i2 < len2; ++i2) {
-                    fastcopy(dstptr, OFF5(dst,i2,i3,i4,i5),
-                             srcptr, OFF5(src,i2,i3,i4,i5), len1);
+                    fastcopy(dstdata, OFF5(dst,i2,i3,i4,i5),
+                             srcdata, OFF5(src,i2,i3,i4,i5), len1);
                 }
             }
         }
@@ -214,14 +214,14 @@ static copy_proc* copy_proc_table[] = {
 
 int
 tao_copy(tao_error_t** errs,
-         void* dstptr, tao_element_type_t dsttype,
+         void* dstdata, tao_element_type_t dsttype,
          const long dstdims[], const long dstoffs[],
-         const void* srcptr, tao_element_type_t srctype,
+         const void* srcdata, tao_element_type_t srctype,
          const long srcdims[], const long srcoffs[],
          const long lens[], int ndims)
 {
-    if (dstptr == NULL || dstdims == NULL ||
-        srcptr == NULL || srcdims == NULL ||
+    if (dstdata == NULL || dstdims == NULL ||
+        srcdata == NULL || srcdims == NULL ||
         lens == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
@@ -257,16 +257,16 @@ tao_copy(tao_error_t** errs,
             }
         }
     }
-    tao_copy_checked_args(dstptr, dsttype, dstdims, dstoffs,
-                          srcptr, srctype, srcdims, srcoffs,
+    tao_copy_checked_args(dstdata, dsttype, dstdims, dstoffs,
+                          srcdata, srctype, srcdims, srcoffs,
                           lens, ndims);
     return 0;
 }
 
 void
-tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
+tao_copy_checked_args(void* dstdata, tao_element_type_t dsttype,
                       const long dstdims[], const long dstoffs[],
-                      const void* srcptr, tao_element_type_t srctype,
+                      const void* srcdata, tao_element_type_t srctype,
                       const long srcdims[], const long srcoffs[],
                       const long lens[], int ndims)
 {
@@ -315,15 +315,15 @@ tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
         for (int d = 0; d < ndims; ++d) {
             len *= lens[d];
         }
-        (*fastcopy_proc_table[k1])(dstptr, dstoff,
-                                   srcptr, srcoff, len);
+        (*fastcopy_proc_table[k1])(dstdata, dstoff,
+                                   srcdata, srcoff, len);
     } else {
         long dstsiz = tao_get_element_size(dsttype);
         long srcsiz = tao_get_element_size(srctype);
-        dstptr = (      void*)((      uint8_t*)dstptr + dstoff*dstsiz);
-        srcptr = (const void*)((const uint8_t*)srcptr + srcoff*srcsiz);
-        (*copy_proc_table[ndims - 2])(dstptr, dstdims,
-                                      srcptr, srcdims,
+        dstdata = (      void*)((      uint8_t*)dstdata + dstoff*dstsiz);
+        srcdata = (const void*)((const uint8_t*)srcdata + srcoff*srcsiz);
+        (*copy_proc_table[ndims - 2])(dstdata, dstdims,
+                                      srcdata, srcdims,
                                       lens, fastcopy_proc_table[k1]);
     }
 }
@@ -333,7 +333,7 @@ tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
 int
 tao_copy_to_array(tao_error_t** errs,
                   tao_array_t* dst, const long dstoffs[],
-                  const void* srcptr, tao_element_type_t srctype,
+                  const void* srcdata, tao_element_type_t srctype,
                   const long srcdims[], const long srcoffs[],
                   const long lens[], int ndims)
 {
@@ -346,14 +346,14 @@ tao_copy_to_array(tao_error_t** errs,
         return -1;
     }
     return tao_copy(errs, dst->data, dst->eltype, dst->dims, dstoffs,
-                    srcptr, srctype, srcdims, srcoffs,
+                    srcdata, srctype, srcdims, srcoffs,
                     lens, ndims);
 }
 
 int
 tao_copy_to_shared_array(tao_error_t** errs,
                          tao_shared_array_t* dst, const long dstoffs[],
-                         const void* srcptr, tao_element_type_t srctype,
+                         const void* srcdata, tao_element_type_t srctype,
                          const long srcdims[], const long srcoffs[],
                          const long lens[], int ndims)
 {
@@ -366,13 +366,13 @@ tao_copy_to_shared_array(tao_error_t** errs,
         return -1;
     }
     return tao_copy(errs, DATA(dst), dst->eltype, dst->dims, dstoffs,
-                    srcptr, srctype, srcdims, srcoffs,
+                    srcdata, srctype, srcdims, srcoffs,
                     lens, ndims);
 }
 
 int
 tao_copy_from_array(tao_error_t** errs,
-                    void* dstptr, tao_element_type_t dsttype,
+                    void* dstdata, tao_element_type_t dsttype,
                     const long dstdims[], const long dstoffs[],
                     tao_array_t* src, const long srcoffs[],
                     const long lens[], int ndims)
@@ -386,14 +386,14 @@ tao_copy_from_array(tao_error_t** errs,
         return -1;
     }
     return tao_copy(errs,
-                    dstptr, dsttype, dstdims, dstoffs,
+                    dstdata, dsttype, dstdims, dstoffs,
                     src->data, src->eltype, src->dims, srcoffs,
                     lens, ndims);
 }
 
 int
 tao_copy_from_shared_array(tao_error_t** errs,
-                           void* dstptr, tao_element_type_t dsttype,
+                           void* dstdata, tao_element_type_t dsttype,
                            const long dstdims[], const long dstoffs[],
                            tao_shared_array_t* src, const long srcoffs[],
                            const long lens[], int ndims)
@@ -407,7 +407,7 @@ tao_copy_from_shared_array(tao_error_t** errs,
         return -1;
     }
     return tao_copy(errs,
-                    dstptr, dsttype, dstdims, dstoffs,
+                    dstdata, dsttype, dstdims, dstoffs,
                     DATA(src), src->eltype, src->dims, srcoffs,
                     lens, ndims);
 }
