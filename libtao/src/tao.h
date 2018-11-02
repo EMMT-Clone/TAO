@@ -3120,11 +3120,13 @@ tao_preprocess_image_u16_to_f64(double* d, double* w, const uint16_t* r, int n,
  * @param dstptr   Address of first element in destination array.
  * @param dsttype  Type of elements in destination array.
  * @param dstdims  Dimensions of destination array.
- * @param dstoffs  Offsets of destination region.
+ * @param dstoffs  Offsets of destination region (can be `NULL` if there are
+ *                 no offsets).
  * @param srcptr   Address of first element in source array.
  * @param srctype  Type of elements in source array.
  * @param srcdims  Dimensions of source array.
- * @param srcoffs  Offsets of source region.
+ * @param srcoffs  Offsets of source region (can be `NULL` if there are
+ *                 no offsets).
  * @param lens     Dimensions of region to copy.
  * @param ndims    Number of dimensions (length of @p dstdims, @p dstoffs,
  *                 @p srcdims, @p srcoffs and @p lens).
@@ -3150,11 +3152,13 @@ tao_copy(tao_error_t** errs,
  * @param dstptr   Address of first element in destination array.
  * @param dsttype  Type of elements in destination array.
  * @param dstdims  Dimensions of destination array.
- * @param dstoffs  Offsets of destination region.
+ * @param dstoffs  Offsets of destination region (can be `NULL` if there are
+ *                 no offsets).
  * @param srcptr   Address of first element in source array.
  * @param srctype  Type of elements in source array.
  * @param srcdims  Dimensions of source array.
- * @param srcoffs  Offsets of source region.
+ * @param srcoffs  Offsets of source region (can be `NULL` if there are
+ *                 no offsets).
  * @param lens     Dimensions of region to copy.
  * @param ndims    Number of dimensions (length of @p dstdims, @p dstoffs,
  *                 @p srcdims, @p srcoffs and @p lens).

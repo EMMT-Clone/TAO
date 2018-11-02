@@ -220,8 +220,8 @@ tao_copy(tao_error_t** errs,
          const long srcdims[], const long srcoffs[],
          const long lens[], int ndims)
 {
-    if (dstptr == NULL || dstdims == NULL || dstoffs == NULL ||
-        srcptr == NULL || srcdims == NULL || srcoffs == NULL ||
+    if (dstptr == NULL || dstdims == NULL ||
+        srcptr == NULL || srcdims == NULL ||
         lens == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
@@ -240,10 +240,21 @@ tao_copy(tao_error_t** errs,
             tao_push_error(errs, __func__, TAO_BAD_SIZE);
             return -1;
         }
-        if (dstoffs[d] < 0 || dstoffs[d] + lens[d] > dstdims[d] ||
-            srcoffs[d] < 0 || srcoffs[d] + lens[d] > srcdims[d]) {
-            tao_push_error(errs, __func__, TAO_BAD_ROI);
-            return -1;
+    }
+    if (dstoffs != NULL) {
+        for (int d = 0; d < ndims; ++d) {
+            if (dstoffs[d] < 0 || dstoffs[d] + lens[d] > dstdims[d]) {
+                tao_push_error(errs, __func__, TAO_BAD_ROI);
+                return -1;
+            }
+        }
+    }
+    if (srcoffs != NULL) {
+        for (int d = 0; d < ndims; ++d) {
+            if (srcoffs[d] < 0 || srcoffs[d] + lens[d] > srcdims[d]) {
+                tao_push_error(errs, __func__, TAO_BAD_ROI);
+                return -1;
+            }
         }
     }
     tao_copy_checked_args(dstptr, dsttype, dstdims, dstoffs,
@@ -260,18 +271,23 @@ tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
                       const long lens[], int ndims)
 {
     /* Compute uni-dimensional offsets from the muti-dimensional offsets. */
-    int dstoff, srcoff;
+    long dstoff = 0;
+    long srcoff = 0;
     if (ndims > 0) {
-        int d = ndims - 1;
-        long dstoff = dstoffs[d];
-        long srcoff = srcoffs[d];
-        while (--d >= 0) {
-            dstoff = dstoffs[d] + dstdims[d]*dstoff;
-            srcoff = srcoffs[d] + srcdims[d]*srcoff;
+        if (dstoffs != NULL) {
+            int d = ndims - 1;
+            dstoff = dstoffs[d];
+            while (--d >= 0) {
+                dstoff = dstoffs[d] + dstdims[d]*dstoff;
+            }
         }
-    } else {
-        dstoff = 0;
-        srcoff = 0;
+        if (srcoffs != NULL) {
+            int d = ndims - 1;
+            srcoff = srcoffs[d];
+            while (--d >= 0) {
+                srcoff = srcoffs[d] + srcdims[d]*srcoff;
+            }
+        }
     }
 
     /*
