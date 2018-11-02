@@ -299,8 +299,7 @@ tao_copy(tao_error_t** errs,
 }
 
 void
-tao_copy_checked_args(tao_error_t** errs,
-                      void* dstptr, tao_element_type_t dsttype,
+tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
                       const long dstdims[], const long dstoffs[],
                       const void* srcptr, tao_element_type_t srctype,
                       const long srcdims[], const long srcoffs[],

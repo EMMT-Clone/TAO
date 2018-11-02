@@ -1783,7 +1783,6 @@ tao_copy(tao_error_t** errs,
  * This function is the same as tao_copy() except that no checking of the
  * arguments is performed.
  *
- * @param errs     Address of a variable to track errors.
  * @param dstptr   Address of first element in destination array.
  * @param dsttype  Type of elements in destination array.
  * @param dstdims  Dimensions of destination array.
@@ -1797,8 +1796,7 @@ tao_copy(tao_error_t** errs,
  * @see tao_copy().
  */
 extern void
-tao_copy_checked_args(tao_error_t** errs,
-                      void* dstptr, tao_element_type_t dsttype,
+tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
                       const long dstdims[], const long dstoffs[],
                       const void* srcptr, tao_element_type_t srctype,
                       const long srcdims[], const long srcoffs[],
