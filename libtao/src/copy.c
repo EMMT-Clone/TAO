@@ -30,232 +30,187 @@
 #define TYPE__f32  float32_t
 #define TYPE__f64  float64_t
 
+#define OFF2(S,i2)               (i2)*S##dim1
+#define OFF3(S,i2,i3)            OFF2(S, (i3)*S##dim2 + (i2))
+#define OFF4(S,i2,i3,i4)         OFF3(S, i2, (i4)*S##dim3 + (i3))
+#define OFF5(S,i2,i3,i4,i5)      OFF4(S, i2, i3, (i5)*S##dim4 + (i4))
 
-#define INDEX1(S,j1)             (j1)
-#define INDEX2(S,j1,j2)          (j2)*S##dim1 + INDEX1(S,j1)
-#define INDEX3(S,j1,j2,j3)       (j3)*S##dim2 + INDEX2(S,j1,j2)
-#define INDEX4(S,j1,j2,j3,j4)    (j4)*S##dim3 + INDEX3(S,j1,j2,j3)
-#define INDEX5(S,j1,j2,j3,j4,j5) (j5)*S##dim4 + INDEX4(S,j1,j2,j3,j4)
-
-#define OFF1(S)                  INDEX1(S, S##off1)
-#define OFF2(S,i2)               INDEX2(S, S##off1,     \
-                                        (i2) + S##off2)
-#define OFF3(S,i2,i3)            INDEX3(S, S##off1,     \
-                                        (i2) + S##off2, \
-                                        (i3) + S##off3)
-#define OFF4(S,i2,i3,i4)         INDEX4(S, S##off1,     \
-                                        (i2) + S##off2, \
-                                        (i3) + S##off3, \
-                                        (i4) + S##off4)
-#define OFF5(S,i2,i3,i4,i5)      INDEX5(S, S##off1,    \
-                                        (i2) + S##off2, \
-                                        (i3) + S##off3, \
-                                        (i4) + S##off4, \
-                                        (i5) + S##off5)
-
-#define ENCODE1(PFX, DST, SRC)                                                \
-static void                                                                   \
-copy_1d_##PFX(void* dstptr, const long dstdims[], const long dstoffs[],       \
-              const void* srcptr, const long srcdims[], const long srcoffs[], \
-              const long lens[])                                              \
-{                                                                             \
-    long dstoff1 = dstoffs[0];                                                \
-    long srcoff1 = srcoffs[0];                                                \
-    long len1 = lens[0];                                                      \
-    DST* dst = ((DST*)dstptr) + dstoff1;                                      \
-    const SRC* src = ((SRC*)srcptr) + srcoff1;                                \
-    for (long i1 = 0; i1 < len1; ++i1) {                                      \
-        dst[i1] = src[i1];                                                    \
-    }                                                                         \
-}
-
-#define ENCODE2(PFX, DST, SRC)                                                \
-static void                                                                   \
-copy_2d_##PFX(void* dstptr, const long dstdims[], const long dstoffs[],       \
-              const void* srcptr, const long srcdims[], const long srcoffs[], \
-              const long lens[])                                              \
-{                                                                             \
-    long dstoff1 = dstoffs[0], dstdim1 = dstdims[0];                          \
-    long dstoff2 = dstoffs[1];                                                \
-    long srcoff1 = srcoffs[0], srcdim1 = srcdims[0];                          \
-    long srcoff2 = srcoffs[1];                                                \
-    long len1 = lens[0];                                                      \
-    long len2 = lens[1];                                                      \
-    for (long i2 = 0; i2 < len2; ++i2) {                                      \
-        DST* dst = ((DST*)dstptr) + OFF2(dst,i2);                             \
-        const SRC* src = ((SRC*)srcptr) + OFF2(src,i2);                       \
-        for (long i1 = 0; i1 < len1; ++i1) {                                  \
-            dst[i1] = src[i1];                                                \
-        }                                                                     \
-    }                                                                         \
-}
-
-#define ENCODE3(PFX, DST, SRC)                                                \
-static void                                                                   \
-copy_3d_##PFX(void* dstptr, const long dstdims[], const long dstoffs[],       \
-              const void* srcptr, const long srcdims[], const long srcoffs[], \
-              const long lens[])                                              \
-{                                                                             \
-    long dstoff1 = dstoffs[0], dstdim1 = dstdims[0];                          \
-    long dstoff2 = dstoffs[1], dstdim2 = dstdims[1];                          \
-    long dstoff3 = dstoffs[2];                                                \
-    long srcoff1 = srcoffs[0], srcdim1 = srcdims[0];                          \
-    long srcoff2 = srcoffs[1], srcdim2 = srcdims[1];                          \
-    long srcoff3 = srcoffs[2];                                                \
-    long len1 = lens[0];                                                      \
-    long len2 = lens[1];                                                      \
-    long len3 = lens[2];                                                      \
-    for (long i3 = 0; i3 < len3; ++i3) {                                      \
-        for (long i2 = 0; i2 < len2; ++i2) {                                  \
-            DST* dst = ((DST*)dstptr) + OFF3(dst,i2,i3);                      \
-            const SRC* src = ((SRC*)srcptr) + OFF3(src,i2,i3);                \
-            for (long i1 = 0; i1 < len1; ++i1) {                              \
-                dst[i1] = src[i1];                                            \
-            }                                                                 \
-        }                                                                     \
-    }                                                                         \
-}
-
-#define ENCODE4(PFX, DST, SRC)                                                \
-static void                                                                   \
-copy_4d_##PFX(void* dstptr, const long dstdims[], const long dstoffs[],       \
-              const void* srcptr, const long srcdims[], const long srcoffs[], \
-              const long lens[])                                              \
-{                                                                             \
-    long dstoff1 = dstoffs[0], dstdim1 = dstdims[0];                          \
-    long dstoff2 = dstoffs[1], dstdim2 = dstdims[1];                          \
-    long dstoff3 = dstoffs[2], dstdim3 = dstdims[2];                          \
-    long dstoff4 = dstoffs[3];                                                \
-    long srcoff1 = srcoffs[0], srcdim1 = srcdims[0];                          \
-    long srcoff2 = srcoffs[1], srcdim2 = srcdims[1];                          \
-    long srcoff3 = srcoffs[2], srcdim3 = srcdims[2];                          \
-    long srcoff4 = srcoffs[3];                                                \
-    long len1 = lens[0];                                                      \
-    long len2 = lens[1];                                                      \
-    long len3 = lens[2];                                                      \
-    long len4 = lens[3];                                                      \
-    for (long i4 = 0; i4 < len4; ++i4) {                                      \
-        for (long i3 = 0; i3 < len3; ++i3) {                                  \
-            for (long i2 = 0; i2 < len2; ++i2) {                              \
-                DST* dst = ((DST*)dstptr) + OFF4(dst,i2,i3,i4);               \
-                const SRC* src = ((SRC*)srcptr) + OFF4(src,i2,i3,i4);         \
-                for (long i1 = 0; i1 < len1; ++i1) {                          \
-                    dst[i1] = src[i1];                                        \
-                }                                                             \
-            }                                                                 \
-        }                                                                     \
-    }                                                                         \
-}
-
-#define ENCODE5(PFX, DST, SRC)                                                \
-static void                                                                   \
-copy_5d_##PFX(void* dstptr, const long dstdims[], const long dstoffs[],       \
-              const void* srcptr, const long srcdims[], const long srcoffs[], \
-              const long lens[])                                              \
-{                                                                             \
-    long dstoff1 = dstoffs[0], dstdim1 = dstdims[0];                          \
-    long dstoff2 = dstoffs[1], dstdim2 = dstdims[1];                          \
-    long dstoff3 = dstoffs[2], dstdim3 = dstdims[2];                          \
-    long dstoff4 = dstoffs[3], dstdim4 = dstdims[3];                          \
-    long dstoff5 = dstoffs[4];                                                \
-    long srcoff1 = srcoffs[0], srcdim1 = srcdims[0];                          \
-    long srcoff2 = srcoffs[1], srcdim2 = srcdims[1];                          \
-    long srcoff3 = srcoffs[2], srcdim3 = srcdims[2];                          \
-    long srcoff4 = srcoffs[3], srcdim4 = srcdims[3];                          \
-    long srcoff5 = srcoffs[4];                                                \
-    long len1 = lens[0];                                                      \
-    long len2 = lens[1];                                                      \
-    long len3 = lens[2];                                                      \
-    long len4 = lens[3];                                                      \
-    long len5 = lens[4];                                                      \
-    for (long i5 = 0; i5 < len5; ++i5) {                                      \
-        for (long i4 = 0; i4 < len4; ++i4) {                                  \
-            for (long i3 = 0; i3 < len3; ++i3) {                              \
-                for (long i2 = 0; i2 < len2; ++i2) {                          \
-                    DST* dst = ((DST*)dstptr) + OFF5(dst,i2,i3,i4,i5);        \
-                    const SRC* src = ((SRC*)srcptr) + OFF5(src,i2,i3,i4,i5);  \
-                    for (long i1 = 0; i1 < len1; ++i1) {                      \
-                        dst[i1] = src[i1];                                    \
-                    }                                                         \
-                }                                                             \
-            }                                                                 \
-        }                                                                     \
-    }                                                                         \
-}
-
-#define ENCODE_ALL_DIMS(FROM, TO)               \
-    ENCODE1(FROM##_##TO, TYPE(TO), TYPE(FROM))  \
-    ENCODE2(FROM##_##TO, TYPE(TO), TYPE(FROM))  \
-    ENCODE3(FROM##_##TO, TYPE(TO), TYPE(FROM))  \
-    ENCODE4(FROM##_##TO, TYPE(TO), TYPE(FROM))  \
-    ENCODE5(FROM##_##TO, TYPE(TO), TYPE(FROM))
-
-#define ENCODE_ALL_DIMS_ALL_SRCS(TO)            \
-    ENCODE_ALL_DIMS(i8,  TO)                    \
-    ENCODE_ALL_DIMS(u8,  TO)                    \
-    ENCODE_ALL_DIMS(i16, TO)                    \
-    ENCODE_ALL_DIMS(u16, TO)                    \
-    ENCODE_ALL_DIMS(i32, TO)                    \
-    ENCODE_ALL_DIMS(u32, TO)                    \
-    ENCODE_ALL_DIMS(i64, TO)                    \
-    ENCODE_ALL_DIMS(u64, TO)                    \
-    ENCODE_ALL_DIMS(f32, TO)                    \
-    ENCODE_ALL_DIMS(f64, TO)
-
-ENCODE_ALL_DIMS_ALL_SRCS(i8)
-ENCODE_ALL_DIMS_ALL_SRCS(u8)
-ENCODE_ALL_DIMS_ALL_SRCS(i16)
-ENCODE_ALL_DIMS_ALL_SRCS(u16)
-ENCODE_ALL_DIMS_ALL_SRCS(i32)
-ENCODE_ALL_DIMS_ALL_SRCS(u32)
-ENCODE_ALL_DIMS_ALL_SRCS(i64)
-ENCODE_ALL_DIMS_ALL_SRCS(u64)
-ENCODE_ALL_DIMS_ALL_SRCS(f32)
-ENCODE_ALL_DIMS_ALL_SRCS(f64)
-
-#undef ENCODE
-#undef ENCODE1
-#undef ENCODE2
-#undef ENCODE3
-#undef ENCODE4
-#undef ENCODE5
+typedef void fastcopy_proc(void* dst, long dstoff,
+                           const void* src, long srcoff, long len);
 
 typedef void copy_proc(void* dstptr, const long dstdims[],
-                       const long dstoffs[], const void* srcptr,
-                       const long srcdims[], const long srcoffs[],
-                       const long lens[]);
+                       const void* srcptr, const long srcdims[],
+                       const long lens[], fastcopy_proc *fastcopy);
 
-#define PROCS(d)    \
-    PROCS1(d, i8),  \
-    PROCS1(d, u8),  \
-    PROCS1(d, i16), \
-    PROCS1(d, u16), \
-    PROCS1(d, i32), \
-    PROCS1(d, u32), \
-    PROCS1(d, i64), \
-    PROCS1(d, u64), \
-    PROCS1(d, f32), \
-    PROCS1(d, f64)
+#define FASTCOPY1(PFX, DST, SRC)                        \
+    static void                                         \
+    fastcopy_##PFX(void* dstptr, long dstoff,           \
+                   const void* srcptr, long srcoff,     \
+                   long len)                            \
+    {                                                   \
+        DST* dst = ((DST*)dstptr) + dstoff;             \
+        const SRC* src = ((const SRC*)srcptr) + srcoff; \
+        for (long i = 0; i < len; ++i) {                \
+            dst[i] = src[i];                            \
+        }                                               \
+    }
 
-#define PROCS1(d,t)         \
-    copy_##d##d_##t##_i8,   \
-    copy_##d##d_##t##_u8,   \
-    copy_##d##d_##t##_i16,  \
-    copy_##d##d_##t##_u16,  \
-    copy_##d##d_##t##_i32,  \
-    copy_##d##d_##t##_u32,  \
-    copy_##d##d_##t##_i64,  \
-    copy_##d##d_##t##_u64,  \
-    copy_##d##d_##t##_f32,  \
-    copy_##d##d_##t##_f64
+#define FASTCOPY(from, to) FASTCOPY1(from##_##to, TYPE(from), TYPE(to))
 
-static copy_proc* copy_proc_table[] = {
-    PROCS(1), PROCS(2), PROCS(3), PROCS(4), PROCS(5)
+#define FASTCOPY_PROCS(from)                    \
+    FASTCOPY(from, i8)                          \
+    FASTCOPY(from, u8)                          \
+    FASTCOPY(from, i16)                         \
+    FASTCOPY(from, u16)                         \
+    FASTCOPY(from, i32)                         \
+    FASTCOPY(from, u32)                         \
+    FASTCOPY(from, i64)                         \
+    FASTCOPY(from, u64)                         \
+    FASTCOPY(from, f32)                         \
+    FASTCOPY(from, f64)
+
+FASTCOPY_PROCS(i8)
+FASTCOPY_PROCS(u8)
+FASTCOPY_PROCS(i16)
+FASTCOPY_PROCS(u16)
+FASTCOPY_PROCS(i32)
+FASTCOPY_PROCS(u32)
+FASTCOPY_PROCS(i64)
+FASTCOPY_PROCS(u64)
+FASTCOPY_PROCS(f32)
+FASTCOPY_PROCS(f64)
+
+#undef FASTCOPY_PROCS
+#undef FASTCOPY1
+#undef FASTCOPY
+
+#if TAO_MAX_NDIMS >= 2
+static void
+copy_2d(void* dstptr, const long dstdims[],
+        const void* srcptr, const long srcdims[],
+        const long lens[], fastcopy_proc *fastcopy)
+{
+    long len1 = lens[0], dstdim1 = dstdims[0], srcdim1 = srcdims[0];
+    long len2 = lens[1];
+    for (long i2 = 0; i2 < len2; ++i2) {
+        fastcopy(dstptr, OFF2(dst,i2),
+                 srcptr, OFF2(src,i2), len1);
+    }
+}
+#endif
+
+#if TAO_MAX_NDIMS >= 3
+static void
+copy_3d(void* dstptr, const long dstdims[],
+        const void* srcptr, const long srcdims[],
+        const long lens[], fastcopy_proc *fastcopy)
+{
+    long len1 = lens[0], dstdim1 = dstdims[0], srcdim1 = srcdims[0];
+    long len2 = lens[1], dstdim2 = dstdims[1], srcdim2 = srcdims[1];
+    long len3 = lens[2];
+    for (long i3 = 0; i3 < len3; ++i3) {
+        for (long i2 = 0; i2 < len2; ++i2) {
+            fastcopy(dstptr, OFF3(dst,i2,i3),
+                     srcptr, OFF3(src,i2,i3), len1);
+        }
+    }
+}
+#endif
+
+#if TAO_MAX_NDIMS >= 4
+static void
+copy_4d(void* dstptr, const long dstdims[],
+        const void* srcptr, const long srcdims[],
+        const long lens[], fastcopy_proc *fastcopy)
+{
+    long len1 = lens[0], dstdim1 = dstdims[0], srcdim1 = srcdims[0];
+    long len2 = lens[1], dstdim2 = dstdims[1], srcdim2 = srcdims[1];
+    long len3 = lens[2], dstdim3 = dstdims[2], srcdim3 = srcdims[2];
+    long len4 = lens[3];
+    for (long i4 = 0; i4 < len4; ++i4) {
+        for (long i3 = 0; i3 < len3; ++i3) {
+            for (long i2 = 0; i2 < len2; ++i2) {
+                fastcopy(dstptr, OFF4(dst,i2,i3,i4),
+                         srcptr, OFF4(src,i2,i3,i4), len1);
+            }
+        }
+    }
+}
+#endif
+
+#if TAO_MAX_NDIMS >= 5
+static void
+copy_5d(void* dstptr, const long dstdims[],
+        const void* srcptr, const long srcdims[],
+        const long lens[], fastcopy_proc *fastcopy)
+{
+    long len1 = lens[0], dstdim1 = dstdims[0], srcdim1 = srcdims[0];
+    long len2 = lens[1], dstdim2 = dstdims[1], srcdim2 = srcdims[1];
+    long len3 = lens[2], dstdim3 = dstdims[2], srcdim3 = srcdims[2];
+    long len4 = lens[3], dstdim4 = dstdims[3], srcdim4 = srcdims[3];
+    long len5 = lens[4];
+    for (long i5 = 0; i5 < len5; ++i5) {
+        for (long i4 = 0; i4 < len4; ++i4) {
+            for (long i3 = 0; i3 < len3; ++i3) {
+                for (long i2 = 0; i2 < len2; ++i2) {
+                    fastcopy(dstptr, OFF5(dst,i2,i3,i4,i5),
+                             srcptr, OFF5(src,i2,i3,i4,i5), len1);
+                }
+            }
+        }
+    }
+}
+#endif
+
+#if TAO_MAX_NDIMS > 5
+#  error code more more than 5 dimensions is not yet implemented
+#endif
+
+#define FASTCOPY_PROCS(t) \
+    fastcopy_##t##_i8,    \
+    fastcopy_##t##_u8,    \
+    fastcopy_##t##_i16,   \
+    fastcopy_##t##_u16,   \
+    fastcopy_##t##_i32,   \
+    fastcopy_##t##_u32,   \
+    fastcopy_##t##_i64,   \
+    fastcopy_##t##_u64,   \
+    fastcopy_##t##_f32,   \
+    fastcopy_##t##_f64
+
+static fastcopy_proc* fastcopy_proc_table[] = {
+    FASTCOPY_PROCS(i8),  \
+    FASTCOPY_PROCS(u8),  \
+    FASTCOPY_PROCS(i16), \
+    FASTCOPY_PROCS(u16), \
+    FASTCOPY_PROCS(i32), \
+    FASTCOPY_PROCS(u32), \
+    FASTCOPY_PROCS(i64), \
+    FASTCOPY_PROCS(u64), \
+    FASTCOPY_PROCS(f32), \
+    FASTCOPY_PROCS(f64)
 };
 
+#undef FASTCOPY_PROCS
+
+static copy_proc* copy_proc_table[] = {
+#if TAO_MAX_NDIMS >= 2
+    copy_2d,
+#endif
+#if TAO_MAX_NDIMS >= 3
+    copy_3d,
+#endif
+#if TAO_MAX_NDIMS >= 4
+    copy_4d,
+#endif
+#if TAO_MAX_NDIMS >= 5
+    copy_5d,
+#endif
+    NULL
+};
+
+/* Number of different types. */
 #define NTYPES (TAO_FLOAT64 - TAO_INT8 + 1)
-#define PROC_INDEX(rank,from,to) \
-    ((((rank) - 1)*NTYPES + ((from) - TAO_INT8))*NTYPES + ((to) - TAO_INT8))
 
 int
 tao_copy(tao_error_t** errs,
@@ -265,7 +220,7 @@ tao_copy(tao_error_t** errs,
          const long srcdims[], const long srcoffs[],
          const long lens[], int ndims)
 {
-    if (ndims < 1 || ndims > TAO_MAX_NDIMS) {
+    if (ndims < 0 || ndims > TAO_MAX_NDIMS) {
         tao_push_error(errs, __func__, TAO_BAD_RANK);
         return -1;
     }
@@ -291,10 +246,9 @@ tao_copy(tao_error_t** errs,
             return -1;
         }
     }
-    int k = PROC_INDEX(ndims, srctype, dsttype);
-    (*copy_proc_table[k])(dstptr, dstdims, dstoffs,
-                          srcptr, srcdims, srcoffs,
-                          lens);
+    tao_copy_checked_args(dstptr, dsttype, dstdims, dstoffs,
+                          srcptr, srctype, srcdims, srcoffs,
+                          lens, ndims);
     return 0;
 }
 
@@ -305,8 +259,55 @@ tao_copy_checked_args(void* dstptr, tao_element_type_t dsttype,
                       const long srcdims[], const long srcoffs[],
                       const long lens[], int ndims)
 {
-    int k = PROC_INDEX(ndims, srctype, dsttype);
-    (*copy_proc_table[k])(dstptr, dstdims, dstoffs,
-                          srcptr, srcdims, srcoffs,
-                          lens);
+    /* Compute uni-dimensional offsets from the muti-dimensional offsets. */
+    int dstoff, srcoff;
+    if (ndims > 0) {
+        int d = ndims - 1;
+        long dstoff = dstoffs[d];
+        long srcoff = srcoffs[d];
+        while (--d >= 0) {
+            dstoff = dstoffs[d] + dstdims[d]*dstoff;
+            srcoff = srcoffs[d] + srcdims[d]*srcoff;
+        }
+    } else {
+        dstoff = 0;
+        srcoff = 0;
+    }
+
+    /*
+     * Divide the work to be done in 2 parts, a fast copy (with possible
+     * conversion) along the inner dimension(s) and outer iterations over
+     * the other indices.
+     */
+    int fastcopy;
+    if (ndims <= 1) {
+        fastcopy = TRUE;
+    } else {
+        fastcopy = (dstoff == 0 && srcoff == 0);
+        if (fastcopy) {
+            for (int d = 0; d < ndims; ++d) {
+                if (dstdims[d] != lens[d] || srcdims[d] != lens[d]) {
+                    fastcopy = FALSE;
+                    break;
+                }
+            }
+        }
+    }
+    int k1 = (srctype - TAO_INT8)*NTYPES + (dsttype - TAO_INT8);
+    if (fastcopy) {
+        long len = 1;
+        for (int d = 0; d < ndims; ++d) {
+            len *= lens[d];
+        }
+        (*fastcopy_proc_table[k1])(dstptr, dstoff,
+                                   srcptr, srcoff, len);
+    } else {
+        long dstsiz = tao_get_element_size(dsttype);
+        long srcsiz = tao_get_element_size(srctype);
+        dstptr = (      void*)((      uint8_t*)dstptr + dstoff*dstsiz);
+        srcptr = (const void*)((const uint8_t*)srcptr + srcoff*srcsiz);
+        (*copy_proc_table[ndims - 2])(dstptr, dstdims,
+                                      srcptr, srcdims,
+                                      lens, fastcopy_proc_table[k1]);
+    }
 }
