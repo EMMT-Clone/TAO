@@ -12,13 +12,10 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
-#include <fitsio2.h>
 
 #include "config.h"
 #include "macros.h"
 #include "tao-private.h"
-
-typedef struct tao_array tao_array_t;
 
 /**
  * Private structure to store an array.
@@ -41,42 +38,8 @@ struct tao_array {
     void* ctx;                  /**< Context used as argument to free */
 };
 
-extern tao_array_t*
-tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
-                 int ndims, const size_t dims[]);
 
-extern tao_array_t*
-tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
-               int ndims, const size_t dims[], void* data,
-               void (*free)(void*), void* ctx);
 
-extern tao_array_t*
-tao_reference_array(tao_array_t* arr);
-
-extern void
-tao_unreference_array(tao_array_t* arr);
-
-extern tao_element_type_t
-tao_get_array_eltype(const tao_array_t* arr);
-
-extern size_t
-tao_get_array_length(const tao_array_t* arr);
-
-extern int
-tao_get_array_ndims(const tao_array_t* arr);
-
-extern size_t
-tao_get_array_size(const tao_array_t* arr, int d);
-
-extern void*
-tao_get_array_data(const tao_array_t* arr);
-
-extern tao_array_t*
-tao_load_array_from_fits_file(tao_error_t** errs, const char* filename,
-                              char* extname);
-
-extern tao_array_t*
-tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr);
 
 /*---------------------------------------------------------------------------*/
 

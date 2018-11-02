@@ -19,14 +19,16 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <time.h>
+#include <fitsio2.h>
 
 /**
  * @defgroup Messages             Messages and logging
  * @defgroup Errors               Error reporting
+ * @defgroup Buffers              Input/output buffers
+ * @defgroup Arrays               Multi-dimensional arrays
  * @defgroup SharedObjects        Shared objects
  * @defgroup   BasicSharedObjects Basic shared objects
  * @defgroup   SharedArrays       Shared multi-dimensional arrays
- * @defgroup Buffers              Input/output buffers.
  * @defgroup Utilities            Utility functions
  * @defgroup   Commands           Parsing of commands
  * @defgroup   DynamicMemory      Dynamic memory
@@ -773,6 +775,389 @@ tao_read_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt);
  */
 extern ssize_t
 tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
+
+/** @} */
+
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @addtogroup Arrays
+ *
+ * Multi-dimensional arrays.
+ *
+ * Multi-dimensional arrays have homogeneous element type and may have up to
+ * `TAO_MAX_NDIMS` dimensions.  Elements of a multi-dimensional array are
+ * contiguous in memory and are stored in
+ * [column-major](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
+ * order (that is the index along the first dimension varies the fastest).
+ *
+ * @{
+ */
+
+/**
+ * Identifier of the type of the elements in an array.
+ */
+typedef enum tao_element_type {
+    TAO_INT8    =   1, /**< Signed 8-bit integer */
+    TAO_UINT8   =   2, /**< Unsigned 8-bit integer */
+    TAO_INT16   =   3, /**< Signed 16-bit integer */
+    TAO_UINT16  =   4, /**< Unsigned 16-bit integer */
+    TAO_INT32   =   5, /**< Signed 32-bit integer */
+    TAO_UINT32  =   6, /**< Unsigned 32-bit integer */
+    TAO_INT64   =   7, /**< Signed 64-bit integer */
+    TAO_UINT64  =   8, /**< Unsigned 64-bit integer */
+    TAO_FLOAT32 =   9, /**< 32-bit floating-point */
+    TAO_FLOAT64 =  10  /**< 64-bit floating-point */
+} tao_element_type_t;
+
+/**
+ * Get the size of an array element given its type.
+ *
+ * @param eltype Identifier of the type of the elements of an array.
+ *
+ * @return A strictly positive number of bytes if @p eltype is valid;
+ * `0` is @p eltype is not valid.
+ *
+ * @see tao_element_type_t.
+ */
+extern size_t
+tao_get_element_size(int eltype);
+
+/**
+ * Maximun number of dimensions of (shared) arrays.
+ */
+#define TAO_MAX_NDIMS 5
+
+/**
+ * Opaque structure for a multi-dimensional array.
+ */
+typedef struct tao_array tao_array_t;
+
+/**
+ * Create a new array.
+ *
+ * This function creates a new multi-dimensional array.  The returned array has
+ * a reference count of 1, the caller is responsible for unreferencing the
+ * array when no longer needed by calling tao_unreference_array().  All the
+ * contents of the returned array is stored in a single block of dynamic
+ * memory, the first element is stored at an address aligned so as to allow for
+ * fast [vectorized
+ * operations](https://fr.wikipedia.org/wiki/Single_instruction_multiple_data).
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param eltype Identifier of the type of the elements of the array.
+ * @param ndims  Number of dimensions of the array.
+ * @param dims   Lengths of the dimensions of the array.
+ *
+ * @return The address of a new array; `NULL` in case of errors.
+ *
+ * @see tao_unreference_array(), tao_wrap_array(), tao_get_array_eltype(),
+ *      tao_get_array_length(), tao_get_array_ndims(), tao_get_array_size(),
+ *      tao_get_array_data().
+ */
+extern tao_array_t*
+tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
+                 int ndims, const size_t dims[]);
+
+/**
+ * Create a new mono-dimensional shared array.
+ *
+ * This function creates a new mono-dimensional array.  The returned array has
+ * a reference count of 1, the caller is responsible for unreferencing the
+ * array when no longer needed by calling tao_unreference_array().
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param eltype Identifier of the type of the elements of the array.
+ * @param dim    Length of the array.
+ *
+ * @return The address of a new array; `NULL` in case of errors.
+ *
+ * @see tao_create_array(), tao_unreference_array().
+ */
+extern tao_array_t*
+tao_create_1d_array(tao_error_t** errs, tao_element_type_t eltype,
+                    size_t dim);
+
+/**
+ * Create a new two-dimensional array.
+ *
+ * This function creates a new two-dimensional array.  The returned array has a
+ * reference count of 1, the caller is responsible for unreferencing the array
+ * when no longer needed by calling tao_unreference_array().
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param eltype Identifier of the type of the elements of the array.
+ * @param dim1   Length of the first dimension.
+ * @param dim2   Length of the second dimension.
+ *
+ * @return The address of a new array; `NULL` in case of errors.
+ *
+ * @see tao_create_array(), tao_unreference_array().
+ */
+extern tao_array_t*
+tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
+                    size_t dim1, size_t dim2);
+
+/**
+ * Create a new three-dimensional array.
+ *
+ * This function creates a new three-dimensional array.  The returned array has
+ * a reference count of 1, the caller is responsible for unreferencing the
+ * array when no longer needed by calling tao_unreference_array().
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param eltype Identifier of the type of the elements of the array.
+ * @param dim1   Length of the first dimension.
+ * @param dim2   Length of the second dimension.
+ * @param dim3   Length of the third dimension.
+ *
+ * @return The address of a new array; `NULL` in case of errors.
+ *
+ * @see tao_create_array(), tao_unreference_array().
+ */
+extern tao_array_t*
+tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
+                    size_t dim1, size_t dim2, size_t dim3);
+
+/**
+ * Wrap existing data into a multi-dimensional array.
+ *
+ * This function creates a multi-dimensional array whose elements are stored in
+ * a provided memory area.  The returned array has a reference count of 1, the
+ * caller is responsible for unreferencing the array when no longer needed by
+ * calling tao_unreference_array().  When the array is eventually destroyed,
+ * the callback @p free is called with the context argument @p ctx.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param eltype Identifier of the type of the elements of the array.
+ * @param ndims  Number of dimensions of the array.
+ * @param dims   Lengths of the dimensions of the array.
+ * @param data   Address of the first element of the array in memory.
+ * @param free   Function to call to release the provided resources.
+ * @param ctx    Argument of @p free to release the provided resources.
+ *
+ * @return The address of a new wrapped array; `NULL` in case of errors.
+ *
+ * @see tao_unreference_array(), tao_create_array(), tao_get_array_eltype(),
+ *      tao_get_array_length(), tao_get_array_ndims(), tao_get_array_size(),
+ *      tao_get_array_data().
+ */
+extern tao_array_t*
+tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
+               int ndims, const size_t dims[], void* data,
+               void (*free)(void*), void* ctx);
+
+/**
+ * Wrap existing data into a mono-dimensional array.
+ *
+ * This function creates a mono-dimensional array whose elements are stored in
+ * a provided memory area.  The returned array has a reference count of 1, the
+ * caller is responsible for unreferencing the array when no longer needed by
+ * calling tao_unreference_array().  When the array is eventually destroyed,
+ * the callback @p free is called with the context argument @p ctx.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param eltype Identifier of the type of the elements of the array.
+ * @param dim    Length of the mono-dimensional array.
+ * @param data   Address of the first element of the array in memory.
+ * @param free   Function to call to release the provided resources.
+ * @param ctx    Argument of @p free to release the provided resources.
+ *
+ * @return The address of a new wrapped array; `NULL` in case of errors.
+ *
+ * @see tao_wrap_array(), tao_unreference_array().
+ */
+extern tao_array_t*
+tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
+                  size_t dim, void* data, void (*free)(void*), void* ctx);
+
+/**
+ * Wrap existing data into a two-dimensional array.
+ *
+ * This function creates a two-dimensional array whose elements are stored in a
+ * provided memory area.  The returned array has a reference count of 1, the
+ * caller is responsible for unreferencing the array when no longer needed by
+ * calling tao_unreference_array().  When the array is eventually destroyed,
+ * the callback @p free is called with the context argument @p ctx.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param eltype Identifier of the type of the elements of the array.
+ * @param dim1   Length of the first dimension.
+ * @param dim2   Length of the second dimension.
+ * @param data   Address of the first element of the array in memory.
+ * @param free   Function to call to release the provided resources.
+ * @param ctx    Argument of @p free to release the provided resources.
+ *
+ * @return The address of a new wrapped array; `NULL` in case of errors.
+ *
+ * @see tao_wrap_array(), tao_unreference_array().
+ */
+extern tao_array_t*
+tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
+                  size_t dim1, size_t dim2, void* data,
+                  void (*free)(void*), void* ctx);
+
+/**
+ * Wrap existing data into a three-dimensional array.
+ *
+ * This function creates a three-dimensional array whose elements are stored in
+ * a provided memory area.  The returned array has a reference count of 1, the
+ * caller is responsible for unreferencing the array when no longer needed by
+ * calling tao_unreference_array().  When the array is eventually destroyed,
+ * the callback @p free is called with the context argument @p ctx.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param eltype Identifier of the type of the elements of the array.
+ * @param dim1   Length of the first dimension.
+ * @param dim2   Length of the second dimension.
+ * @param dim3   Length of the third dimension.
+ * @param data   Address of the first element of the array in memory.
+ * @param free   Function to call to release the provided resources.
+ * @param ctx    Argument of @p free to release the provided resources.
+ *
+ * @return The address of a new wrapped array; `NULL` in case of errors.
+ *
+ * @see tao_wrap_array(), tao_unreference_array().
+ */
+extern tao_array_t*
+tao_wrap_3d_array(tao_error_t** errs, tao_element_type_t eltype,
+                  size_t dim1, size_t dim2, size_t dim3, void* data,
+                  void (*free)(void*), void* ctx);
+
+/**
+ * Add a reference to an existing multi-dimensional array.
+ *
+ * This function increments the reference count of a multi-dimensional array
+ * by one.  The caller is responsible to eventually unreference the array by
+ * calling tao_unreference_array().
+ *
+ * @param arr Pointer to an array (must not be `NULL`).
+ *
+ * @return The address of the array @p arr.
+ *
+ * @see tao_create_array(), tao_wrap_array(), tao_unreference_array().
+ */
+extern tao_array_t*
+tao_reference_array(tao_array_t* arr);
+
+/**
+ * Drop a reference from a multi-dimensional array.
+ *
+ * This function decrements the reference count of a multi-dimensional array by
+ * one.  When the reference count reach the value of zero the multi-dimensional
+ * array is effectively destroyed.
+ *
+ * @param arr    Pointer to an array referenced by the caller.
+ *
+ * @see tao_create_array(), tao_wrap_array(), tao_reference_array().
+ */
+extern void
+tao_unreference_array(tao_array_t* arr);
+
+/**
+ * Get the type of elements of an array.
+ *
+ * @param arr    Pointer to an array referenced by the caller.
+ *
+ * @return One of the `tao_element_type_t` values.
+ */
+extern tao_element_type_t
+tao_get_array_eltype(const tao_array_t* arr);
+
+/**
+ * Get the number of elements of an array.
+ *
+ * @param arr    Pointer to an array referenced by the caller.
+ *
+ * @return The number of elements in the array.
+ */
+extern size_t
+tao_get_array_length(const tao_array_t* arr);
+
+/**
+ * Get the number of dimensions of an array.
+ *
+ * @param arr    Pointer to an array referenced by the caller.
+ *
+ * @return The number of dimensions of the array.
+ */
+extern int
+tao_get_array_ndims(const tao_array_t* arr);
+
+/**
+ * Get the length of a dimension of an array.
+ *
+ * All dimensions beyond the number of dimensions of @p arr are assumed to have
+ * unit length.
+ *
+ * @param arr    Pointer to an array referenced by the caller.
+ * @param d      Index of dimension of interest (`1` is the first dimension).
+ *
+ * @return The number of elements along the given dimension if @p d is greater
+ *         or equal `1` and less or equal the number of dimensions of @p arr;
+ *         `0` if @p d is less than `1` and `1` if @p d is greater than the
+ *         number of dimensions of @p arr.
+ */
+extern size_t
+tao_get_array_size(const tao_array_t* arr, int d);
+
+/**
+ * Get the address of the first element of an array.
+ *
+ * Elements of a multi-dimensional array are contiguous in memory and are
+ * stored in
+ * [column-major](https://en.wikipedia.org/wiki/Row-_and_column-major_order)
+ * order (that is the index along the first dimension varies the fastest).
+ *
+ * @param arr    Pointer to an array referenced by the caller.
+ *
+ * @return The address of the first element of the array.
+ */
+extern void*
+tao_get_array_data(const tao_array_t* arr);
+
+/**
+ * Load a multi-dimensional array from a FITS file.
+ *
+ * This function loads the contents of a FITS IMAGE data into a new
+ * multi-dimensional array.  The returned array has a reference count of 1, the
+ * caller is responsible for unreferencing the array when no longer needed by
+ * calling tao_unreference_array().
+ *
+ * @param errs      Address of a variable to track errors.
+ * @param filename  Name of the FITS file.
+ * @param extname   Name of the FITS extension to read.  Can be `NULL` to read
+ *                  the first FITS IMAGE of the file.
+ *
+ * @return The address of a new multi-dimensional array; `NULL` in case of
+ *         errors.
+ *
+ * @see tao_create_array(), tao_unreference_array(),
+ *      tao_load_array_from_fits_handle().
+ */
+extern tao_array_t*
+tao_load_array_from_fits_file(tao_error_t** errs, const char* filename,
+                              char* extname);
+
+/**
+ * Load a multi-dimensional array from a provided FITS handle.
+ *
+ * This function loads the contents of the current FITS HDU into a new
+ * multi-dimensional array.  The returned array has a reference count of 1, the
+ * caller is responsible for unreferencing the array when no longer needed by
+ * calling tao_unreference_array().
+ *
+ * @param errs      Address of a variable to track errors.
+ * @param fitsfile  FITS file handle.
+ *
+ * @return The address of a new multi-dimensional array; `NULL` in case of
+ *         errors.
+ *
+ * @see tao_create_array(), tao_unreference_array(),
+ *      tao_load_array_from_fits_file().
+ */
+extern tao_array_t*
+tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr);
 
 /** @} */
 
@@ -1665,36 +2050,6 @@ tao_unlock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
 /** Opaque structure to a shared array. */
 typedef struct tao_shared_array tao_shared_array_t;
 
-/** Maximun number of dimensions of (shared) arrays. */
-#define TAO_MAX_NDIMS 5
-
-/** The identifier of the type of the elements in a shared arrays. */
-typedef enum tao_element_type {
-    TAO_INT8    =   1, /**< Signed 8-bit integer */
-    TAO_UINT8   =   2, /**< Unsigned 8-bit integer */
-    TAO_INT16   =   3, /**< Signed 16-bit integer */
-    TAO_UINT16  =   4, /**< Unsigned 16-bit integer */
-    TAO_INT32   =   5, /**< Signed 32-bit integer */
-    TAO_UINT32  =   6, /**< Unsigned 32-bit integer */
-    TAO_INT64   =   7, /**< Signed 64-bit integer */
-    TAO_UINT64  =   8, /**< Unsigned 64-bit integer */
-    TAO_FLOAT32 =   9, /**< 32-bit floating-point */
-    TAO_FLOAT64 =  10  /**< 64-bit floating-point */
-} tao_element_type_t;
-
-/**
- * Get the size of an array element given its type.
- *
- * @param eltype Identifier of the type of the elements of an array.
- *
- * @return A strictly positive number of bytes if @p eltype is valid;
- * `0` is @p eltype is not valid.
- *
- * @see tao_element_type_t.
- */
-extern size_t
-tao_get_element_size(int eltype);
-
 /**
  * Create a new shared array.
  *
@@ -1718,12 +2073,12 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
                         int ndims, const size_t size[], unsigned int perms);
 
 /**
- * Create a new 1D shared array.
+ * Create a new mono-dimensional shared array.
  *
- * This function creates a new 1D array whose contents can be shared between
- * processes.  The returned array is attached to the address space of the
- * caller which is responsible to detach the shared array when no longer needed
- * by calling tao_detach_shared_array().
+ * This function creates a new mono-dimensional array whose contents can be
+ * shared between processes.  The returned array is attached to the address
+ * space of the caller which is responsible to detach the shared array when no
+ * longer needed by calling tao_detach_shared_array().
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -1739,12 +2094,12 @@ tao_create_1d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
                            size_t dim, unsigned int perms);
 
 /**
- * Create a new 2D shared array.
+ * Create a new two-dimensional shared array.
  *
- * This function creates a new 3D array whose contents can be shared between
- * processes.  The returned array is attached to the address space of the
- * caller which is responsible to detach the shared array when no longer needed
- * by calling tao_detach_shared_array().
+ * This function creates a new two-dimensional array whose contents can be
+ * shared between processes.  The returned array is attached to the address
+ * space of the caller which is responsible to detach the shared array when no
+ * longer needed by calling tao_detach_shared_array().
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
@@ -1761,12 +2116,12 @@ tao_create_2d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
                            size_t dim1, size_t dim2, unsigned int perms);
 
 /**
- * Create a new 3D shared array.
+ * Create a new three-dimensional shared array.
  *
- * This function creates a new 3D array whose contents can be shared between
- * processes.  The returned array is attached to the address space of the
- * caller which is responsible to detach the shared array when no longer needed
- * by calling tao_detach_shared_array().
+ * This function creates a new three-dimensional array whose contents can be
+ * shared between processes.  The returned array is attached to the address
+ * space of the caller which is responsible to detach the shared array when no
+ * longer needed by calling tao_detach_shared_array().
  *
  * @param errs   Address of a variable to track errors.
  * @param eltype Identifier of the type of the elements of the array.
