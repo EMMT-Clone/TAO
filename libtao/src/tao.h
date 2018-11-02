@@ -824,6 +824,28 @@ extern size_t
 tao_get_element_size(int eltype);
 
 /**
+ * Count the number of elements of a multi-dimensional array.
+ *
+ * This function counts the number of elements of a multi-dimensional array
+ * given its dimensions checking for the validity of the arguments and for
+ * integer overflow.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param ndims  Number of dimensions of the array.
+ * @param dims   Lengths of the dimensions of the array.
+ *
+ * @return The product of the dimensions in @p dims, assuming that a
+ *         zer-dimensional array has just one element.  Normally, this value is
+ *         at least `1`; `0` is returned in case of errors.
+ *
+ * @see tao_unreference_array(), tao_wrap_array(), tao_get_array_eltype(),
+ *      tao_get_array_length(), tao_get_array_ndims(), tao_get_array_size(),
+ *      tao_get_array_data().
+ */
+extern size_t
+tao_count_elements(tao_error_t** errs, int ndims, const size_t dims[]);
+
+/**
  * Maximun number of dimensions of (shared) arrays.
  */
 #define TAO_MAX_NDIMS 5

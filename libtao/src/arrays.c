@@ -41,10 +41,29 @@ struct tao_array {
 
 /*---------------------------------------------------------------------------*/
 
-static size_t
-count_array_elements(tao_error_t** errs, int ndims, const size_t dims[])
+size_t
+tao_get_element_size(int eltype)
 {
-    if (ndims < 0) {
+    switch (eltype) {
+    case TAO_INT8:    return sizeof(int8_t);
+    case TAO_UINT8:   return sizeof(uint8_t);
+    case TAO_INT16:   return sizeof(int16_t);
+    case TAO_UINT16:  return sizeof(uint16_t);
+    case TAO_INT32:   return sizeof(int32_t);
+    case TAO_UINT32:  return sizeof(uint32_t);
+    case TAO_INT64:   return sizeof(int64_t);
+    case TAO_UINT64:  return sizeof(uint64_t);
+    case TAO_FLOAT32: return sizeof(float);
+    case TAO_FLOAT64: return sizeof(double);
+    default:          return 0;
+    }
+}
+
+size_t
+tao_count_elements(tao_error_t** errs, int ndims, const size_t dims[])
+{
+    const size_t maxsize = ~(size_t)0;
+    if (ndims < 0 || ndims > TAO_MAX_NDIMS) {
         tao_push_error(errs, __func__, TAO_BAD_RANK);
         return 0;
     }
@@ -53,13 +72,20 @@ count_array_elements(tao_error_t** errs, int ndims, const size_t dims[])
         return 0;
     }
     size_t nelem = 1;
-    for (int i = 0; i < ndims; ++i) {
-        if (dims[i] <= 0) {
+    for (int d = 0; d < ndims; ++d) {
+        size_t dim = dims[d];
+        if (dim <= 0) {
             tao_push_error(errs, __func__, TAO_BAD_SIZE);
             return 0;
         }
-        /* FIXME: check for overflows */
-        nelem *= dims[i];
+        if (dim > 1) {
+            /* Count number of elements and check for overflows. */
+            if (nelem > maxsize/dim) {
+                tao_push_error(errs, __func__, TAO_BAD_SIZE);
+                return 0;
+            }
+            nelem *= dim;
+        }
     }
     return nelem;
 }
@@ -68,7 +94,7 @@ tao_array_t*
 tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
                  int ndims, const size_t dims[])
 {
-    size_t nelem = count_array_elements(errs, ndims, dims);
+    size_t nelem = tao_count_elements(errs, ndims, dims);
     if (nelem < 1) {
         return NULL;
     }
@@ -101,7 +127,7 @@ tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
                int ndims, const size_t dims[], void* data,
                void (*free)(void*), void* ctx)
 {
-    size_t nelem = count_array_elements(errs, ndims, dims);
+    size_t nelem = tao_count_elements(errs, ndims, dims);
     if (nelem < 1) {
         return NULL;
     }

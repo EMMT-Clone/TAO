@@ -16,24 +16,6 @@
 #include "macros.h"
 #include "tao-private.h"
 
-size_t
-tao_get_element_size(int eltype)
-{
-    switch (eltype) {
-    case TAO_INT8:    return sizeof(int8_t);
-    case TAO_UINT8:   return sizeof(uint8_t);
-    case TAO_INT16:   return sizeof(int16_t);
-    case TAO_UINT16:  return sizeof(uint16_t);
-    case TAO_INT32:   return sizeof(int32_t);
-    case TAO_UINT32:  return sizeof(uint32_t);
-    case TAO_INT64:   return sizeof(int64_t);
-    case TAO_UINT64:  return sizeof(uint64_t);
-    case TAO_FLOAT32: return sizeof(float);
-    case TAO_FLOAT64: return sizeof(double);
-    default:          return 0;
-    }
-}
-
 int
 tao_get_shared_array_ident(const tao_shared_array_t* arr)
 {
@@ -175,25 +157,14 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
         tao_push_error(errs, __func__, TAO_BAD_TYPE);
         return NULL;
     }
-    if (ndims < 0 || ndims > TAO_MAX_NDIMS) {
-        tao_push_error(errs, __func__, TAO_BAD_RANK);
+    size_t nelem = tao_count_elements(errs, ndims, size);
+    if (nelem < 1) {
         return NULL;
     }
-    size_t nelem = 1;
     for (int d = 0; d < ndims; ++d) {
-        if (size[d] <= 0) {
+        if (size[d] <= 0 || size[d] > UINT32_MAX) {
             tao_push_error(errs, __func__, TAO_BAD_SIZE);
             return NULL;
-        }
-        if (size[d] > 1) {
-            /* Count number of elements and check for overflows. */
-            size_t prev = nelem;
-            uint32_t dim = size[d];
-            nelem *= size[d];
-            if (dim != size[d] || nelem <= prev) {
-                tao_push_error(errs, __func__, TAO_BAD_SIZE);
-                return NULL;
-            }
         }
     }
     size_t offset = TAO_ROUND_UP(sizeof(tao_shared_array_t), ALIGNMENT);
