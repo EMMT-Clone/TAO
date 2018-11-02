@@ -10,6 +10,14 @@
 * Setting connection speed with ActiveSilicon Phoenix frame grabber is not yet
   fully working (but will be possible).
 
+* When some lengths of the region to copy are equal to one they can be
+  suppressed to speed-up copy.  The only difficulty is to properly collapse the
+  corresponding array dimensions of the source and of the destination.  This
+  would lead to very efficient slice extraction (possibly with conversion).
+
+* Shared camera members corresponding to a dimension should be long not int.
+
+
 ## Things to do
 
 * Instead of immediately attempt to reflect the configuration of the camera
