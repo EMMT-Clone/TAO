@@ -777,6 +777,24 @@ tao_read_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt);
 extern ssize_t
 tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
 
+/**
+ * Append a formatted message to an i/o buffer.
+ *
+ * This function appends to the contents of the i/o buffer @b buf a formatted
+ * message specified by @b format and subsequent arguments in the same way as
+ * the sprintf() function.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param buf    Dynamic buffer.
+ * @param format Format string.
+ * @param ...    Subsequent arguments.
+ *
+ * @see tao_get_buffer_contents().
+ */
+extern int
+tao_print_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                    const char* format, ...);
+
 /** @} */
 
 /*---------------------------------------------------------------------------*/

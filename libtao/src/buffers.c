@@ -13,6 +13,8 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -348,4 +350,37 @@ tao_write_buffer(tao_error_t** errs, int fd, tao_buffer_t* buf)
     }
     /* No bytes have been written. */
     return 0;
+}
+
+int
+tao_print_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                    const char* format, ...)
+{
+    va_list ap;
+    int status = 0;
+    char* ptr;
+    long siz, len;
+
+    /* Check arguments. */
+    CHECK_BUFFER_STRUCT(errs, buf, -1);
+
+    /*
+     * Append formated message to the i/o buffer, resizing and adjusting
+     * the size of the buffer as needed.
+     */
+    va_start(ap, format);
+    while (status == 0) {
+        siz = tao_get_buffer_unused_part(buf, (void**)&ptr);
+        len = vsnprintf(ptr, siz, format, ap);
+        if (len < siz) {
+            /* Unused part was large enough.  Adjust buffer size and return. */
+            status = tao_adjust_buffer_contents_size(errs, buf, len);
+            break;
+        } else {
+            /* Unused part was too small.  Enlarge it and re-try. */
+            status = tao_resize_buffer(errs, buf, len + 1);
+        }
+    }
+    va_end(ap);
+    return status;
 }
