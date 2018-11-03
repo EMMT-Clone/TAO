@@ -60,16 +60,6 @@
   constraints), having packed pixel values in the captured image, ...
 
 
-## Integer type for array indices
-
-* What is the best integer type for array indices?  `ptrdiff_t` seems to be the
-  right answer (See
-  https://stackoverflow.com/questions/3174850/what-is-the-correct-type-for-array-indexes-in-c) but is it the fastest?
-
-* I generally find more useful to use signed integer types even for nonnegative
-  quantities because this avoids any unexpected result when doing arithmetic.
-
-
 ## Some benchmark results
 
 ```julia

@@ -56,6 +56,32 @@ done:
   }
 ```
 
+## Integer type for array indices, dimensions and sizes
+
+What is the best integer type for array indices?  `ptrdiff_t` seems to be the
+right answer (See
+https://stackoverflow.com/questions/3174850/what-is-the-correct-type-for-array-indexes-in-c) but is it the fastest?
+
+I generally find more useful to use signed integer types even for nonnegative
+quantities because this avoids any unexpected results when doing arithmetic.
+
+A *pragmatic* answer to these questions is to use C type `long` integer for
+array dimensions, number of elements, indices and sizes.  This is the same rule
+as in [Yorick](https://github.com/dhmunro/yorick) (we can trust Dave Munro on
+having carefully think about this matter).  I can see the following advantages:
+
+1. In practice, `long` is large enough to index any array fitting in memory and
+   to store the size of anything that fits in memory.  This is supproted by the
+   fact that, `long` integer type is usually 32 bits on 32-bit machines and 64
+   bits machines.
+
+2. `long` is a **signed** integer type which is very useful (compared to,
+   *e.g.*, `size_t`) to detect errors and to compute offsets.
+
+3. `long` is not `int` so the purpose of variables or returned values using one
+   of these two types can be inferred from their type.
+
+
 ## Shared Objects
 
 Shared objects are stored in shared memory so as to be accessible to any
