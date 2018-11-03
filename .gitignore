@@ -38,6 +38,14 @@ lib*.a
 *.xz
 *.zip
 
+# Images and other binary files #
+#################################
+*.png
+*.fits
+*.fts
+*.jpg
+*.pdf
+
 # Logs and databases #
 ######################
 *.log
