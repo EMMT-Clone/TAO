@@ -17,10 +17,12 @@ static tao_buffer_t srvbuf; /* dynamic i/o buffer for sending messages to the
 #define FULLWIDTH  640
 #define FULLHEIGHT 480
 
+#if 0 /* FIXME: unused */
 static const double max_rate = 2e3;
 static const double min_rate = 1.0;
 static const double min_exposure = 0.0;
 static const double max_exposure = 1.0;
+#endif
 
 static tao_camera_t* cam = NULL;
 
@@ -93,7 +95,6 @@ generate_image(int depth, int width, int height, uint32_t bits)
     FUNC(TYPE* dest, int width, int height, uint32_t bits)      \
     {                                                           \
         TYPE xmsk = 0xFF;                                       \
-        TYPE ymsk = 0xFF;                                       \
         TYPE xoff = ( bits        & 0xFF);                      \
         TYPE yoff = ((bits >>  8) & 0xFF);                      \
         for (int y = 0; y < height; ++y) {                      \
@@ -171,33 +172,12 @@ static void produce_image(unsigned bits)
 }
 
 /*---------------------------------------------------------------------------*/
-/* COMMANDS */
-
-static int split_command(XPA xpa, const char* cmd, const char*** argv)
-{
-    tao_error_t* errs = NULL;
-    int argc;
-
-    *argv = NULL;
-    argc = tao_split_command(&errs, argv, cmd, -1);
-    if (argc < 0) {
-        if (argv != NULL) {
-            free((void*)*argv);
-        }
-        report_error(&errs, xpa);
-        return -1;
-    }
-    tao_discard_errors(&errs); /* in case of... */
-    return argc;
-}
-
-static void start_command(int nbufs) {}
-static void abort_command() {}
-static void stop_command() {}
-static void close_command() {}
-
-/*---------------------------------------------------------------------------*/
 /* ERROR MESSAGES */
+
+/*
+ * The following buffer is used for storing the answer or the error message.
+ */
+static char message[1024];
 
 static void
 tao_get_error_details(char* buffer, int code, const char** reason,
@@ -284,10 +264,8 @@ static void report_error(tao_error_t** errs, XPA xpa)
 /*
  * When printing error messages to a fixed size buffer, it is important to only
  * print the arguments which are correct (to avoid buffer overflow).  In the
- * routines belown `argc` is the number of arguments to print.
+ * routines below `argc` is the number of arguments to print.
  */
-
-/* FIXME: indicate set/get command */
 
 static void syntax_error(XPA xpa, char* buf, const char* prefix,
                          int argc, const char** argv, const char* suffix)
@@ -331,28 +309,33 @@ static void invalid_arguments(XPA xpa, char* buf, const char* cmd,
 
 /*---------------------------------------------------------------------------*/
 
+static void start_command(int nbufs) {}
+static void abort_command() {}
+static void stop_command() {}
+static void close_command() {}
+
 #define CHECK_MIN_ARGC(nprt, nmin)                              \
     do {                                                        \
         if (argc < nmin) {                                      \
-            too_few_arguments(xpa, buffer, CMD, nprt, argv);    \
+            too_few_arguments(xpa, message, CMD, nprt, argv);   \
             goto error;                                         \
         }                                                       \
     } while (0)
 #define CHECK_ARGC(nprt, nmin, nmax)                            \
     do {                                                        \
         if (argc < nmin) {                                      \
-            too_few_arguments(xpa, buffer, CMD, nprt, argv);    \
+            too_few_arguments(xpa, message, CMD, nprt, argv);   \
             goto error;                                         \
         }                                                       \
         if (argc > nmax) {                                      \
-            too_many_arguments(xpa, buffer, CMD, nprt, argv);   \
+            too_many_arguments(xpa, message, CMD, nprt, argv);  \
             goto error;                                         \
         }                                                       \
     } while (0)
 
 #define INVALID_ARGUMENTS(n)                            \
     do {                                                \
-        invalid_arguments(xpa, buffer, CMD, n, argv);   \
+        invalid_arguments(xpa, message, CMD, n, argv);  \
         goto error;                                     \
     } while (0)
 
@@ -361,19 +344,19 @@ static void invalid_arguments(XPA xpa, char* buf, const char* cmd,
 static int send_callback(void* send_data, void* call_data,
                          char* command, char** bufptr, size_t* lenptr)
 {
+    /* Automatic variables. */
     XPA xpa = (XPA)call_data;
-    static char buffer[1024]; /* FIXME: share the same buffer? */
-    tao_error_t* errs = NULL;
-    int argc, i, status = 0, nargs;
+    tao_error_t* errs = TAO_NO_ERRORS;
+    int argc, status = 0;
     size_t len;
-    const char** argv;
+    const char** argv = NULL;
 
     if (debug) {
         fprintf(stderr, "send: %s\n", command);
     }
-    argc = split_command(xpa, command, &argv);
+    argc = tao_split_command(&errs, &argv, command, -1);
     if (argc < 0) {
-        return -1;
+        goto error;
     }
     if (debug) {
         for (int i = 0; i < argc; ++i) {
@@ -381,81 +364,97 @@ static int send_callback(void* send_data, void* call_data,
         }
     }
 
-    /* Start with an empty answer. */
-    buffer[0] = '\0';
+    /* Parse command starting with an empty answer. */
+    message[0] = '\0';
     if (argc < 1) {
         goto done;
     }
     int c = argv[0][0];
     if (c == 'b' && strcmp(argv[0], "bias") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%.1f", cam->shared->bias);
+        sprintf(message, "%.1f", cam->shared->bias);
     } else if (c == 'd' && strcmp(argv[0], "debug") == 0) {
         CHECK_ARGC(1, 1, 1);
-        strcpy(buffer, (debug ? "on" : "off"));
+        strcpy(message, (debug ? "on" : "off"));
     } else if (c == 'e' && strcmp(argv[0], "exposure") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%.6f", cam->shared->exposure);
+        sprintf(message, "%.6f", cam->shared->exposure);
     } else if (c == 'f' && strcmp(argv[0], "fullheight") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d", cam->shared->fullheight);
+        sprintf(message, "%d", cam->shared->fullheight);
     } else if (c == 'f' && strcmp(argv[0], "fullwidth") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d", cam->shared->fullwidth);
+        sprintf(message, "%d", cam->shared->fullwidth);
     } else if (c == 'g' && strcmp(argv[0], "gamma") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%.3f", cam->shared->gamma);
+        sprintf(message, "%.3f", cam->shared->gamma);
     } else if (c == 'g' && strcmp(argv[0], "gain") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%.1f", cam->shared->gain);
+        sprintf(message, "%.1f", cam->shared->gain);
     } else if (c == 'h' && strcmp(argv[0], "height") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d", cam->shared->height);
+        sprintf(message, "%d", cam->shared->height);
+    } else if (c == 'p' && strcmp(argv[0], "ping") == 0) {
+        tao_time_t ts;
+        CHECK_ARGC(1, 1, 1);
+        if (tao_get_monotonic_time(&errs, &ts) != 0) {
+            goto error;
+        }
+        tao_sprintf_time(message, &ts);
     } else if (c == 'r' && strcmp(argv[0], "rate") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%.3f", cam->shared->rate);
+        sprintf(message, "%.3f", cam->shared->rate);
     } else if (c == 'r' && strcmp(argv[0], "roi") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d %d %d %d",
+        sprintf(message, "%d %d %d %d",
                 cam->shared->xoff, cam->shared->yoff,
                 cam->shared->width, cam->shared->height);
     } else if (c == 's' && strcmp(argv[0], "shmid") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d", tao_get_shared_camera_ident(cam->shared));
+        sprintf(message, "%d", tao_get_shared_camera_ident(cam->shared));
     } else if (c == 's' && strcmp(argv[0], "state") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d", cam->shared->state);
+        sprintf(message, "%d", cam->shared->state);
     } else if (c == 'w' && strcmp(argv[0], "width") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d", cam->shared->width);
+        sprintf(message, "%d", cam->shared->width);
     } else if (c == 'x' && strcmp(argv[0], "xoff") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d", cam->shared->xoff);
+        sprintf(message, "%d", cam->shared->xoff);
     } else if (c == 'y' && strcmp(argv[0], "yoff") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(buffer, "%d", cam->shared->yoff);
+        sprintf(message, "%d", cam->shared->yoff);
     } else {
         XPAError(xpa, "unknown parameter for get `...` command");
         goto error;
     }
 
  done:
-    len = strlen(buffer);
+    len = strlen(message);
     if (len > 0) {
-        /* Append a newline for more readable output when xapset/xpaget are
-         * used from the command line. */
-        buffer[len] = '\n';
-        buffer[len+1] = '\0';
+        /*
+         * Append a newline for more readable output when xapset/xpaget are
+         * used from the command line.
+         */
+        message[len] = '\n';
+        message[len+1] = '\0';
     }
-    *bufptr = buffer;
+    *bufptr = message;
     *lenptr = len + 1;
  cleanup:
+    if (errs != TAO_NO_ERRORS) {
+        /* FIXME: This should not happen, at least print a warning. */
+        tao_discard_errors(&errs);
+    }
     if (argv != NULL) {
         free(argv);
     }
     return status;
 
  error:
+    if (errs != TAO_NO_ERRORS) {
+        report_error(&errs, xpa);
+    }
     status = -1;
     goto cleanup;
 }
@@ -468,17 +467,17 @@ static int recv_callback(void* recv_data, void* call_data,
                          char* command, char* buf, size_t len)
 {
     XPA xpa = (XPA)call_data;
-    static char buffer[1024]; /* FIXME: share the same buffer? */
-    tao_error_t* errs = NULL;
-    int argc, i, status = 0, nargs;
-    const char** argv;
+    tao_error_t* errs = TAO_NO_ERRORS;
+    int argc, status = 0;
+    const char** argv = NULL;
 
     if (debug) {
         fprintf(stderr, "recv: %s [%ld byte(s)]\n", command, (long)len);
     }
-    argc = split_command(xpa, command, &argv);
+    argc = tao_split_command(&errs, &argv, command, -1);
     if (argc < 0) {
-        return -1;
+        report_error(&errs, xpa);
+        goto error;
     }
     if (debug) {
         for (int i = 0; i < argc; ++i) {
@@ -486,10 +485,13 @@ static int recv_callback(void* recv_data, void* call_data,
         }
     }
 
-    /* FIXME: most commands take on data, check this */
+    /* Commands take no data, check this. */
+    if (len > 0) {
+        XPAError(xpa, "expecting no data");
+        goto error;
+    }
 
-    /* Start with an empty answer. */
-    buffer[0] = '\0';
+    /* Parse command. */
     if (argc < 1) {
         goto done;
     }
@@ -549,14 +551,6 @@ static int recv_callback(void* recv_data, void* call_data,
             goto error;
         }
         cam->shared->gamma = gamma;
-    } else if (c == 'p' && strcmp(argv[0], "ping") == 0) {
-        tao_time_t ts;
-        CHECK_ARGC(1, 1, 1);
-        if (tao_get_monotonic_time(&errs, &ts) != 0) {
-            report_error(&errs, xpa);
-            goto error;
-        }
-        tao_sprintf_time(buffer, &ts);
     } else if (c == 'p' && strcmp(argv[0], "produce") == 0) {
         CHECK_ARGC(1, 1, 1);
         produce_image(0x3256ae07);
@@ -644,14 +638,20 @@ static int recv_callback(void* recv_data, void* call_data,
         goto error;
     }
 
-    /* FIXME: XPA set commands expect no answer. */
  done:
+    if (errs != TAO_NO_ERRORS) {
+        /* FIXME: This should not happen, at least print a warning. */
+        tao_discard_errors(&errs);
+    }
     if (argv != NULL) {
         free(argv);
     }
     return status;
 
  error:
+    if (errs != TAO_NO_ERRORS) {
+        report_error(&errs, xpa);
+    }
     status = -1;
     goto done;
 }
@@ -709,15 +709,13 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    /* We do not use XPAMainLoop() because we want to exit when the `quit`
-     * command is sent. */
+    /*
+     * We do not use XPAMainLoop() because we want to exit when the `quit`
+     * command is sent.
+     */
     while (! quit) {
         XPAPoll(msec, 1);
     }
-
-
-    /* We do not use XPAMainLoop() because we want to exit when the `quit`
-    /* Finalize resources. */
     if (XPAFree(srv) != 0) {
         fprintf(stderr, "failed to remove XPA server %s:%s\n",
                 serverclass, servername);

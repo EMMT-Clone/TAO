@@ -90,10 +90,10 @@ are available (square brackets `[...]` denote optional arguments):
 
 * `xpaset -p TAO:$cam quit` to make the camera server exit.
 
-* `xpaset -p TAO:$cam ping` to check the connection.  The result is a
-  time-stamp in fractional seconds with nanosecond resolution and using the
-  *monotonic* clock whose origin is unspecified but which is insensitive to
-  time adjustments by the system.
+* `xpaget TAO:$cam ping` to check the connection.  The result is a time-stamp
+  in fractional seconds with nanosecond resolution and using the *monotonic*
+  clock whose origin is unspecified but which is insensitive to time
+  adjustments by the system.
 
 * `xpaget TAO:$cam debug` to retrieve the current debug mode.  Result is `on`
   or `off`.
