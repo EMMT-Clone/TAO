@@ -1,0 +1,5 @@
+virtualcamera
+test-fits
+test-endian
+*~
+*.o
