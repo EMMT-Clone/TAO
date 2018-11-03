@@ -104,9 +104,6 @@ struct phx_camera {
     phx_config_t usr_cfg;   /**< User chosen camera settings */
     uint32_t fullwidth;     /**< Width (in pixels) of the sensor */
     uint32_t fullheight;    /**< Height (in pixels) of the sensor */
-    phx_roi_t cam_roi;      /**< ROI defining the images sent by the camera and
-                                  defined relatively to the sensor surface */
-    phx_roi_t usr_roi;      /**< User chosen ROI */
     uint32_t pixel_format;  /**< Raw pixel format of the camera */
     phx_value_t cam_color;  /**< Pixel format in acquired images
                                  (PHX_CAM_SRC_...) */
