@@ -24,16 +24,29 @@
 #include <phoenix-types.h>
 #include <coaxpress.h>
 
+/**
+ * @addtogroup PhoenixCameras
+ *
+ * Using cameras connected to ActiveSilicon *Phoenix* frame grabber.
+ *
+ * @{
+ */
+
+/**
+ * Structure storing describing a camera connected to and ActiveSilicon
+ * *Phoenix* frame grabber.
+ */
 typedef struct phx_camera phx_camera_t;
 
-typedef struct phx_virtual_buffer phx_virtual_buffer_t;
-
-struct phx_virtual_buffer {
+/**
+ * Virtual buffer used for real-time acquisition.
+ */
+typedef struct phx_virtual_buffer {
     void* data;
     int64_t counter;
     struct timespec ts;
     int index;
-};
+} phx_virtual_buffer_t;
 
 /**
  * Connection settings for image transmission.
@@ -213,21 +226,39 @@ phx_create(tao_error_t** errs,
 extern void
 phx_destroy(phx_camera_t* cam);
 
+/**
+ * Print camera description.
+ */
 extern int
 phx_print_camera_info(phx_camera_t* cam, FILE* stream);
 
+/**
+ * Load camera settings.
+ */
 extern int
 phx_load_configuration(phx_camera_t* cam, int id);
 
+/**
+ * Save camera settings.
+ */
 extern int
 phx_save_configuration(phx_camera_t* cam, int id);
 
+/**
+ * Retrieve camera settings.
+ */
 extern void
 phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg);
 
+/**
+ * Set camera settings.
+ */
 extern int
 phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg);
 
+/**
+ * Set camera connection settings.
+ */
 extern int
 phx_set_coaxpress_connection(phx_camera_t* cam, const phx_connection_t* con);
 
@@ -414,21 +445,39 @@ phx_stop(phx_camera_t* cam);
 extern int
 phx_abort(phx_camera_t* cam);
 
+/**
+ * Update camera temperature.
+ */
 extern int
 phx_update_temperature(phx_camera_t* cam);
 
+/**
+ * Execute a frame grabber command.
+ */
 extern int
 phx_read_stream(phx_camera_t* cam, phx_acquisition_t command, void* addr);
 
+/**
+ * Query a frame grabber parameter.
+ */
 extern int
 phx_get_parameter(phx_camera_t* cam, phx_param_t param, void* addr);
 
+/**
+ * Set a frame grabber parameter.
+ */
 extern int
 phx_set_parameter(phx_camera_t* cam, phx_param_t param, void* addr);
 
+/**
+ * Query the value of a frame grabber parameter.
+ */
 extern int
 phx_get(phx_camera_t* cam, phx_param_t param, phx_value_t* valptr);
 
+/**
+ * Set the value of a frame grabber parameter.
+ */
 extern int
 phx_set(phx_camera_t* cam, phx_param_t param, phx_value_t value);
 
@@ -436,47 +485,98 @@ phx_set(phx_camera_t* cam, phx_param_t param, phx_value_t value);
 /*---------------------------------------------------------------------------*/
 /* ROUTINES TO READ/WRITE COAXPRESS REGISTERS */
 
+/**
+ * Read data from a CoaXPress register.
+ */
 extern int
 cxp_read(phx_camera_t* cam, uint32_t addr, uint8_t* data, uint32_t* size);
 
+/**
+ * Write data to a CoaXPress register.
+ */
 extern int
 cxp_write(phx_camera_t* cam, uint32_t addr, uint8_t* data, uint32_t* size);
 
+/**
+ * Reset a CoaXPress register.
+ *
+ * @warning This functionality is not described in the ActiveSilicon manuals.
+ */
 extern int
 cxp_reset(phx_camera_t* cam, uint32_t addr);
 
+/**
+ * Read an unsigned 32-bit integer from a CoaXPress register.
+ */
 extern int
 cxp_read_uint32(phx_camera_t* cam, uint32_t addr, uint32_t* value);
 
+/**
+ * Read an unsigned 64-bit integer from a CoaXPress register.
+ */
 extern int
 cxp_read_uint64(phx_camera_t* cam, uint32_t addr, uint64_t* value);
 
+/**
+ * Read a 32-bit floating-point value from a CoaXPress register.
+ */
 extern int
 cxp_read_float32(phx_camera_t* cam, uint32_t addr, float32_t* value);
 
+/**
+ * Read a 64-bit floating-point value from a CoaXPress register.
+ */
 extern int
 cxp_read_float64(phx_camera_t* cam, uint32_t addr, float64_t* value);
 
+/**
+ * Read a string from a CoaXPress register.
+ */
 extern int
 cxp_read_string(phx_camera_t* cam, uint32_t addr, uint32_t len, char* buf);
 
+/**
+ * Indirect reading of an unsigned 32-bit integer from a CoaXPress register.
+ */
 extern int
 cxp_read_indirect_uint32(phx_camera_t* cam, uint32_t addr, uint32_t* value);
 
+/**
+ * Write an unsigned 32-bit integer to a CoaXPress register.
+ */
 extern int
 cxp_write_uint32(phx_camera_t* cam, uint32_t addr, uint32_t value);
 
+/**
+ * Write an unsigned 64-bit integer to a CoaXPress register.
+ */
 extern int
 cxp_write_uint64(phx_camera_t* cam, uint32_t addr, uint64_t value);
 
+/**
+ * Write a 32-bit floating-point value to a CoaXPress register.
+ */
 extern int
 cxp_write_float32(phx_camera_t* cam, uint32_t addr, float32_t value);
 
+/**
+ * Write a 64-bit floating-point value to a CoaXPress register.
+ */
 extern int
 cxp_write_float64(phx_camera_t* cam, uint32_t addr, float64_t value);
 
 /*--------------------------------------------------------------------------*/
 /* CAMERAS */
+/**
+ * @addtogroup Cameras
+ *
+ * Supported cameras.
+ *
+ * Supported cameras are checked by `phx_check_MODEL()` and initialized
+ * by `phx_initialize_MODEL()` where `MODEL` is the model of the cameras.
+ *
+ * @{
+ */
 
 /**
  * Check whether a camera is one of the Mikrotron MC408x cameras.
@@ -506,6 +606,9 @@ phx_check_mikrotron_mc408x(phx_camera_t* cam);
  */
 extern int
 phx_initialize_mikrotron_mc408x(phx_camera_t* cam);
+/**
+ * @}
+ */
 
 /*--------------------------------------------------------------------------*/
 /* UTILITIES */
@@ -565,6 +668,10 @@ extern void phx_keyboard_final(void);
  *
  */
 extern int phx_keyboard_read(void);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
