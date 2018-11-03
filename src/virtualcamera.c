@@ -175,7 +175,8 @@ static void produce_image(unsigned bits)
 /* ERROR MESSAGES */
 
 /*
- * The following buffer is used for storing the answer or the error message.
+ * The following buffer is used for storing answers or small error messages
+ * sent by the server.  FIXME: use srvbuf?
  */
 static char message[1024];
 
@@ -222,40 +223,29 @@ static void report_error(tao_error_t** errs, XPA xpa)
     tao_error_getter_t* proc;
     int code, flag = 1;
     char* buf;
-    long siz, len;
     char infobuf[20];
 
     /* Write error message. */
     tao_clear_buffer(&srvbuf);
     while (tao_pop_error(errs, &func, &code, &proc)) {
+        /*
+         * Append next error message to the i/o buffer.  A fatal error results
+         * in case of failure here.
+         */
         tao_get_error_details(infobuf, code, &reason, &info, proc);
         if (debug) {
             fprintf(stderr, "%s %s in function `%s` [%s]\n",
                     (flag ? "{ERROR}" : "       "), reason, func, info);
         }
-        while (1) {
-            /*
-             * Append error message to the i/o buffer, resizing and adjusting
-             * the size of the buffer as needed.  A fatal error results in case
-             * of failure here.
-             */
-            siz = tao_get_buffer_unused_part(&srvbuf, (void**)&buf);
-            len = snprintf(buf, siz, "%s%s in function `%s` [%s]\n",
-                           (flag ? "" : "; "), reason, func, info);
-            if (len < siz) {
-                tao_adjust_buffer_contents_size(NULL, &srvbuf, len);
-                break;
-            }
-            tao_resize_buffer(NULL, &srvbuf, len + 1);
-        }
+        tao_print_to_buffer(NULL, &srvbuf, "%s%s in function `%s` [%s]\n",
+                            (flag ? "" : "; "), reason, func, info);
         flag = 0;
     }
     if (flag) {
-        siz = tao_get_buffer_contents(&srvbuf, (void**)&buf);
+        (void)tao_get_buffer_contents(&srvbuf, (void**)&buf);
     } else {
         /* There were no errors! */
         buf = "no errors!";
-        siz = strlen(buf) + 1;
     }
     XPAError(xpa, buf);
 }
@@ -684,6 +674,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
     if (debug) {
+        fprintf(stderr, "XPA: %s:%s\n", serverclass, servername);
         fprintf(stderr, "shmid: %ld\n",
                 (long)tao_get_shared_camera_ident(cam->shared));
     }
