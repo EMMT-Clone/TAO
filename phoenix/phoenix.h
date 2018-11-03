@@ -217,9 +217,6 @@ extern int
 phx_print_camera_info(phx_camera_t* cam, FILE* stream);
 
 extern int
-phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream);
-
-extern int
 phx_load_configuration(phx_camera_t* cam, int id);
 
 extern int
@@ -284,7 +281,7 @@ phx_discard_errors(phx_camera_t* cam);
  * because the camera instance may be shared between the thread handling frame
  * grabber events and the other threads.  The following high level functions
  * take care of locking/unlocking the camera: phx_start(), phx_stop(),
- * phx_abort(), phx_wait(), phx_release_buffer(), phx_print_board_info().  All
+ * phx_abort(), phx_wait(), phx_release_buffer(), phx_print_camera_info().  All
  * other functions which take a camera instance as their argument should only
  * be called while the caller has locked the camera.
  *

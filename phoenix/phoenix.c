@@ -1016,12 +1016,6 @@ phx_save_configuration(phx_camera_t* cam, int id)
     return status;
 }
 
-extern void
-phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg);
-
-extern int
-phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg);
-
 void
 phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg)
 {
@@ -1029,9 +1023,7 @@ phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg)
         if (cam == NULL) {
             memset(cfg, 0, sizeof(phx_config_t));
         } else {
-            // FIXME: phx_lock(cam);
             memcpy(cfg, &cam->dev_cfg, sizeof(phx_config_t));
-            // FIXME: phx_unlock(cam);
         }
     }
 }
@@ -1274,11 +1266,12 @@ cxp_read_indirect_uint32(phx_camera_t* cam, uint32_t addr, uint32_t* value)
 /*--------------------------------------------------------------------------*/
 /* UTILITIES */
 
+static int
+print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream);
+
 int
 phx_print_camera_info(phx_camera_t* cam, FILE* stream)
 {
-    int status = 0;
-
     /* Minimal checks and set defaults. */
     if (cam == NULL) {
         errno = EFAULT;
@@ -1288,6 +1281,10 @@ phx_print_camera_info(phx_camera_t* cam, FILE* stream)
         stream = stdout;
     }
 
+    /* Assume success and lock the camera. */
+    int status = 0;
+    phx_lock(cam);
+
     /* Print information and settings. */
     fprintf(stream, "Camera vendor: %s\n",
             (cam->vendor[0] != '\0' ? cam->vendor : "Unknown"));
@@ -1296,7 +1293,7 @@ phx_print_camera_info(phx_camera_t* cam, FILE* stream)
     fprintf(stream, "CoaXPress camera: %s\n",
             (cam->coaxpress ? "yes" : "no"));
     fprintf(stream, "Board information:\n");
-    if (phx_print_board_info(cam, "    ", stream) != 0) {
+    if (print_board_info(cam, "    ", stream) != 0) {
         status = -1;
     }
     fprintf(stream, "Connection channels: %u\n",
@@ -1324,32 +1321,19 @@ phx_print_camera_info(phx_camera_t* cam, FILE* stream)
             status = -1;
         }
     }
+
+    /* Unlock camera and return status. */
+    phx_unlock(cam);
     return status;
 }
 
-int
-phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
+static int
+print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
 {
-    /* Minimal checks and set defaults. */
-    if (cam == NULL) {
-        errno = EFAULT;
-        return -1;
-    }
-    if (pfx == NULL) {
-        pfx = "";
-    }
-    if (stream == NULL) {
-        stream = stdout;
-    }
-
-    /* Assume failure and lock the camera. */
-    int status = -1;
-    phx_lock(cam);
-
     /* Retrieve information. */
     phx_value_t bits;
      if (phx_get(cam, PHX_BOARD_INFO, &bits) != 0) {
-        goto unlock;;
+        return -1;
     }
 #define PRT(msk, txt)                                   \
     do {                                                \
@@ -1386,7 +1370,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
     if ((bits & PHX_BOARD_INFO_PCI_EXPRESS) != PHX_BOARD_INFO_PCI_EXPRESS) {
         phx_value_t val;
         if (phx_get(cam, PHX_PCIE_INFO, &val) != 0) {
-            goto unlock;;
+            return -1;
         }
         switch ((int)(val & PHX_EMASK_PCIE_INFO_LINK_GEN)) {
             CASE(PHX_PCIE_INFO_LINK_GEN1,
@@ -1451,7 +1435,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
 
     /* CoaXPress information. */
     if (phx_get(cam, PHX_CXP_INFO, &bits) != 0) {
-        goto unlock;;
+        return -1;
     }
     PRT(PHX_CXP_CAMERA_DISCOVERED,
         "The CoaXPress camera has completed discovery");
@@ -1495,7 +1479,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
     if (bits != 0) {
         phx_value_t val;
         if (phx_get(cam, PHX_CXP_BITRATE, &val) != 0) {
-            goto unlock;;
+            return -1;
         }
         switch ((int)val) {
             CASE(PHX_CXP_BITRATE_UNKNOWN, "No CoaXPress camera is connected, "
@@ -1507,7 +1491,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
             CASE(PHX_CXP_BITRATE_CXP6, "Bitrate is 6250 Mbps");
         }
         if (phx_get(cam, PHX_CXP_DISCOVERY, &val) != 0) {
-            goto unlock;;
+            return -1;
         }
         switch ((int)val) {
             CASE(PHX_CXP_DISCOVERY_UNKNOWN, "No CoaXPress camera is connected, "
@@ -1520,7 +1504,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
                  "The camera is using four CoaXPress links");
         }
         if (phx_get(cam, PHX_CXP_BITRATE_MODE, &val) != 0) {
-            goto unlock;;
+            return -1;
         }
         switch ((int)val) {
             CASE1(PHX_CXP_BITRATE_MODE_AUTO);
@@ -1531,7 +1515,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
             CASE1(PHX_CXP_BITRATE_MODE_CXP6);
         }
         if (phx_get(cam, PHX_CXP_DISCOVERY_MODE, &val) != 0) {
-            goto unlock;;
+            return -1;
         }
         switch ((int)val) {
             CASE1(PHX_CXP_DISCOVERY_MODE_AUTO);
@@ -1540,7 +1524,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
             CASE1(PHX_CXP_DISCOVERY_MODE_4X);
         }
         if (phx_get(cam, PHX_CXP_POCXP_MODE, &val) != 0) {
-            goto unlock;;
+            return -1;
         }
         switch ((int)val) {
             CASE1(PHX_CXP_POCXP_MODE_AUTO);
@@ -1552,10 +1536,7 @@ phx_print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
 #undef CASE
 #undef CASE1
 #undef PRT
-    status = 0;
- unlock:
-    phx_unlock(cam);
-    return status;
+    return 0;
 }
 
 int
