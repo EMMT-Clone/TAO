@@ -95,7 +95,7 @@ main(int argc, char* argv[])
                         "Change and/or show camera configuration.\n");
                 fprintf(stderr, "Options:\n");
                 fprintf(stderr, "  -roi XOFF,YOFF,WIDTH,HEIGHT  "
-                        "Region of interest [%d,%d,%d,%d]?\n",
+                        "Region of interest [%ld,%ld,%ld,%ld].\n",
                         cfg.roi.xoff, cfg.roi.yoff,
                         cfg.roi.width, cfg.roi.height);
                 fprintf(stderr, "  -load ID                     "
@@ -163,7 +163,7 @@ main(int argc, char* argv[])
                 if (pass != 2) {
                     continue;
                 }
-                if (sscanf(argv[i], " %d , %d , %d , %d %c",
+                if (sscanf(argv[i], " %ld , %ld , %ld , %ld %c",
                            &cfg.roi.xoff, &cfg.roi.yoff,
                            &cfg.roi.width, &cfg.roi.height, &c) != 4) {
                     fatal("invalid argument for option `-roi`, "

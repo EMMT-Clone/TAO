@@ -2563,6 +2563,19 @@ typedef struct tao_shared_camera tao_shared_camera_t;
 typedef struct tao_camera tao_camera_t;
 
 /**
+ * Region of interest (ROI) in an image.
+ *
+ * A region of interest (ROI for short) is defined with respect to a *parent*.
+ * This parent can be another ROI, the sensor, an image, etc.
+ */
+typedef struct tao_image_roi {
+    long xoff;    /**< Horizontal offset with respect to parent */
+    long yoff;    /**< Vertical offset with respect to parent */
+    long width;   /**< Horizontal size */
+    long height;  /**< Vertical size */
+} tao_image_roi_t;
+
+/**
  * Create a camera structure for a frame grabber server.
  *
  * The caller is responsible for eventually calling tao_finalize_camera().

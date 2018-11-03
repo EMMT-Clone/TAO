@@ -16,8 +16,13 @@ TAO_LIBS = ${srcdir}/../build/src/.libs/libtao.a -lpthread
 XPA_DEFS =
 XPA_LIBS = -lxpa
 
+TARGETS = virtualcamera test-fits test-endian
+
 default: all
-all: virtualcamera test-fits test-endian
+all: $(TARGETS)
+
+clean:
+	rm -f *~ *.o $(TARGETS)
 
 virtualcamera: ${srcdir}/virtualcamera.c
 	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(XPA_DEFS) $(CFLAGS) $(LDFLAGS) "$<" -o "$@" $(TAO_LIBS) $(XPA_LIBS) $(LIBS)
@@ -27,3 +32,5 @@ test-fits: ${srcdir}/test-fits.c
 
 test-endian: ${srcdir}/test-endian.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) "$<" -o "$@"
+
+.PHONY: all clean default

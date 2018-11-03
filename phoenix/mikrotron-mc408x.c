@@ -484,7 +484,7 @@ update_region_of_interest(phx_camera_t* cam)
 }
 
 static int
-set_region_of_interest(phx_camera_t* cam, const phx_roi_t* arg)
+set_region_of_interest(phx_camera_t* cam, const tao_image_roi_t* arg)
 {
     if (arg->xoff < 0 || arg->width < 1 ||
         arg->yoff < 0 || arg->height < 1 ||
@@ -492,14 +492,14 @@ set_region_of_interest(phx_camera_t* cam, const phx_roi_t* arg)
         arg->yoff + arg->height > cam->fullheight) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
     }
-    phx_roi_t newroi;
+    tao_image_roi_t newroi;
     newroi.xoff = ROUND_DOWN(arg->xoff, CXP_HORIZONTAL_INCREMENT);
     newroi.yoff = ROUND_DOWN(arg->yoff, CXP_VERTICAL_INCREMENT);
     newroi.width = ROUND_UP(arg->xoff + arg->width,
                             CXP_HORIZONTAL_INCREMENT) - newroi.xoff;
     newroi.height = ROUND_UP(arg->yoff + arg->height,
                              CXP_VERTICAL_INCREMENT) - newroi.yoff;
-    phx_roi_t* oldroi = &cam->dev_cfg.roi;
+    tao_image_roi_t* oldroi = &cam->dev_cfg.roi;
 #define CFG_SET(m, id)                              \
         if (cxp_set(cam, id, newroi.m) != 0) {      \
             return -1;                              \

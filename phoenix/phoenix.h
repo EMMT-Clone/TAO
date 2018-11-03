@@ -36,19 +36,6 @@ struct phx_virtual_buffer {
 };
 
 /**
- * Region of interest.
- *
- * A region of interest (ROI for short) is defined with respect to a *parent*.
- * This parent can be another ROI, the sensor, an image, etc.
- */
-typedef struct phx_roi {
-    int xoff;    /**< Horizontal offset with respect to parent */
-    int yoff;    /**< Vertical offset with respect to parent */
-    int width;   /**< Horizontal size */
-    int height;  /**< Vertical size */
-} phx_roi_t;
-
-/**
  * Connection settings for image transmission.
  */
 typedef struct phx_connection {
@@ -69,7 +56,7 @@ typedef struct phx_config {
     phx_connection_t connection;
                            /**< Connection for image transmission */
     int depth;             /**< Bits per pixel */
-    phx_roi_t roi;         /**< ROI of acquired images and defined relatively
+    tao_image_roi_t roi;   /**< ROI of acquired images and defined relatively
                                 to the sensor surface */
 } phx_config_t;
 

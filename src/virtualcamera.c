@@ -43,7 +43,7 @@ static void* raw_img = NULL;
 static size_t raw_size = 0;
 
 static void*
-resize_image(int depth, int width, int height)
+resize_image(long depth, long width, long height)
 {
     size_t elsize = (depth <= 8 ? 1 : 2);
     size_t minsize = elsize*width*height;
@@ -59,7 +59,7 @@ resize_image(int depth, int width, int height)
 }
 
 static void*
-generate_image(int depth, int width, int height, uint32_t bits)
+generate_image(long depth, long width, long height, uint32_t bits)
 {
     void* raw = resize_image(depth, width, height);
 
@@ -69,10 +69,10 @@ generate_image(int depth, int width, int height, uint32_t bits)
         TYPE ymsk = ((bits >>  8) & 0xFF);              \
         TYPE xoff = ((bits >> 16) & 0xFF);              \
         TYPE yoff = ((bits >> 24) & 0xFF);              \
-        for (int y = 0; y < height; ++y) {              \
+        for (long y = 0; y < height; ++y) {             \
             TYPE* line = ((TYPE*)raw) + y*width;        \
             TYPE mask = ((y + yoff) & ymsk);            \
-            for (int x = 0; x < width; ++x) {           \
+            for (long x = 0; x < width; ++x) {          \
                 line[x] = mask & ((x + xoff) & xmsk);   \
             }                                           \
         }                                               \
@@ -92,15 +92,15 @@ generate_image(int depth, int width, int height, uint32_t bits)
 
 #define GENERATE(FUNC, TYPE)                                    \
     static void                                                 \
-    FUNC(TYPE* dest, int width, int height, uint32_t bits)      \
+    FUNC(TYPE* dest, long width, long height, uint32_t bits)    \
     {                                                           \
         TYPE xmsk = 0xFF;                                       \
         TYPE xoff = ( bits        & 0xFF);                      \
         TYPE yoff = ((bits >>  8) & 0xFF);                      \
-        for (int y = 0; y < height; ++y) {                      \
+        for (long y = 0; y < height; ++y) {                     \
             TYPE* line = ((TYPE*)dest) + y*width;               \
             TYPE mask = ((y + yoff) & 0x0F) == 0x0F ? 0 : 0xFF; \
-            for (int x = 0; x < width; ++x) {                   \
+            for (long x = 0; x < width; ++x) {                  \
                 line[x] = mask & ((x + xoff) & xmsk);           \
             }                                                   \
         }                                                       \
@@ -144,8 +144,8 @@ static void produce_image(unsigned bits)
     /* Generate/process the image while the shared camera data is unlocked. */
     tao_set_shared_array_timestamp(arr, t0.s, t0.ns);
     void* data = tao_get_shared_array_data(arr);
-    int width = tao_get_shared_array_size(arr, 1);
-    int height = tao_get_shared_array_size(arr, 2);
+    long width = tao_get_shared_array_size(arr, 1);
+    long height = tao_get_shared_array_size(arr, 2);
     if (cam->shared->pixel_type == TAO_UINT8) {
         generate_u8(data, width, height, bits);
     } else if (cam->shared->pixel_type == TAO_UINT16) {
@@ -157,7 +157,7 @@ static void produce_image(unsigned bits)
         }
         tao_subtract_times(&dt, &t1, &t0);
         tao_sprintf_time(buf, &dt);
-        fprintf(stderr, "%d×%d image (ident=%d) generated in %s seconds\n",
+        fprintf(stderr, "%ld×%ld image (ident=%d) generated in %s seconds\n",
                 width, height, tao_get_shared_array_ident(arr), buf);
     }
 
@@ -371,10 +371,10 @@ static int send_callback(void* send_data, void* call_data,
         sprintf(message, "%.6f", cam->shared->exposure);
     } else if (c == 'f' && strcmp(argv[0], "fullheight") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%d", cam->shared->fullheight);
+        sprintf(message, "%ld", cam->shared->fullheight);
     } else if (c == 'f' && strcmp(argv[0], "fullwidth") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%d", cam->shared->fullwidth);
+        sprintf(message, "%ld", cam->shared->fullwidth);
     } else if (c == 'g' && strcmp(argv[0], "gamma") == 0) {
         CHECK_ARGC(1, 1, 1);
         sprintf(message, "%.3f", cam->shared->gamma);
@@ -383,7 +383,7 @@ static int send_callback(void* send_data, void* call_data,
         sprintf(message, "%.1f", cam->shared->gain);
     } else if (c == 'h' && strcmp(argv[0], "height") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%d", cam->shared->height);
+        sprintf(message, "%ld", cam->shared->height);
     } else if (c == 'p' && strcmp(argv[0], "ping") == 0) {
         tao_time_t ts;
         CHECK_ARGC(1, 1, 1);
@@ -396,7 +396,7 @@ static int send_callback(void* send_data, void* call_data,
         sprintf(message, "%.3f", cam->shared->rate);
     } else if (c == 'r' && strcmp(argv[0], "roi") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%d %d %d %d",
+        sprintf(message, "%ld %ld %ld %ld",
                 cam->shared->xoff, cam->shared->yoff,
                 cam->shared->width, cam->shared->height);
     } else if (c == 's' && strcmp(argv[0], "shmid") == 0) {
@@ -407,13 +407,13 @@ static int send_callback(void* send_data, void* call_data,
         sprintf(message, "%d", cam->shared->state);
     } else if (c == 'w' && strcmp(argv[0], "width") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%d", cam->shared->width);
+        sprintf(message, "%ld", cam->shared->width);
     } else if (c == 'x' && strcmp(argv[0], "xoff") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%d", cam->shared->xoff);
+        sprintf(message, "%ld", cam->shared->xoff);
     } else if (c == 'y' && strcmp(argv[0], "yoff") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%d", cam->shared->yoff);
+        sprintf(message, "%ld", cam->shared->yoff);
     } else {
         XPAError(xpa, "unknown parameter for get `...` command");
         goto error;
@@ -556,24 +556,24 @@ static int recv_callback(void* recv_data, void* call_data,
         }
         quit = 1;
     } else if (c == 'r' && strcmp(argv[0], "roi") == 0) {
-        int xoff, yoff, width, height;
+        long xoff, yoff, width, height;
         CHECK_ARGC(1, 5, 5);
-        if (tao_parse_int(argv[1], &xoff) != 0 || xoff < 0 ||
+        if (tao_parse_long(argv[1], &xoff) != 0 || xoff < 0 ||
             xoff >= FULLWIDTH) {
             XPAError(xpa, "bad value for `xoff` in set `roi ...` command");
             goto error;
         }
-        if (tao_parse_int(argv[2], &yoff) != 0 || yoff < 0 ||
+        if (tao_parse_long(argv[2], &yoff) != 0 || yoff < 0 ||
             yoff >= FULLHEIGHT) {
             XPAError(xpa, "bad value for `yoff` in set `roi ...` command");
             goto error;
         }
-        if (tao_parse_int(argv[3], &width) != 0 || width < 1 ||
+        if (tao_parse_long(argv[3], &width) != 0 || width < 1 ||
             width > FULLWIDTH) {
             XPAError(xpa, "bad value for `width` in set `roi ...` command");
             goto error;
         }
-        if (tao_parse_int(argv[4], &height) != 0 || height < 1 ||
+        if (tao_parse_long(argv[4], &height) != 0 || height < 1 ||
             height > FULLHEIGHT) {
             XPAError(xpa, "bad value for `height` in set `roi ...` command");
             goto error;

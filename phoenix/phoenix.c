@@ -333,8 +333,8 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
         phx_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
-    const phx_roi_t* dev_roi = &cam->dev_cfg.roi;
-    const phx_roi_t* usr_roi = &cam->usr_cfg.roi;
+    const tao_image_roi_t* dev_roi = &cam->dev_cfg.roi;
+    const tao_image_roi_t* usr_roi = &cam->usr_cfg.roi;
     if (dev_roi->xoff < 0 || dev_roi->xoff > usr_roi->xoff ||
         dev_roi->yoff < 0 || dev_roi->yoff > usr_roi->yoff ||
         usr_roi->width < 1 ||
