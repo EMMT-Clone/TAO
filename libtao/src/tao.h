@@ -2830,7 +2830,7 @@ extern int tao_get_shared_camera_depth(const tao_shared_camera_t* cam);
  * @return The number of pixels per line of the detector, `0` if @a cam is
  *         `NULL`.
  */
-extern int tao_get_shared_camera_fullwidth(const tao_shared_camera_t* cam);
+extern long tao_get_shared_camera_fullwidth(const tao_shared_camera_t* cam);
 
 /**
  * Get the height of the detector.
@@ -2843,7 +2843,7 @@ extern int tao_get_shared_camera_fullwidth(const tao_shared_camera_t* cam);
  * @return The number of lines of pixels of the detector, `0` if @a cam is
  *         `NULL`.
  */
-extern int tao_get_shared_camera_fullheight(const tao_shared_camera_t* cam);
+extern long tao_get_shared_camera_fullheight(const tao_shared_camera_t* cam);
 
 /**
  * Get the horizontal offset of captured images.
@@ -2853,7 +2853,7 @@ extern int tao_get_shared_camera_fullheight(const tao_shared_camera_t* cam);
  * @return The horizontal offset in physical pixels of the region of interest
  *         set for the captured images, `0` if @a cam is `NULL`.
  */
-extern int tao_get_shared_camera_xoff(const tao_shared_camera_t* cam);
+extern long tao_get_shared_camera_xoff(const tao_shared_camera_t* cam);
 
 /**
  * Get the vertical offset of captured images.
@@ -2863,7 +2863,7 @@ extern int tao_get_shared_camera_xoff(const tao_shared_camera_t* cam);
  * @return The vertical offset in physical pixels of the region of interest
  *         set for the captured images, `0` if @a cam is `NULL`.
  */
-extern int tao_get_shared_camera_yoff(const tao_shared_camera_t* cam);
+extern long tao_get_shared_camera_yoff(const tao_shared_camera_t* cam);
 
 /**
  * Get the width of the captured images.
@@ -2877,7 +2877,7 @@ extern int tao_get_shared_camera_yoff(const tao_shared_camera_t* cam);
  * @return The number of macro-pixels per line of the captured images, `0` if
  *         @a cam is `NULL`.
  */
-extern int tao_get_shared_camera_width(const tao_shared_camera_t* cam);
+extern long tao_get_shared_camera_width(const tao_shared_camera_t* cam);
 
 /**
  * Get the height of the captured images.
@@ -2891,7 +2891,7 @@ extern int tao_get_shared_camera_width(const tao_shared_camera_t* cam);
  * @return The number of lines of macro-pixels in the captured images, `0` if
  *         @a cam is `NULL`.
  */
-extern int tao_get_shared_camera_height(const tao_shared_camera_t* cam);
+extern long tao_get_shared_camera_height(const tao_shared_camera_t* cam);
 
 /**
  * Get the detector bias.

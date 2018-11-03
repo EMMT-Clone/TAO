@@ -126,14 +126,14 @@ struct tao_shared_camera {
                           acquisition is running. */
     int pixel_type;  /**< Pixel type. */
     int depth;       /**< Bits per pixel in the raw images. */
-    int fullwidth;   /**< Maximum image width for the detector. */
-    int fullheight;  /**< Maximum image height for the detector. */
-    int xoff;        /**< Horizontal offset of the acquired images with respect
+    long fullwidth;  /**< Maximum image width for the detector. */
+    long fullheight; /**< Maximum image height for the detector. */
+    long xoff;       /**< Horizontal offset of the acquired images with respect
                           to the left border of the detector. */
-    int yoff;        /**< Vertical offset of the acquired images with respect
+    long yoff;       /**< Vertical offset of the acquired images with respect
                           to the bottom border of the detector. */
-    int width;       /**< Number of pixels per line of the acquired images. */
-    int height;      /**< Number of lines of pixels in the acquired images. */
+    long width;      /**< Number of pixels per line of the acquired images. */
+    long height;     /**< Number of lines of pixels in the acquired images. */
     double bias;     /**< Detector bias. */
     double gain;     /**< Detector gain. */
     double rate;     /**< Acquisition rate in frames per second. */
