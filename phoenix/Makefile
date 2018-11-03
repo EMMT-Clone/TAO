@@ -46,7 +46,6 @@ PHOENIX_SHARED_LIBRARY = libtaophx.so
 PHOENIX_OBJECTS = errors.o phoenix.o mikrotron-mc408x.o
 PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
                   ${srcdir}/phoenix.h \
-                  ${srcdir}/phoenix-private.h \
                   ${srcdir}/coaxpress.h \
                   $(TAO_SRCDIR)/tao.h
 PHOENIX_DEFS = -DPHX_DEBUG -DPHX_VERBOSE $(PHX_DEFS) $(TAO_DEFS) $(FITSIO_DEFS)

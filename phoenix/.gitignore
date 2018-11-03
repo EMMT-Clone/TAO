@@ -1,0 +1,12 @@
+*.e
+work-*
+dump-errors
+endian
+phx_capture
+phx_config
+phx_info
+phx_live
+phx_rt_last
+phx_rt_wait
+phx_server
+phx_test
