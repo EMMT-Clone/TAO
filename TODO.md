@@ -35,6 +35,23 @@
 * Manage to have '-Wall -Werror -O2' the default compilation flags.
 
 
+## Phoenix part
+
+* Setting connection speed is not fully functional (it works sometimes).
+
+* Implement connection-reset.
+
+* Set trigger mode (even though defaults are OK).
+
+* The way the end of acquisition is signaled makes the "stop" command behaves
+  as the "abort" one.
+
+* Some operations (mostly playing with the configuration) should be forbidden
+  while acquisition is running.
+
+* phx_start should apply the user chosen configuration?
+
+
 ## Vectorization and real-time computations
 
 * Make sure shared array values are optimally aligned to benefit from
