@@ -1,30 +1,59 @@
 ## Error Reporting
 
-Error reporting in TAO C library is simple: all functions of the library which
-may report an error have a first parameter which is the address of a status
-code.  (Note: it must be the first one because there are functions with a
-variable number of arguments.)  Initially, the status must be set to zero
-(`TAO_SUCCESS`).  On entry, such a function checks the status value; if it is
-non-zero, the function returns with the status value unchanged; otherwise, the
-function proceeeds but will set the status value to a non-zero error code on
-error.
+Errors in TAO are identified by a numerical code (see `tao_error_code_t`) and
+by the name of the function where the error occured.  When an error occurs in
+most TAO function, this information may be transferred to the caller via the
+first parameter of the function.  (Note: it must be the first argument because
+there are functions with a variable number of arguments.)  To collect error
+information, the caller has to provide the address of a pointer to an opaque
+`tao_error_t` structure.  There are two possibilities:
 
-At any point, if status value is zero, it means that all calls were successful
-so far.  If the status value is strictly positive, it corresponds to a system
-error code (as given by `errno`).  If the status value is strictly negative, it
-corresponds to a specific error in the library.  Function
-`tao_get_error_text` may be used to convert the error code into a human
-readable message.
+- If the address of the variable to track the errors is `NULL`, then any
+  occuring error is assumed to be fatal: it is immediately reported and the
+  process is aborted.
+
+- If the address of the variable to track the errors is not `NULL`, then
+  information about errors that have occured are stored (as a chained list) in
+  the variable.  Initially, the variable to track error information must be set
+  to `TAO_NO_ERRORS` to indicate that there are no errors yet.  To check
+  whether an error has occured, the caller just have to check whether the
+  variable is not equal to `TAO_NO_ERRORS` after calling a TAO function.  (Some
+  TAO functions may also return a specific value, say `NULL` or `-1`, when an
+  error occured.)  The macro `TAO_ANY_ERRORS()` can also be used to check
+  whether any error occured.  It is the caller responsibility to ensure that
+  errors are eventually taken into account.  There are basically two
+  possibilities: errors can be reported with `tao_report_errors() `or errors
+  can be simply ignored with the `tao_discard_errors()`.  Calling any of these
+  two functions does free the resources associated with the memorized errors.
+
+Note that, if the (small) amount of memory needed to store the error
+information cannot be allocated, a fatal error is assumed: the current error
+and all pending errors are immediately reported and the process is aborted.
+
+Usually, functions should stop upon the first ocurring error.  This is however
+not always possible (for instance when an object is destroyed several resources
+may have to be destroyed).  When there are several errors occuring in the same
+function call, the error mangement mechanism implemented in TAO offers the
+possibility to report all errors that occured.
+
+Example:
 
 ```c
-tao_error_t* errs = NULL;
-tao_fun1(&errs, arg1, arg2, ...);
-tao_fun2(&errs, ...);
-tao_fun3(&errs, ...);
-if (TAO_ANY_ERRORS(&errs)) {
-    tao_report_errors(errs);
-    exit(1);
-}
+    tao_error_t* errs = TAO_NO_ERRORS;
+    if (tao_fun1(&errs, arg1, arg2, ...) != 0) {
+        goto done;
+    }
+    ...; // do something
+    if (tao_fun2(&errs, ...) != 0 ||
+        tao_fun3(&errs, ...) != 0) {
+        goto done;
+    }
+    ...; // do something else
+done:
+  if (errs != TAO_NO_ERRORS) {
+      tao_report_errors(&errs);
+      exit(1);
+  }
 ```
 
 ## Shared Objects
