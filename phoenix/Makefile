@@ -24,16 +24,21 @@ PHX_LIBDIR = $(PHX_DIR)/lib64
 PHX_INCDIR = $(PHX_DIR)/include
 PHX_DEFS = -D_PHX_LINUX -I$(PHX_INCDIR)
 PHX_DLL = $(PHX_LIBDIR)/libphxapi-x86_64.so
-PHX_LIBS = -L$(PHX_LIBDIR) -lphxfb02-x86_64 -lphxapi-x86_64 -lphxbl-x86_64 -lphxil-x86_64 -lphxdl-x86_64 -lrt -ldl
+PHX_LIBS = -L$(PHX_LIBDIR) -lphxfb02-x86_64 -lphxapi-x86_64 -lphxbl-x86_64 -lphxil-x86_64 -lphxdl-x86_64
+
+# Other libraries.
+OTHER_LIBS = -lrt -ldl -lpthread -lm
+
+# Settings for the C FITSIO library.
+FITSIO_LIBS = -lcfitsio
+FITSIO_DEFS =
 
 # Settings for TAO library.
 TAO_SRCDIR = ${srcdir}/../libtao/src
 TAO_LIBDIR = ${srcdir}/../build/src/.libs
 TAO_INCDIR = $(TAO_SRCDIR)
 TAO_DEFS = -I$(TAO_INCDIR)
-TAO_DLL = $(TAO_LIBDIR)/libtao.so
-TAO_LIBS = -L$(TAO_LIBDIR) -ltao -lpthread -lm
-TAO_CFLAGS = $(CPPFLAGS) $(CFLAGS) $(PIC_FLAGS)
+TAO_LIBS = -L$(TAO_LIBDIR) -ltao
 
 # Macros for the Phoenix Frame Grabber Library (FGL):
 PHOENIX_STATIC_LIBRARY = libtaophx.a
@@ -44,13 +49,9 @@ PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
                   ${srcdir}/phoenix-private.h \
                   ${srcdir}/coaxpress.h \
                   $(TAO_SRCDIR)/tao.h
-PHOENIX_DEFS = -DPHX_DEBUG -DPHX_VERBOSE
-PHOENIX_CFLAGS = $(CPPFLAGS) $(PHX_DEFS) $(TAO_DEFS) $(PHOENIX_DEFS) $(CFLAGS) $(PIC_FLAGS)
-PHOENIX_LIBS = $(PHOENIX_STATIC_LIBRARY) $(PHX_LIBS) $(TAO_LIBS)
-
-# Settings for te CFITSIO library.
-CFITSIO_LIBS = -lcfitsio
-CFITSIO_DEFS =
+PHOENIX_DEFS = -DPHX_DEBUG -DPHX_VERBOSE $(PHX_DEFS) $(TAO_DEFS) $(FITSIO_DEFS)
+PHOENIX_CFLAGS = $(CPPFLAGS) $(PHOENIX_DEFS) $(CFLAGS) $(PIC_FLAGS)
+PHOENIX_LIBS = $(PHOENIX_STATIC_LIBRARY) $(PHX_LIBS) $(TAO_LIBS) $(FITSIO_LIBS) $(OTHER_LIBS)
 
 TOOLS = phx_info phx_config phx_test
 
@@ -85,8 +86,8 @@ phx_live: ${srcdir}/phx_live.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
 
 phx_capture: ${srcdir}/phx_capture.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
-	$(CC) $(PHOENIX_CFLAGS) $(CFITSIO_DEFS) $(LDFLAGS) $< -o $@ \
-	    $(PHOENIX_LIBS) $(CFITSIO_LIBS) -lm
+	$(CC) $(PHOENIX_CFLAGS) $(FITSIO_DEFS) $(LDFLAGS) $< -o $@ \
+	    $(PHOENIX_LIBS) $(FITSIO_LIBS) -lm
 
 phx_rt_last: ${srcdir}/phx_rt_last.c $(PHOENIX_HEADERS) $(PHOENIX_STATIC_LIBRARY)
 	$(CC) $(PHOENIX_CFLAGS) $(LDFLAGS) $< -o $@ $(PHOENIX_LIBS)
