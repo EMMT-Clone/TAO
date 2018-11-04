@@ -38,6 +38,17 @@ extern "C" {
  * @{
  */
 
+/*--------------------------------------------------------------------------*/
+/* ERROR MANAGEMENT */
+
+/**
+ * @addtogroup PhoenixBasics
+ *
+ * Basic operations and type definitions for Phoenix cameras.
+ *
+ * @{
+ */
+
 /**
  * Structure storing describing a camera connected to and ActiveSilicon
  * *Phoenix* frame grabber.
@@ -140,50 +151,6 @@ struct phx_camera {
 };
 
 /**
- * Set the level of verbosity of the default error handler.
- *
- * @param level   The level of verbosity: < 1 to print no messages, 1 to print
- *                brief messages, > 1 to print detailed messages.
- *
- * @return The previous value of the verbosity level.
- */
-extern int phx_set_error_handler_verbosity(int level);
-
- /**
- * Get the level of verbosity of the default error handler.
- *
- * @return The current verbosity level for error messages printed by the
- *         default error handler.
- */
-extern int  phx_get_error_handler_verbosity();
-
-extern void
-phx_push_error(tao_error_t** errs, const char* func, int code);
-
-/**
- * Get textual identifier of status code.
- *
- * @param status    Status returned by one of the functions of the
- *                  ActiveSilicon Phoenix library.
- *
- * @return The address of a static string with the textual identifier of
- *         the status.
- */
-extern const char*
-phx_status_identifier(phx_status_t status);
-
-/**
- * Get textual description of status code.
- *
- * @param status    Status returned by one of the functions of the
- *                  ActiveSilicon Phoenix library.
- *
- * @return The address of a static string describing the status code.
- */
-const char*
-phx_status_description(phx_status_t status);
-
-/**
  * Create a new instance of a frame grabber connection to a camera.
  *
  * This function allocates a camera hanlder, connects to the camera and sets
@@ -234,20 +201,83 @@ phx_destroy(phx_camera_t* cam);
 extern int
 phx_print_camera_info(phx_camera_t* cam, FILE* stream);
 
+/**
+ * Lock a camera.
+ *
+ * This function locks the mutex of the camera @b cam.  The caller is
+ * responsible of eventually calling phx_unlock().
+ *
+ * Locking a camera is needed before changing anything in the camera instance
+ * because the camera instance may be shared between the thread handling frame
+ * grabber events and the other threads.  The following high level functions
+ * take care of locking/unlocking the camera: phx_start(), phx_stop(),
+ * phx_abort(), phx_wait(), phx_release_buffer(), phx_print_camera_info(),
+ * phx_load_configuration(), phx_save_configuration(), phx_get_configuration(),
+ * phx_set_configuration() and phx_update_configuration().  All other functions
+ * which take a camera instance as their argument should only be called while
+ * the caller has locked the camera.
+ *
+ * @param cam    Address of camera instance (must be non-`NULL`).
+ */
+extern void
+phx_lock(phx_camera_t* cam);
+
+/**
+ * Try to lock a camera.
+ *
+ * This function attempts to lock the mutex of the camera @b cam.  If the call
+ * is successful, the caller is responsible of eventually calling phx_unlock().
+ *
+ * @param cam    Address of camera instance (must be non-`NULL`).
+ *
+ * @return `1` if camera has been locked by the caller; `0` otherwise (that is,
+ * if the camera is already locked by some other thread/process).
+ */
+extern int
+phx_try_lock(phx_camera_t* cam);
+
+/**
+ * Unlock a camera.
+ *
+ * This function unlocks the mutex of the camera @b cam.  The caller must
+ * have locked the camera @b cam with phx_lock() or phx_try_lock().
+ *
+ * @param cam    Address of camera instance (must be non-`NULL`).
+ */
+extern void
+phx_unlock(phx_camera_t* cam);
+
+/**
+ * Signal the condition variable of a camera.
+ *
+ * This function restarts one of the threads that are waiting on the condition
+ * variable of the camera @b cam.  Nothing happens, if no threads are waiting
+ * on the condition variable of @b cam.  The caller is assumed to have locked
+ * the camera before calling this function and to unlock the camera soon after
+ * calling this function.
+ *
+ * @param cam    Address of camera instance (must be non-`NULL`).
+ */
+extern void
+phx_signal_condition(phx_camera_t* cam);
+
+/**
+ * @}
+ */
+
 /*--------------------------------------------------------------------------*/
 /* CONFIGURATION */
 
 /**
- * @addtogroup Configuration
+ * @addtogroup PhoenixConfiguration
  *
  * Configuration of camera settings.
  *
- * Configurable camera parameters are: the region of interest (ROI), the
- * exposure duration and frame rate, the detetctor bias and gain, etc.
- *
- * As setting camera parameters sequentially may result in an invalid
+ * Configurable camera parameters are the region of interest (ROI), the
+ * exposure duration and frame rate, the detetctor bias and gain, *etc*.  As
+ * setting camera parameters sequentially may result in an invalid
  * configuration, all parameters are set at the same time.  A complete camera
- * configuration is stored in a `phx_config_t` structure.
+ * configuration is stored in a @ref phx_config_t structure.
  *
  * There are different possible operations with camera configuration:
  *
@@ -264,20 +294,20 @@ phx_print_camera_info(phx_camera_t* cam, FILE* stream);
  * The *load* and *save* operations operate between the camera settings and a
  * given preset configuration stored in the ROM of the camera (or equivalent).
  * The *get* and *set* operations operate between the camera settings and a
- * user provided `phx_config_t` structure.  For efficiency reasons, the camera
- * configuration is memorized in the `phx_camera_t` structure and is
- * synchronized with the hardware settings.  It may however happen that errors
- * prevent this synchronization.  In that case, the *update* operation can be
- * applied to synchronize the memorized configuration with the current hardware
- * settings.
+ * user provided @ref phx_config_t structure.  For efficiency reasons, the
+ * camera configuration is memorized in the @ref phx_camera_t structure
+ * associated with the camera and is synchronized with the hardware settings.
+ * It may however happen that errors prevent this synchronization.  In that
+ * case, the *update* operation can be applied to synchronize the memorized
+ * configuration with the current hardware settings.
  *
  * Due to hardware restrictions, the device ROI may be different than the one
- * chsen.  The device ROI is set to encompass the chosen ROI under these
+ * chosen.  The device ROI is set to encompass the chosen ROI under these
  * restrictions.  The device ROI does not need to be accessible to the end-user
- * and is stored in the `dev_roi` member of the `phx_camera_t` structure while
- * the chosen ROI is stored in the `cfg.roi` member of this structure.  After
- * checking the validitity of the user chosen ROI, if an error occurs when
- * setting one the ROI parameter, the `cfg.roi` is reset to the hardware
+ * and is stored in the `dev_roi` member of the @ref phx_camera_t structure
+ * while the chosen ROI is stored in the `cfg.roi` member of this structure.
+ * After checking the validitity of the user chosen ROI, if an error occurs
+ * when setting one the ROI parameter, the `cfg.roi` is reset to the hardware
  * settings.
  *
  * @{
@@ -320,108 +350,24 @@ extern int
 phx_set_coaxpress_connection(phx_camera_t* cam, const phx_connection_t* con);
 
 /**
+ * Update camera temperature.
+ */
+extern int
+phx_update_temperature(phx_camera_t* cam);
+
+/**
  * @}
  */
 
-/**
- * Check whether there are any errors with a camera.
- *
- * @param cam    Address of camera instance.
- *
- * @return `1` (true) if there are errors in the error stack of the camera @p
- * cam; `0` (false) otherwise.
- *
- * @see phx_create(), phx_report_errors(), phx_discard_errors().
- */
-extern int
-phx_any_errors(const phx_camera_t* cam);
+/*--------------------------------------------------------------------------*/
+/* IMAGE ACQUISITION */
 
 /**
- * Report all tracked errors of a camera.
+ * @addtogroup PhoenixAcquisition
  *
- * This function prints to the standard error stream the errors in the error
- * stack of the camera @p cam, deleting the errors in the process.
- *
- * @param cam    Address of camera instance.
- *
- * @see tao_report_errors(), phx_create(), phx_any_errors(),
- * phx_discard_errors().
+ * Image acquisition with a Phoenix camera.
+ * @{
  */
-extern void
-phx_report_errors(phx_camera_t* cam);
-
-/**
- * Clear all tracked errors of a camera.
- *
- * This function deletes the contents of the error stack of the camera @p cam.
- *
- * @param cam    Address of camera instance.
- *
- * @see tao_discard_errors(), phx_any_errors(), phx_report_errors(),
- * phx_create().
- */
-extern void
-phx_discard_errors(phx_camera_t* cam);
-
-/**
- * Lock a camera.
- *
- * This function locks the mutex of the camera @p cam.  The caller is
- * responsible of eventually calling phx_unlock().
- *
- * Locking a camera is needed before changing anything in the camera instance
- * because the camera instance may be shared between the thread handling frame
- * grabber events and the other threads.  The following high level functions
- * take care of locking/unlocking the camera: phx_start(), phx_stop(),
- * phx_abort(), phx_wait(), phx_release_buffer(), phx_print_camera_info(),
- * phx_load_configuration(), phx_save_configuration(), phx_get_configuration(),
- * phx_set_configuration() and phx_update_configuration().  All other functions
- * which take a camera instance as their argument should only be called while
- * the caller has locked the camera.
- *
- * @param cam    Address of camera instance (must be non-`NULL`).
- */
-extern void
-phx_lock(phx_camera_t* cam);
-
-/**
- * Try to lock a camera.
- *
- * This function attempts to lock the mutex of the camera @p cam.  If the call
- * is successful, the caller is responsible of eventually calling phx_unlock().
- *
- * @param cam    Address of camera instance (must be non-`NULL`).
- *
- * @return `1` if camera has been locked by the caller; `0` otherwise (that is,
- * if the camera is already locked by some other thread/process).
- */
-extern int
-phx_try_lock(phx_camera_t* cam);
-
-/**
- * Unlock a camera.
- *
- * This function unlocks the mutex of the camera @p cam.  The caller must
- * have locked the camera @p cam with phx_lock() or phx_try_lock().
- *
- * @param cam    Address of camera instance (must be non-`NULL`).
- */
-extern void
-phx_unlock(phx_camera_t* cam);
-
-/**
- * Signal the condition variable of a camera.
- *
- * This function restarts one of the threads that are waiting on the condition
- * variable of the camera @p cam.  Nothing happens, if no threads are waiting
- * on the condition variable of @p cam.  The caller is assumed to have locked
- * the camera before calling this function and to unlock the camera soon after
- * calling this function.
- *
- * @param cam    Address of camera instance (must be non-`NULL`).
- */
-extern void
-phx_signal_condition(phx_camera_t* cam);
 
 /**
  * Start continuous acquisition.
@@ -446,7 +392,7 @@ phx_start(phx_camera_t* cam, int nbufs);
  *
  * @param cam    Address of camera instance.
  * @param secs   Maximum number of seconds to wait.  Must be nonnegative.
- *               Wait forever if @p secs is larger than one year.
+ *               Wait forever if @b secs is larger than one year.
  * @param drop   If non-zero, the very last image is always delivered,  the
  *               older unprocessed images, if any, are discarded.
  *
@@ -509,10 +455,207 @@ extern int
 phx_abort(phx_camera_t* cam);
 
 /**
- * Update camera temperature.
+ * @}
+ */
+
+/*--------------------------------------------------------------------------*/
+/* ERROR MANAGEMENT */
+
+/**
+ * @addtogroup PhoenixErrors
+ *
+ * Management of errors with Phoenix cameras.
+ *
+ * The @ref phx_camera_t structure has its own error stack which is used by
+ * most functions operating on this class of cameras to store error
+ * information.
+ *
+ * The end user shall call phx_any_errors() to check whether there are any
+ * errors, phx_report_errors() to print any errors to the standard error output
+ * and phx_discard_errors() to discard any errors.  Note that all functions of
+ * the Phoenix/TAO library return a value which can be checked to figure out
+ * whether an error has occured.
+ *
+ * At low level, phx_push_error() is called to push a new error on top of the
+ * error stack.  Errors occuring in functions of the ActiveSilicon Phoenix
+ * library may also immediately print some error message.  The printing of such
+ * messages is controlled by phx_set_error_handler_verbosity() and the current
+ * settings are given by calling phx_get_error_handler_verbosity().
+ *
+ * @{
+ */
+
+/**
+ * Check whether there are any errors with a camera.
+ *
+ * @warning The caller is responsible of locking/unlocking the camera.
+ *
+ * @todo As this is supposed to be a high level function, locking/unlocking the
+ * camera should be done by this function.
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @return `1` (true) if there are errors in the error stack of the camera @b
+ * cam; `0` (false) otherwise.
+ *
+ * @see phx_create(), phx_report_errors(), phx_discard_errors().
  */
 extern int
-phx_update_temperature(phx_camera_t* cam);
+phx_any_errors(const phx_camera_t* cam);
+
+/**
+ * Report all tracked errors of a camera.
+ *
+ * This function prints to the standard error stream the errors in the error
+ * stack of the camera @b cam, deleting the errors in the process.
+ *
+ * @warning The caller is responsible of locking/unlocking the camera.
+ *
+ * @todo As this is supposed to be a high level function, locking/unlocking the
+ * camera should be done by this function.
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @see tao_report_errors(), phx_create(), phx_any_errors(),
+ * phx_discard_errors().
+ */
+extern void
+phx_report_errors(phx_camera_t* cam);
+
+/**
+ * Clear all tracked errors of a camera.
+ *
+ * This function deletes the contents of the error stack of the camera @b cam.
+ *
+ * @warning The caller is responsible of locking/unlocking the camera.
+ *
+ * @todo As this is supposed to be a high level function, locking/unlocking the
+ * camera should be done by this function.
+ *
+ * @param cam    Address of camera instance.
+ *
+ * @see tao_discard_errors(), phx_any_errors(), phx_report_errors(),
+ * phx_create().
+ */
+extern void
+phx_discard_errors(phx_camera_t* cam);
+
+/**
+ * Set the level of verbosity of the default error handler.
+ *
+ * @param level   The level of verbosity: < 1 to print no messages, 1 to print
+ *                brief messages, > 1 to print detailed messages.
+ *
+ * @return The previous value of the verbosity level.
+ */
+extern int
+phx_set_error_handler_verbosity(int level);
+
+ /**
+ * Get the level of verbosity of the default error handler.
+ *
+ * @return The current verbosity level for error messages printed by the
+ *         default error handler.
+ */
+extern int
+phx_get_error_handler_verbosity();
+
+/**
+ * Push a new error on top of the camera error stack.
+ *
+ * @warning The caller is responsible of locking/unlocking the camera.
+ */
+extern void
+phx_push_error(tao_error_t** errs, const char* func, int code);
+
+/**
+ * Get textual identifier of status code.
+ *
+ * @param status    Status returned by one of the functions of the
+ *                  ActiveSilicon Phoenix library.
+ *
+ * @return The address of a static string with the textual identifier of
+ *         the status.
+ */
+extern const char*
+phx_status_identifier(phx_status_t status);
+
+/**
+ * Get textual description of status code.
+ *
+ * @param status    Status returned by one of the functions of the
+ *                  ActiveSilicon Phoenix library.
+ *
+ * @return The address of a static string describing the status code.
+ */
+const char*
+phx_status_description(phx_status_t status);
+
+/**
+ * @}
+ */
+
+/*--------------------------------------------------------------------------*/
+/* SUPPORTED CAMERAS */
+
+/**
+ * @addtogroup PhoenixSupportedCameras
+ *
+ * Supported cameras.
+ *
+ * Supported cameras are checked by `phx_check_MODEL()` and initialized
+ * by `phx_initialize_MODEL()` where `MODEL` is the model of the cameras.
+ *
+ * @{
+ */
+
+/**
+ * Check whether a camera is one of the Mikrotron MC408x cameras.
+ *
+ * @param cam   Reference to a structure describing a freshly connected camera.
+ *
+ * @return Non-zero if @b cam is connected to one of the Mikrotron MC408x
+ * cameras; zero otherwise.
+ *
+ * @see phx_initialize_mikrotron_mc408x
+ */
+extern int
+phx_check_mikrotron_mc408x(phx_camera_t* cam);
+
+/**
+ * Initialize a Mikrotron MC408x camera.
+ *
+ * This function initialize the members of @b cam assuming it is connected to
+ * one of the Mikrotron MC408x cameras.
+ *
+ * @param cam   Reference to a structure describing a freshly connected camera.
+ *
+ * @return 0 on success, -1 on error (with errors information stored in
+ * camera error stack).
+ *
+ * @see phx_check_mikrotron_mc408x.
+ */
+extern int
+phx_initialize_mikrotron_mc408x(phx_camera_t* cam);
+
+/**
+ * @}
+ */
+
+/*---------------------------------------------------------------------------*/
+/* GET/SET PHOENIX PARAMETERS AND READ/WRITE COAXPRESS REGISTERS */
+
+/**
+ * @addtogroup PhoenixLowLevel
+ *
+ * Low level functions for ActiveSilicon *Phoenix* frame grabber.
+ *
+ * These functions are to get or set ActiveSilicon Phoenix parameters and to
+ * read or write CoaXPress registers.  These functions do not lock/unlock the
+ * camera, it is the caller's responsibility to do it.
+ *
+ * @{
+ */
 
 /**
  * Execute a frame grabber command.
@@ -543,10 +686,6 @@ phx_get(phx_camera_t* cam, phx_param_t param, phx_value_t* valptr);
  */
 extern int
 phx_set(phx_camera_t* cam, phx_param_t param, phx_value_t value);
-
-
-/*---------------------------------------------------------------------------*/
-/* ROUTINES TO READ/WRITE COAXPRESS REGISTERS */
 
 /**
  * Read data from a CoaXPress register.
@@ -628,54 +767,20 @@ cxp_write_float32(phx_camera_t* cam, uint32_t addr, float32_t value);
 extern int
 cxp_write_float64(phx_camera_t* cam, uint32_t addr, float64_t value);
 
-/*--------------------------------------------------------------------------*/
-/* CAMERAS */
-/**
- * @addtogroup Cameras
- *
- * Supported cameras.
- *
- * Supported cameras are checked by `phx_check_MODEL()` and initialized
- * by `phx_initialize_MODEL()` where `MODEL` is the model of the cameras.
- *
- * @{
- */
-
-/**
- * Check whether a camera is one of the Mikrotron MC408x cameras.
- *
- * @param cam   Camera instance which has already been connected.
- *
- * @return Non-zero if @p cam is connected to one of the Mikrotron MC408x
- * cameras; zero otherwise.
- *
- * @see phx_initialize_mikrotron_mc408x
- */
-extern int
-phx_check_mikrotron_mc408x(phx_camera_t* cam);
-
-/**
- * Initialize a Mikrotron MC408x camera.
- *
- * This function initialize the members of @p cam assuming it is connected to
- * one of the Mikrotron MC408x cameras.
- *
- * @param cam   Camera instance which has already been connected.
- *
- * @return 0 on success, -1 on error (with errors information stored in
- * camera error stack).
- *
- * @see phx_check_mikrotron_mc408x.
- */
-extern int
-phx_initialize_mikrotron_mc408x(phx_camera_t* cam);
-
 /**
  * @}
  */
 
 /*--------------------------------------------------------------------------*/
 /* UTILITIES */
+
+/**
+ * @addtogroup PhoenixUtilities
+ *
+ * Utility functions for ActiveSilicon *Phoenix* frame grabber.
+ *
+ * @{
+ */
 
 /**
  * Get number of bits for a given capture format.
@@ -728,6 +833,10 @@ extern void phx_keyboard_final(void);
  * Read a character from the keyboard.
  */
 extern int phx_keyboard_read(void);
+
+/**
+ * @}
+ */
 
 /**
  * @}
