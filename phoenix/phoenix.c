@@ -1093,6 +1093,28 @@ phx_update_configuration(phx_camera_t* cam)
     return status;
 }
 
+int
+phx_update_temperature(phx_camera_t* cam)
+{
+    int status = -1;
+    if (cam == NULL) {
+        errno = EFAULT;
+    } else {
+        phx_lock(cam);
+        /* FIXME: Perhaps this can be done while acquisition is running. */
+        if (cam->state >= 2) {
+            tao_push_error(&cam->errs, __func__, TAO_ACQUISITION_RUNNING);
+        } else if (cam->update_temperature == NULL) {
+            tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
+        } else {
+            status = cam->update_temperature(cam);
+        }
+        phx_unlock(cam);
+    }
+    return status;
+}
+
+
 /*--------------------------------------------------------------------------*/
 /* WRAPPERS FOR PHOENIX ROUTINES */
 
