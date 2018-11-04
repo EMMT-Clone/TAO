@@ -24,6 +24,12 @@
 #include <phoenix-types.h>
 #include <coaxpress.h>
 
+#if defined __cplusplus
+extern "C" {
+#elif 0
+}
+#endif
+
 /**
  * @addtogroup PhoenixCameras
  *
@@ -92,7 +98,7 @@ struct phx_camera {
     int (*update_config)(phx_camera_t*);
                             /**< Hook to retrieve the camera current device
                                  settings (and update dev_cfg) */
-    int (*set_config)(phx_camera_t*);
+    int (*set_config)(phx_camera_t*, const phx_config_t*);
                             /**< Hook to set the camera settings according to
                                  the configuration chosen by the user */
     int (*save_config)(phx_camera_t*, int);
@@ -100,8 +106,8 @@ struct phx_camera {
     int (*load_config)(phx_camera_t*, int);
                             /**< Hook to load the camera settings */
     double temperature;     /**< Camera temperature (in degrees Celsius) */
-    phx_config_t dev_cfg;   /**< Current device settings */
-    phx_config_t usr_cfg;   /**< User chosen camera settings */
+    phx_config_t cfg;       /**< Current settings */
+    tao_image_roi_t dev_roi;/**< ROI for the device */
     uint32_t fullwidth;     /**< Width (in pixels) of the sensor */
     uint32_t fullheight;    /**< Height (in pixels) of the sensor */
     uint32_t pixel_format;  /**< Raw pixel format of the camera */
@@ -132,10 +138,6 @@ struct phx_camera {
     size_t bufsize;        /**< Size of acquisition buffers */
     uint32_t events;       /**< Mask of events to be signaled */
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * Set the level of verbosity of the default error handler.
@@ -232,6 +234,55 @@ phx_destroy(phx_camera_t* cam);
 extern int
 phx_print_camera_info(phx_camera_t* cam, FILE* stream);
 
+/*--------------------------------------------------------------------------*/
+/* CONFIGURATION */
+
+/**
+ * @addtogroup Configuration
+ *
+ * Configuration of camera settings.
+ *
+ * Configurable camera parameters are: the region of interest (ROI), the
+ * exposure duration and frame rate, the detetctor bias and gain, etc.
+ *
+ * As setting camera parameters sequentially may result in an invalid
+ * configuration, all parameters are set at the same time.  A complete camera
+ * configuration is stored in a `phx_config_t` structure.
+ *
+ * There are different possible operations with camera configuration:
+ *
+ * - **load** camera settings from a preset configuration;
+ *
+ * - **save** camera settings as a preset configuration;
+ *
+ * - **get** current configuration parameters;
+ *
+ * - **set** configuration parameters;
+ *
+ * - **update** configuration parameters.
+ *
+ * The *load* and *save* operations operate between the camera settings and a
+ * given preset configuration stored in the ROM of the camera (or equivalent).
+ * The *get* and *set* operations operate between the camera settings and a
+ * user provided `phx_config_t` structure.  For efficiency reasons, the camera
+ * configuration is memorized in the `phx_camera_t` structure and is
+ * synchronized with the hardware settings.  It may however happen that errors
+ * prevent this synchronization.  In that case, the *update* operation can be
+ * applied to synchronize the memorized configuration with the current hardware
+ * settings.
+ *
+ * Due to hardware restrictions, the device ROI may be different than the one
+ * chsen.  The device ROI is set to encompass the chosen ROI under these
+ * restrictions.  The device ROI does not need to be accessible to the end-user
+ * and is stored in the `dev_roi` member of the `phx_camera_t` structure while
+ * the chosen ROI is stored in the `cfg.roi` member of this structure.  After
+ * checking the validitity of the user chosen ROI, if an error occurs when
+ * setting one the ROI parameter, the `cfg.roi` is reset to the hardware
+ * settings.
+ *
+ * @{
+ */
+
 /**
  * Load camera settings.
  */
@@ -248,7 +299,7 @@ phx_save_configuration(phx_camera_t* cam, int id);
  * Retrieve camera settings.
  */
 extern void
-phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg);
+phx_get_configuration(phx_camera_t* cam, phx_config_t* cfg);
 
 /**
  * Set camera settings.
@@ -257,10 +308,20 @@ extern int
 phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg);
 
 /**
+ * Update camera settings to match hardware ones.
+ */
+extern int
+phx_update_configuration(phx_camera_t* cam);
+
+/**
  * Set camera connection settings.
  */
 extern int
 phx_set_coaxpress_connection(phx_camera_t* cam, const phx_connection_t* con);
+
+/**
+ * @}
+ */
 
 /**
  * Check whether there are any errors with a camera.
@@ -312,9 +373,11 @@ phx_discard_errors(phx_camera_t* cam);
  * because the camera instance may be shared between the thread handling frame
  * grabber events and the other threads.  The following high level functions
  * take care of locking/unlocking the camera: phx_start(), phx_stop(),
- * phx_abort(), phx_wait(), phx_release_buffer(), phx_print_camera_info().  All
- * other functions which take a camera instance as their argument should only
- * be called while the caller has locked the camera.
+ * phx_abort(), phx_wait(), phx_release_buffer(), phx_print_camera_info(),
+ * phx_load_configuration(), phx_save_configuration(), phx_get_configuration(),
+ * phx_set_configuration() and phx_update_configuration().  All other functions
+ * which take a camera instance as their argument should only be called while
+ * the caller has locked the camera.
  *
  * @param cam    Address of camera instance (must be non-`NULL`).
  */
@@ -606,6 +669,7 @@ phx_check_mikrotron_mc408x(phx_camera_t* cam);
  */
 extern int
 phx_initialize_mikrotron_mc408x(phx_camera_t* cam);
+
 /**
  * @}
  */
@@ -647,25 +711,21 @@ phx_capture_format_type(phx_value_t fmt);
 
 /**
  * Initialize cross-platform keyboard input routines.
- *
  */
 extern void phx_keyboard_init(void);
 
 /**
  * Cross-platform routine to check whether keyboard hit occured.
- *
  */
 extern int  phx_keyboard_hit();
 
 /**
  * Finalize cross-platform keyboard input routines.
- *
  */
 extern void phx_keyboard_final(void);
 
 /**
  * Read a character from the keyboard.
- *
  */
 extern int phx_keyboard_read(void);
 

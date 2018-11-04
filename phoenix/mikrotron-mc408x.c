@@ -169,10 +169,10 @@ update_pixel_format(phx_camera_t* cam)
     cam->pixel_format = val;
     if (val == CXP_PIXEL_FORMAT_MONO8 ||
         val == CXP_PIXEL_FORMAT_BAYERGR8) {
-        cam->dev_cfg.depth = 8;
+        cam->cfg.depth = 8;
     } else if (val == CXP_PIXEL_FORMAT_MONO10 ||
                val == CXP_PIXEL_FORMAT_BAYERGR10) {
-        cam->dev_cfg.depth = 10;
+        cam->cfg.depth = 10;
     } else {
         tao_push_error(&cam->errs, __func__, TAO_BAD_TYPE);
         return -1;
@@ -211,7 +211,7 @@ set_bits_per_pixel(phx_camera_t* cam, int depth)
             return -1;
         }
         cam->pixel_format = pixel_format;
-        cam->dev_cfg.depth = depth;
+        cam->cfg.depth = depth;
     }
     return set_other_formats(cam);
 
@@ -233,38 +233,38 @@ update_connection(phx_camera_t* cam)
     }
     switch (val & msk) {
     case CXP_CONNECTION_CONFIG_CONNECTION_1:
-        cam->dev_cfg.connection.channels = 1;
+        cam->cfg.connection.channels = 1;
         break;
     case CXP_CONNECTION_CONFIG_CONNECTION_2:
-        cam->dev_cfg.connection.channels = 2;
+        cam->cfg.connection.channels = 2;
         break;
     case CXP_CONNECTION_CONFIG_CONNECTION_3:
-        cam->dev_cfg.connection.channels = 3;
+        cam->cfg.connection.channels = 3;
         break;
     case CXP_CONNECTION_CONFIG_CONNECTION_4:
-        cam->dev_cfg.connection.channels = 4;
+        cam->cfg.connection.channels = 4;
         break;
     default:
-        cam->dev_cfg.connection.channels = 0;
+        cam->cfg.connection.channels = 0;
     }
     switch (val & ~msk) {
     case CXP_CONNECTION_CONFIG_SPEED_1250:
-        cam->dev_cfg.connection.speed = 1250;
+        cam->cfg.connection.speed = 1250;
         break;
     case CXP_CONNECTION_CONFIG_SPEED_2500:
-        cam->dev_cfg.connection.speed = 2500;
+        cam->cfg.connection.speed = 2500;
         break;
     case CXP_CONNECTION_CONFIG_SPEED_3125:
-        cam->dev_cfg.connection.speed = 3125;
+        cam->cfg.connection.speed = 3125;
         break;
     case CXP_CONNECTION_CONFIG_SPEED_5000:
-        cam->dev_cfg.connection.speed = 5000;
+        cam->cfg.connection.speed = 5000;
         break;
     case CXP_CONNECTION_CONFIG_SPEED_6250:
-        cam->dev_cfg.connection.speed = 6250;
+        cam->cfg.connection.speed = 6250;
         break;
     default:
-        cam->dev_cfg.connection.speed = 0;
+        cam->cfg.connection.speed = 0;
     }
     return 0;
 }
@@ -280,11 +280,11 @@ set_connection(phx_camera_t* cam, const phx_connection_t* con)
         return -1;
     }
     if (con->channels != 0 &&
-        con->channels != cam->dev_cfg.connection.channels) {
+        con->channels != cam->cfg.connection.channels) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_CHANNELS);
     }
     if (con->speed != 0 &&
-        con->speed != cam->dev_cfg.connection.speed) {
+        con->speed != cam->cfg.connection.speed) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_SPEED);
     }
 #else
@@ -328,8 +328,8 @@ set_connection(phx_camera_t* cam, const phx_connection_t* con)
     if (cxp_set(cam, CONNECTION_CONFIG, val) != 0) {
         return -1;
     }
-    cam->dev_cfg.connection.channels = con->channels;
-    cam->dev_cfg.connection.speed = con->speed;
+    cam->cfg.connection.channels = con->channels;
+    cam->cfg.connection.speed = con->speed;
 #endif
     return 0;
 }
@@ -345,7 +345,7 @@ update_black_level(phx_camera_t* cam)
     if (cxp_get(cam, BLACK_LEVEL, &val) != 0) {
         return -1;
     }
-    cam->dev_cfg.bias = (double)val;
+    cam->cfg.bias = (double)val;
     return 0;
 }
 
@@ -355,13 +355,13 @@ set_black_level(phx_camera_t* cam, double arg)
     if (isnan(arg) ||
         arg <= (cxp_min(BLACK_LEVEL) - 0.5) ||
         arg >= (cxp_max(BLACK_LEVEL) + 0.5)) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+        tao_push_error(&cam->errs, __func__, TAO_BAD_BIAS);
     }
     uint32_t val = lround(arg);
     if (cxp_set(cam, BLACK_LEVEL, val) != 0) {
         return -1;
     }
-    cam->dev_cfg.bias = (double)val;
+    cam->cfg.bias = (double)val;
     return 0;
 }
 
@@ -377,7 +377,7 @@ update_gain(phx_camera_t* cam)
     if (cxp_get(cam, GAIN, &val) != 0) {
         return -1;
     }
-    cam->dev_cfg.gain = (double)val;
+    cam->cfg.gain = (double)val;
     return 0;
 }
 
@@ -393,7 +393,7 @@ set_gain(phx_camera_t* cam, double arg)
     if (cxp_set(cam, GAIN, val) != 0) {
         return -1;
     }
-    cam->dev_cfg.gain = (double)val;
+    cam->cfg.gain = (double)val;
     return 0;
 }
 
@@ -409,7 +409,7 @@ update_exposure_time(phx_camera_t* cam)
     if (cxp_get(cam, EXPOSURE_TIME, &val) != 0) {
         return -1;
     }
-    cam->dev_cfg.exposure = 1e-6*val;
+    cam->cfg.exposure = 1e-6*val;
     return 0;
 }
 
@@ -425,7 +425,7 @@ set_exposure_time(phx_camera_t* cam, double arg)
     if (cxp_set(cam, EXPOSURE_TIME, val) != 0) {
         return -1;
     }
-    cam->dev_cfg.exposure = 1e-6*val;
+    cam->cfg.exposure = 1e-6*val;
     return 0;
 }
 
@@ -441,7 +441,7 @@ update_frame_rate(phx_camera_t* cam)
     if (cxp_get(cam, ACQUISITION_FRAME_RATE, &val) != 0) {
         return -1;
     }
-    cam->dev_cfg.rate = (double)val;
+    cam->cfg.rate = (double)val;
     return 0;
 }
 
@@ -457,7 +457,7 @@ set_frame_rate(phx_camera_t* cam, double arg)
     if (cxp_set(cam, ACQUISITION_FRAME_RATE, val) != 0) {
         return -1;
     }
-    cam->dev_cfg.rate = (double)val;
+    cam->cfg.rate = (double)val;
     return 0;
 }
 
@@ -476,10 +476,14 @@ update_region_of_interest(phx_camera_t* cam)
         cxp_get(cam, HEIGHT, &height) != 0) {
         return -1;
     }
-    cam->dev_cfg.roi.xoff = xoff;
-    cam->dev_cfg.roi.yoff = yoff;
-    cam->dev_cfg.roi.width = width;
-    cam->dev_cfg.roi.height = height;
+    cam->dev_roi.xoff = xoff;
+    cam->dev_roi.yoff = yoff;
+    cam->dev_roi.width = width;
+    cam->dev_roi.height = height;
+    cam->cfg.roi.xoff = xoff;
+    cam->cfg.roi.yoff = yoff;
+    cam->cfg.roi.width = width;
+    cam->cfg.roi.height = height;
     return 0;
 }
 
@@ -491,40 +495,56 @@ set_region_of_interest(phx_camera_t* cam, const tao_image_roi_t* arg)
         arg->xoff + arg->width > cam->fullwidth ||
         arg->yoff + arg->height > cam->fullheight) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
+        return -1;
     }
-    tao_image_roi_t newroi;
-    newroi.xoff = ROUND_DOWN(arg->xoff, CXP_HORIZONTAL_INCREMENT);
-    newroi.yoff = ROUND_DOWN(arg->yoff, CXP_VERTICAL_INCREMENT);
-    newroi.width = ROUND_UP(arg->xoff + arg->width,
-                            CXP_HORIZONTAL_INCREMENT) - newroi.xoff;
-    newroi.height = ROUND_UP(arg->yoff + arg->height,
-                             CXP_VERTICAL_INCREMENT) - newroi.yoff;
-    tao_image_roi_t* oldroi = &cam->dev_cfg.roi;
-#define CFG_SET(m, id)                              \
-        if (cxp_set(cam, id, newroi.m) != 0) {      \
-            return -1;                              \
-        }                                           \
-        oldroi->m = newroi.m
-    if (newroi.xoff < oldroi->xoff) {
+    long xoff = ROUND_DOWN(arg->xoff, CXP_HORIZONTAL_INCREMENT);
+    long yoff = ROUND_DOWN(arg->yoff, CXP_VERTICAL_INCREMENT);
+    long width = ROUND_UP(arg->xoff + arg->width,
+                          CXP_HORIZONTAL_INCREMENT) - xoff;
+    long height = ROUND_UP(arg->yoff + arg->height,
+                           CXP_VERTICAL_INCREMENT) - yoff;
+    int status = 0;
+    tao_image_roi_t* dev_roi = &cam->dev_roi;
+#define CFG_SET(m, id)                          \
+    do {                                        \
+        if (cxp_set(cam, id, m) != 0) {         \
+            status = -1;                        \
+        } else {                                \
+            dev_roi->m = m;                     \
+        }                                       \
+    } while (0)
+    if (xoff < dev_roi->xoff) {
         CFG_SET(xoff, OFFSET_X);
     }
-    if (newroi.width != oldroi->width) {
+    if (width != dev_roi->width) {
         CFG_SET(width, WIDTH);
     }
-    if (newroi.xoff > oldroi->xoff) {
+    if (xoff > dev_roi->xoff) {
         CFG_SET(xoff, OFFSET_X);
     }
-    if (newroi.yoff < oldroi->yoff) {
+    if (yoff < dev_roi->yoff) {
         CFG_SET(yoff, OFFSET_Y);
     }
-    if (newroi.height != oldroi->height) {
+    if (height != dev_roi->height) {
         CFG_SET(height, HEIGHT);
     }
-    if (newroi.yoff > oldroi->yoff) {
+    if (yoff > dev_roi->yoff) {
         CFG_SET(yoff, OFFSET_Y);
     }
 #undef CFG_SET
-    return 0;
+    if (status == 0) {
+        cam->cfg.roi.xoff = arg->xoff;
+        cam->cfg.roi.yoff = arg->yoff;
+        cam->cfg.roi.width = arg->width;
+        cam->cfg.roi.height = arg->height;
+    } else {
+        /* Update current ROI to current hardware settings. */
+        cam->cfg.roi.xoff = dev_roi->xoff;
+        cam->cfg.roi.yoff = dev_roi->yoff;
+        cam->cfg.roi.width = dev_roi->width;
+        cam->cfg.roi.height = dev_roi->height;
+    }
+    return status;
 }
 
 
@@ -562,10 +582,9 @@ update_config(phx_camera_t* cam)
  * 7. augment bits per pixel if requested;
  */
 static int
-set_config(phx_camera_t* cam)
+set_config(phx_camera_t* cam, const phx_config_t* usr)
 {
-    phx_config_t* dev = &cam->dev_cfg;
-    phx_config_t* usr = &cam->usr_cfg;
+    phx_config_t* dev = &cam->cfg;
 
     /* Check configuration parameters. */
     if (isnan(usr->bias)) {
@@ -578,8 +597,8 @@ set_config(phx_camera_t* cam)
     }
     if (isnan(usr->exposure)) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
-         return -1;
-   }
+        return -1;
+    }
     if (isnan(usr->rate)) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_RATE);
         return -1;
@@ -587,21 +606,19 @@ set_config(phx_camera_t* cam)
     if (usr->connection.channels < 1 || usr->connection.channels > 4 ||
         usr->connection.speed < 1250 || usr->connection.speed > 6250) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_SPEED);
-         return -1;
-   }
+        return -1;
+    }
 
     /* Change black level and gain if requested. */
     if (usr->bias != dev->bias) {
         if (set_black_level(cam, usr->bias) != 0) {
             return -1;
         }
-        usr->bias = dev->bias;
     }
     if (usr->gain != dev->gain) {
         if (set_gain(cam, usr->gain) != 0) {
             return -1;
         }
-        usr->gain = dev->gain;
     }
 
     /* Augment connection speed if requested. */
@@ -610,8 +627,6 @@ set_config(phx_camera_t* cam)
         if (set_connection(cam, &usr->connection) != 0) {
             return -1;
         }
-        dev->connection.channels = usr->connection.channels;
-        dev->connection.speed = usr->connection.speed;
     }
 
     /* Reduce bits per pixel if requested. */
@@ -619,7 +634,6 @@ set_config(phx_camera_t* cam)
         if (set_bits_per_pixel(cam, usr->depth) != 0) {
             return -1;
         }
-        usr->depth = dev->depth;
     }
 
     /* Reduce frame rate if requested. */
@@ -627,7 +641,6 @@ set_config(phx_camera_t* cam)
         if (set_frame_rate(cam, usr->rate) != 0) {
             return -1;
         }
-        usr->rate = dev->rate;
     }
 
     /* Reduce exposure time if requested. */
@@ -635,7 +648,6 @@ set_config(phx_camera_t* cam)
         if (set_exposure_time(cam, usr->exposure) != 0) {
             return -1;
         }
-        usr->exposure = dev->exposure;
     }
 
     /* Change the ROI if it has to change. */
@@ -648,7 +660,6 @@ set_config(phx_camera_t* cam)
         if (set_exposure_time(cam, usr->exposure) != 0) {
             return -1;
         }
-        usr->exposure = dev->exposure;
     }
 
     /* Augment frame rate if requested. */
@@ -656,7 +667,6 @@ set_config(phx_camera_t* cam)
         if (set_frame_rate(cam, usr->rate) != 0) {
             return -1;
         }
-        usr->rate = dev->rate;
     }
 
     /* Augment bits per pixel if requested. */
@@ -664,7 +674,6 @@ set_config(phx_camera_t* cam)
         if (set_bits_per_pixel(cam, usr->depth) != 0) {
             return -1;
         }
-        usr->depth = dev->depth;
     }
 
     /* Reduce connection speed if requested. */
@@ -847,11 +856,6 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     cam->update_config = update_config;
     cam->save_config = save_config;
     cam->load_config = load_config;
-
-    /*
-     * Make user settings identical to that of the device.
-     */
-    memcpy(&cam->usr_cfg, &cam->dev_cfg, sizeof(cam->dev_cfg));
 
     return 0;
 }

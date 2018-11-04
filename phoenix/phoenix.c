@@ -333,8 +333,8 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
         phx_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
-    const tao_image_roi_t* dev_roi = &cam->dev_cfg.roi;
-    const tao_image_roi_t* usr_roi = &cam->usr_cfg.roi;
+    const tao_image_roi_t* dev_roi = &cam->dev_roi;
+    const tao_image_roi_t* usr_roi = &cam->cfg.roi;
     if (dev_roi->xoff < 0 || dev_roi->xoff > usr_roi->xoff ||
         dev_roi->yoff < 0 || dev_roi->yoff > usr_roi->yoff ||
         usr_roi->width < 1 ||
@@ -343,7 +343,7 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
         usr_roi->height < 1 ||
         dev_roi->xoff + dev_roi->height < usr_roi->xoff + usr_roi->height ||
         usr_roi->yoff + usr_roi->height > cam->fullheight) {
-        phx_push_error(&cam->errs, __func__, TAO_BAD_ARGUMENT);
+        phx_push_error(&cam->errs, __func__, TAO_BAD_ROI);
         return -1;
     }
 
@@ -360,7 +360,7 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
     phx_value_t active_xlength = dev_roi->width;
     phx_value_t active_ylength = dev_roi->width;
     phx_value_t cam_color      = cam->cam_color;
-    phx_value_t cam_depth      = cam->dev_cfg.depth;
+    phx_value_t cam_depth      = cam->cfg.depth;
     phx_value_t src_xoffset    = usr_roi->xoff - dev_roi->xoff;
     phx_value_t src_yoffset    = usr_roi->yoff - dev_roi->yoff;
     phx_value_t roi_xlength    = usr_roi->width;
@@ -820,13 +820,14 @@ check_coaxpress(phx_camera_t* cam)
             cxp_get(cam, DEVICE_MODEL_NAME,       cam->model) != 0) {
             return -1;
         }
-        cam->pixel_format        = pixel_format;
-        cam->dev_cfg.roi.xoff    = 0;
-        cam->dev_cfg.roi.yoff    = 0;
-        cam->dev_cfg.roi.width   = width;
-        cam->dev_cfg.roi.height  = height;
-        cam->fullwidth           = width;
-        cam->fullheight          = height;
+        cam->pixel_format    = pixel_format;
+        cam->cfg.roi.xoff    = 0;
+        cam->cfg.roi.yoff    = 0;
+        cam->cfg.roi.width   = width;
+        cam->cfg.roi.height  = height;
+        cam->fullwidth       = width;
+        cam->fullheight      = height;
+        memcpy(&cam->dev_roi, &cam->cfg.roi, sizeof(tao_image_roi_t));
     }
     return 0;
 }
@@ -986,15 +987,17 @@ phx_load_configuration(phx_camera_t* cam, int id)
     int status = -1;
     if (cam == NULL) {
         errno = EFAULT;
-        return status;
-    }
-    phx_lock(cam);
-    if (cam->load_config == NULL) {
-        tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
     } else {
-        status = cam->load_config(cam, id);
+        phx_lock(cam);
+        if (cam->state >= 2) {
+            tao_push_error(&cam->errs, __func__, TAO_ACQUISITION_RUNNING);
+        } else if (cam->load_config == NULL) {
+            tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
+        } else {
+            status = cam->load_config(cam, id);
+        }
+        phx_unlock(cam);
     }
-    phx_unlock(cam);
     return status;
 }
 
@@ -1004,26 +1007,30 @@ phx_save_configuration(phx_camera_t* cam, int id)
     int status = -1;
     if (cam == NULL) {
         errno = EFAULT;
-        return status;
-    }
-    phx_lock(cam);
-    if (cam->save_config == NULL) {
-        tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
     } else {
-        status = cam->save_config(cam, id);
+        phx_lock(cam);
+        if (cam->state >= 2) {
+            tao_push_error(&cam->errs, __func__, TAO_ACQUISITION_RUNNING);
+        } else if (cam->save_config == NULL) {
+            tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
+        } else {
+            status = cam->save_config(cam, id);
+        }
+        phx_unlock(cam);
     }
-    phx_unlock(cam);
     return status;
 }
 
 void
-phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg)
+phx_get_configuration(phx_camera_t* cam, phx_config_t* cfg)
 {
     if (cfg != NULL) {
         if (cam == NULL) {
             memset(cfg, 0, sizeof(phx_config_t));
         } else {
-            memcpy(cfg, &cam->dev_cfg, sizeof(phx_config_t));
+            phx_lock(cam);
+            memcpy(cfg, &cam->cfg, sizeof(phx_config_t));
+            phx_unlock(cam);
         }
     }
 }
@@ -1031,47 +1038,59 @@ phx_get_configuration(const phx_camera_t* cam, phx_config_t* cfg)
 int
 phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg)
 {
+    int status = -1;
     if (cam == NULL) {
         errno = EFAULT;
-        return -1;
-    }
-    if (cfg != NULL) {
-        if (cfg->depth <= 0) {
-            tao_push_error(&cam->errs, __func__, TAO_BAD_DEPTH);
-            return -1;
-        }
-        if (isnan(cfg->bias) || isinf(cfg->bias)) {
-            tao_push_error(&cam->errs, __func__, TAO_BAD_BIAS);
-            return -1;
-        }
-        if (isnan(cfg->gain) || isinf(cfg->gain)) {
-            tao_push_error(&cam->errs, __func__, TAO_BAD_GAIN);
-            return -1;
-        }
-        if (isnan(cfg->exposure) || isinf(cfg->exposure) ||
-            cfg->exposure < 0) {
-            tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
-            return -1;
-        }
-        if (isnan(cfg->rate) || isinf(cfg->rate) || cfg->rate <= 0) {
-            tao_push_error(&cam->errs, __func__, TAO_BAD_RATE);
-            return -1;
-        }
-        if (cfg->roi.xoff < 0 || cfg->roi.yoff < 0 ||
-            cfg->roi.width < 1 || cfg->roi.height < 1 ||
-            cfg->roi.xoff + cfg->roi.width > cam->fullwidth ||
-            cfg->roi.yoff + cfg->roi.height > cam->fullheight) {
-            tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
-            return -1;
-        }
-        memcpy(&cam->usr_cfg, cfg, sizeof(phx_config_t));
-    }
-    if (cam->set_config != NULL) {
-        return cam->set_config(cam);
+    } else if (cfg == NULL) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_ADDRESS);
+    } else if (cfg->depth <= 0) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_DEPTH);
+    } else if (isnan(cfg->bias) || isinf(cfg->bias)) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_BIAS);
+    } else if (isnan(cfg->gain) || isinf(cfg->gain)) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_GAIN);
+    } else if (isnan(cfg->exposure) || isinf(cfg->exposure) ||
+        cfg->exposure < 0) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
+    } else if (isnan(cfg->rate) || isinf(cfg->rate) || cfg->rate <= 0) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_RATE);
+    } else if (cfg->roi.xoff < 0 || cfg->roi.yoff < 0 ||
+        cfg->roi.width < 1 || cfg->roi.height < 1 ||
+        cfg->roi.xoff + cfg->roi.width > cam->fullwidth ||
+        cfg->roi.yoff + cfg->roi.height > cam->fullheight) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
     } else {
-        memcpy(&cam->dev_cfg, &cam->usr_cfg, sizeof(phx_config_t));
-        return 0;
+        phx_lock(cam);
+        if (cam->state >= 2) {
+            tao_push_error(&cam->errs, __func__, TAO_ACQUISITION_RUNNING);
+        } else if (cam->set_config == NULL) {
+            tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
+        } else {
+            status = cam->set_config(cam, cfg);
+        }
+        phx_unlock(cam);
     }
+    return status;
+}
+
+int
+phx_update_configuration(phx_camera_t* cam)
+{
+    int status = -1;
+    if (cam == NULL) {
+        errno = EFAULT;
+    } else {
+        phx_lock(cam);
+        if (cam->state >= 2) {
+            tao_push_error(&cam->errs, __func__, TAO_ACQUISITION_RUNNING);
+        } else if (cam->update_config == NULL) {
+            tao_push_error(&cam->errs, __func__, TAO_UNSUPPORTED);
+        } else {
+            status = cam->update_config(cam);
+        }
+        phx_unlock(cam);
+    }
+    return status;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1297,22 +1316,22 @@ phx_print_camera_info(phx_camera_t* cam, FILE* stream)
         status = -1;
     }
     fprintf(stream, "Connection channels: %u\n",
-            cam->dev_cfg.connection.channels);
+            cam->cfg.connection.channels);
     fprintf(stream, "Connection speed: %u Mbps\n",
-            cam->dev_cfg.connection.speed);
-    fprintf(stream, "Bits per pixel: %d\n", (int)cam->dev_cfg.depth);
+            cam->cfg.connection.speed);
+    fprintf(stream, "Bits per pixel: %d\n", (int)cam->cfg.depth);
     fprintf(stream, "Sensor size: %d × %d pixels\n",
             (int)cam->fullwidth,  (int)cam->fullheight);
     fprintf(stream, "Region of interest: %d × %d at (%d,%d)\n",
-            (int)cam->usr_cfg.roi.width,  (int)cam->usr_cfg.roi.height,
-            (int)cam->usr_cfg.roi.xoff, (int)cam->usr_cfg.roi.yoff);
+            (int)cam->cfg.roi.width,  (int)cam->cfg.roi.height,
+            (int)cam->cfg.roi.xoff, (int)cam->cfg.roi.yoff);
     fprintf(stream, "Active region:      %d × %d at (%d,%d)\n",
-            (int)cam->dev_cfg.roi.width,  (int)cam->dev_cfg.roi.height,
-            (int)cam->dev_cfg.roi.xoff, (int)cam->dev_cfg.roi.yoff);
-    fprintf(stream, "Detector bias: %5.1f\n", cam->dev_cfg.bias);
-    fprintf(stream, "Detector gain: %5.1f\n", cam->dev_cfg.gain);
-    fprintf(stream, "Exposure time: %g s\n", cam->dev_cfg.exposure);
-    fprintf(stream, "Frame rate: %.1f Hz\n", cam->dev_cfg.rate);
+            (int)cam->dev_roi.width,  (int)cam->dev_roi.height,
+            (int)cam->dev_roi.xoff, (int)cam->dev_roi.yoff);
+    fprintf(stream, "Detector bias: %5.1f\n", cam->cfg.bias);
+    fprintf(stream, "Detector gain: %5.1f\n", cam->cfg.gain);
+    fprintf(stream, "Exposure time: %g s\n", cam->cfg.exposure);
+    fprintf(stream, "Frame rate: %.1f Hz\n", cam->cfg.rate);
     if (cam->update_temperature != NULL) {
         if (cam->update_temperature(cam) == 0) {
             fprintf(stream, "Detector temperature: %.1f °C\n",
