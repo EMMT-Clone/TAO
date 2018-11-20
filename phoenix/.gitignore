@@ -1,3 +1,4 @@
+errors.c
 *.e
 work-*
 dump-errors
