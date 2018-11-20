@@ -1,3 +1,5 @@
+* Shared images may have associated weights.
+
 * Implement the policy for sharing images allowing no readers if there is a
   writer and at most one writer.
 

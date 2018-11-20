@@ -138,18 +138,27 @@ static tao_shared_array_t*
 allocate_frame(tao_error_t** errs, tao_camera_t* cam)
 {
     tao_shared_camera_t* shared = cam->shared;
-    return tao_create_2d_shared_array(errs,
-                                      shared->pixel_type,
-                                      shared->width,
-                                      shared->height,
-                                      cam->perms);
+    return (shared->weighted ?
+            tao_create_3d_shared_array(errs,
+                                       shared->pixel_type,
+                                       shared->width,
+                                       shared->height,
+                                       2,
+                                       cam->perms) :
+            tao_create_2d_shared_array(errs,
+                                       shared->pixel_type,
+                                       shared->width,
+                                       shared->height,
+                                       cam->perms));
 }
 
 static int
 check_frame(const tao_shared_array_t* arr, const tao_shared_camera_t* cam)
 {
-    return (arr->eltype == cam->pixel_type && arr->ndims == 2 &&
-            arr->dims[0] == cam->width && arr->dims[1] == cam->height);
+    return (arr->eltype == cam->pixel_type &&
+            (cam->weighted ? (arr->ndims == 3 && arr->dims[2] == 2) :
+             (arr->ndims == 2)) && arr->dims[0] == cam->width &&
+            arr->dims[1] == cam->height);
 }
 
 /* WARNING: Caller must have locked the shared camera. */

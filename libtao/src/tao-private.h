@@ -124,8 +124,9 @@ struct tao_shared_camera {
     int state;       /**< State of the camera: 0 if device not yet open, 1
                           if device open but no acquisition is running, 2 if
                           acquisition is running. */
-    int pixel_type;  /**< Pixel type. */
     int depth;       /**< Bits per pixel in the raw images. */
+    int pixel_type;  /**< Pixel type. */
+    int weighted;    /**< Pre-processed images have associated weights. */
     long fullwidth;  /**< Maximum image width for the detector. */
     long fullheight; /**< Maximum image height for the detector. */
     long xoff;       /**< Horizontal offset of the acquired images with respect

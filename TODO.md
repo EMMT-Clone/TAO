@@ -1,7 +1,5 @@
 ## Important
 
-* Implement shared images policy (as discussed with Michel).
-
 * Choosing a sub-image with ActiveSilicon Phoenix frame grabber is not yet
   fully working (chosen ROI must respect hardware constraints: horizontal
   offset and width must be multiples of 16, vertical offset and height must be
@@ -16,6 +14,8 @@
   would lead to very efficient slice extraction (possibly with conversion).
 
 * Shared camera members corresponding to a dimension should be long not int.
+
+* Weighted images implemented as a cube of 2 images do preserve alignment.
 
 
 ## Things to do
