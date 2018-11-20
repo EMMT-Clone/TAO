@@ -55,6 +55,13 @@ tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam)
             }
             free(cam->frames);
         }
+        if (cam->spare != NULL) {
+            tao_shared_array_t* arr = cam->spare;
+            cam->spare = NULL;
+            if (tao_detach_shared_array(errs, arr) != 0) {
+                status = -1;
+            }
+        }
         free(cam);
     }
     return status;
@@ -81,6 +88,7 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
         return NULL;
     }
     cam->nframes = nframes;
+    cam->index = -1;
     shared = NEW_SHARED_OBJECT(errs, tao_shared_camera_t,
                                TAO_SHARED_CAMERA, perms);
     if (shared == NULL) {
@@ -126,6 +134,25 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
     return cam;
 }
 
+static tao_shared_array_t*
+allocate_frame(tao_error_t** errs, tao_camera_t* cam)
+{
+    tao_shared_camera_t* shared = cam->shared;
+    return tao_create_2d_shared_array(errs,
+                                      shared->pixel_type,
+                                      shared->width,
+                                      shared->height,
+                                      cam->perms);
+}
+
+static int
+check_frame(const tao_shared_array_t* arr, const tao_shared_camera_t* cam)
+{
+    return (arr->eltype == cam->pixel_type && arr->ndims == 2 &&
+            arr->dims[0] == cam->width && arr->dims[1] == cam->height);
+}
+
+/* WARNING: Caller must have locked the shared camera. */
 tao_shared_array_t*
 tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
 {
@@ -136,98 +163,105 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
     }
 
     /* Local variables. */
-    tao_shared_array_t* arr;
     tao_shared_array_t** frame_list = cam->frames;
     tao_shared_camera_t* shared = cam->shared;
     int nframes = cam->nframes;
+    int index = (cam->index + 1)%nframes; /* index of next frame */
+    tao_shared_array_t* arr = frame_list[index];
 
-    /* Find, preferentially, a recyclable array, otherwise the index of an
-       empty slot in the list of shared arrays, otherwise the oldest array.
-       With this strategy, the number of allocated images is maintained to a
-       mimimum. */
-    int index1 = -1; /* first choice, a frame which can be recycled */
-    int index2 = -1; /* second choice, an empty slot */
-    int index3 = -1; /* third choice, the oldest frame */
-    for (int i = 0; i < nframes; ++i) {
-        arr = frame_list[i];
-        if (arr == NULL) {
-            /* An empty slot is only our second choice. */
-            if (index2 == -1) {
-                index2 = i;
-            }
-            continue;
-        }
+    if (arr != NULL) {
+        int drop = 0;
         if (arr->base.ident == shared->last_frame.ident) {
             /* We do not want to overwrite the previous last frame. */
-            continue;
+            drop = 1;
+        } else if (! check_frame(arr, shared)) {
+            /* Array must have the correct element type and dimensions. */
+            drop = 1;
+        } else {
+            /* Make sure array is not used by others. */
+            if (tao_lock_shared_array(errs, arr) != 0) {
+                return NULL;
+            }
+            if (arr->nreaders != 0 || arr->nwriters != 0) {
+                drop = 1;
+            } else {
+                arr->nwriters = 1;
+            }
+            if (tao_unlock_shared_array(errs, arr) != 0) {
+                return NULL;
+            }
         }
-        if (arr->eltype != shared->pixel_type || arr->ndims != 2 ||
-            arr->dims[0] != shared->width || arr->dims[1] != shared->height) {
-            /* This frame does not have the correct format, discard it. */
-            frame_list[i] = NULL;
+        if (drop) {
+            frame_list[index] = NULL;
             if (tao_detach_shared_array(errs, arr) != 0) {
                 return NULL;
             }
-            if (index2 == -1) {
-                index2 = i;
-            }
-            continue;
+            arr = NULL;
         }
-        if (arr->nreaders < 1 && arr->nwriters < 1 &&
-            (index1 == -1 || arr->counter < frame_list[index1]->counter)) {
-            /* This frame has currently no readers, nor writers and it is the
-               first frame or the oldest frame satisfying all criteria. */
-            index1 = i;
-            continue;
-        }
-        if (index3 == -1 || arr->counter < frame_list[index3]->counter) {
-            /* This is the oldest frame. */
-            index3 = i;
-        }
-    }
-    if (index1 >= 0) {
-        /* Mark the chosen frame as being written. */
-        /* FIXME: lock the frame? */
-        frame_list[index1]->nwriters = 1;
-    } else if (index2 < 0) {
-        /* Detach the oldest frame. */
-        tao_shared_array_t* tmp = frame_list[index3];
-        if (tao_detach_shared_array(errs, tmp) != 0) {
-            return NULL;
-        }
-        index2 = index3;
     }
 
-    /* If no image can be recycled, allocate a new one. */
-    if (index1 < 0) {
-        /* New image has ident ≥ 1, number = 0 and nrefs = 1 */
-        frame_list[index2] = tao_create_2d_shared_array(errs,
-                                                        shared->pixel_type,
-                                                        shared->width,
-                                                        shared->height,
-                                                        cam->perms);
-        index1 = index2;
+    if (arr == NULL) {
+        if (cam->spare != NULL) {
+            /* Attempt to use the pre-allocated array. */
+            arr = cam->spare;
+            cam->spare = NULL;
+            if (check_frame(arr, shared)) {
+                if (tao_detach_shared_array(errs, arr) != 0) {
+                    return NULL;
+                }
+                arr = NULL;
+            }
+        }
+        if (arr == NULL) {
+            /* Create a new array. */
+            arr = allocate_frame(errs, cam);
+            if (arr == NULL) {
+                return NULL;
+            }
+        }
+        arr->nwriters = 1;
+        frame_list[index] = arr;
     }
-    return frame_list[index1];
+    cam->index = index;
+    return arr;
 }
 
 int
 tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
                        tao_shared_array_t* arr)
 {
-    /* Check arguments. */
+    /* Check arguments.  FIXME: We may also want to check that arr is
+       cam->frames[cam->index]. */
     if (cam == NULL || arr == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
+    tao_shared_camera_t* shared = cam->shared;
+    if (check_frame(arr, shared)) {
+        tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
+        return -1;
+    }
 
     /* Increment image number and update image. */
-    /* FIXME: check information (pixel size, etc.) */
-    /* FIXME: lock array or assume it has been locked for the processing? */
-    tao_shared_camera_t* shared = cam->shared;
-    arr->counter = ++shared->last_frame.counter;
+    if (tao_lock_shared_array(errs, arr) != 0) {
+        return -1;
+    }
+    int status = 0;
+    if (arr->nreaders != 0 || arr->nwriters != 1) {
+        tao_push_error(errs, __func__, TAO_ASSERTION_FAILED);
+        status = -1;
+        goto unlock;
+    }
     arr->nwriters = 0;
+    arr->counter = ++shared->last_frame.counter;
     shared->last_frame.ident = arr->base.ident;
+ unlock:
+    if (tao_unlock_shared_array(errs, arr) != 0) {
+        status = -1;
+    }
+    if (status != 0) {
+        return -1;
+    }
 
     /* Signal that a new image is available. */
     for (int i = 0; i < TAO_SHARED_CAMERA_SEMAPHORES; ++i) {
@@ -241,6 +275,14 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
                 tao_push_system_error(errs, "sem_post");
                 return -1;
             }
+        }
+    }
+
+    /* If no array has been pre-allocated, allocate one. */
+    if (cam->spare == NULL) {
+        cam->spare = allocate_frame(errs, cam);
+        if (cam->spare == NULL) {
+            return -1;
         }
     }
     return 0;

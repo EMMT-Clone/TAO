@@ -2608,7 +2608,9 @@ tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam);
  * new pro-processed image.  If possible, an old shared array from the list
  * owned by the server is recycled.
  *
- * @warning The caller is supposed to have locked the shared camera data.
+ * @warning The caller is supposed to have locked the shared camera data.  The
+ *          returned array is marked as being written but is unlocked (no one
+ *          else is supposed to read/write it).
  *
  * @param errs   Address of a variable to track errors.
  * @param cam    Address of the shared camera data.
@@ -2622,7 +2624,9 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam);
 /**
  * Make a new image available to the clients of a frame grabber server.
  *
- * @warning The caller is supposed to have locked the shared camera data.
+ * @warning The caller is supposed to have locked the shared camera data and
+ *          @b arr should not be locked by the caller and should have been
+ *          obtained by tao_fetch_next_frame().
  *
  * @param errs   Address of a variable to track errors.
  * @param cam    Address of the camera data.

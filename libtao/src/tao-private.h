@@ -161,7 +161,9 @@ struct tao_camera {
     tao_shared_camera_t* shared; /**< Attached shared camera data. */
     unsigned perms;              /**< Access permissions for the shared data. */
     int nframes;                 /**< Maximum number of memorized frames. */
+    int index;                   /**< Index of current frame. */
     tao_shared_array_t** frames; /**< List of shared arrays. */
+    tao_shared_array_t* spare;   /**< A spare array. */
 };
 
 #endif /* _TAO_PRIVATE_H_ */
