@@ -3207,6 +3207,9 @@ tao_copy_checked_args(void* dstdata, tao_element_type_t dsttype,
                       const long srcdims[], const long srcoffs[],
                       const long lens[], int ndims);
 
+/**
+ * Set a region into an array.
+ */
 extern int
 tao_copy_to_array(tao_error_t** errs,
                   tao_array_t* dst, const long dstoffs[],
@@ -3214,6 +3217,9 @@ tao_copy_to_array(tao_error_t** errs,
                   const long srcdims[], const long srcoffs[],
                   const long lens[], int ndims);
 
+/**
+ * Set a region into a shared array.
+ */
 extern int
 tao_copy_to_shared_array(tao_error_t** errs,
                          tao_shared_array_t* dst, const long dstoffs[],
@@ -3221,6 +3227,9 @@ tao_copy_to_shared_array(tao_error_t** errs,
                          const long srcdims[], const long srcoffs[],
                          const long lens[], int ndims);
 
+/**
+ * Extract a region from an array.
+ */
 extern int
 tao_copy_from_array(tao_error_t** errs,
                     void* dstdata, tao_element_type_t dsttype,
@@ -3228,6 +3237,9 @@ tao_copy_from_array(tao_error_t** errs,
                     tao_array_t* src, const long srcoffs[],
                     const long lens[], int ndims);
 
+/**
+ * Extract a region from a shaded array.
+ */
 extern int
 tao_copy_from_shared_array(tao_error_t** errs,
                            void* dstdata, tao_element_type_t dsttype,
@@ -3235,24 +3247,36 @@ tao_copy_from_shared_array(tao_error_t** errs,
                            tao_shared_array_t* src, const long srcoffs[],
                            const long lens[], int ndims);
 
+/**
+ * Copy a region of an array into another array.
+ */
 extern int
 tao_copy_array_to_array(tao_error_t** errs,
                         tao_array_t* dst, const long dstoffs[],
                         tao_array_t* src, const long srcoffs[],
                         const long lens[], int ndims);
 
+/**
+ * Copy a region of an array into a shared array.
+ */
 extern int
 tao_copy_array_to_shared_array(tao_error_t** errs,
                                tao_shared_array_t* dst, const long dstoffs[],
                                tao_array_t* src, const long srcoffs[],
                                const long lens[], int ndims);
 
+/**
+ * Copy a region of a shared array into an array.
+ */
 extern int
 tao_copy_shared_array_to_array(tao_error_t** errs,
                                tao_array_t* dst, const long dstoffs[],
                                tao_shared_array_t* src, const long srcoffs[],
                                const long lens[], int ndims);
 
+/**
+ * Copy a region of a shared array into another shared array.
+ */
 extern int
 tao_copy_shared_array_to_shared_array(tao_error_t** errs,
                                       tao_shared_array_t* dst,
