@@ -70,23 +70,23 @@ function bcastdims(A::NTuple{Na,Int}, B::NTuple{Nb,Int}) where {Na,Nb}
     @noinline baddims(len1::Integer, len2::Integer) =
         error("incompatible array dimensions $len1 and $len2")
     if Na > Nb
+        Nmin = Nb
+        Nmax = Na
         A, B = B, A
+    else
+        Nmin = Na
+        Nmax = Nb
     end
-    dims = Array{Int}(undef, Nb)
-    @inbounds for d in 1:Na
-        A[d] ≥ 1 || baddim(A[d])
-        B[d] ≥ 1 || baddim(B[d])
-        if A[d] == B[d] || B[d] == 1
-           dims[d] = A[d]
-        elseif A[d] == 1
-            dims[d] = B[d]
-        else
-            baddims(A[d], B[d])
-        end
+    dims = Array{Int}(undef, Nmax)
+    @inbounds for d in 1:Nmin
+        minlen, maxlen = minmax(A[d], B[d])
+        minlen ≥ 1 || baddim(minlen)
+        minlen == maxlen || minlen == 1 || baddims(minlen, maxlen)
+        dims[d] = maxlen
     end
-    @inbounds for i in Na+1:Nb
-        B[d] ≥ 1 || baddim(B[d])
-        dims[d] = B[d]
+    @inbounds for d in Nmin+1:Nmax
+        (len = B[d]) ≥ 1 || baddim(len)
+        dims[d] = len
     end
     return (dims...,)
 end
