@@ -25,37 +25,50 @@ TimeStamp(secs::Integer) = TimeStamp(secs, 0)
 
 """
 
-`bcastcopy(T, dims, A)` yields a new array of type `T` and dimensions `dims`
-filled with the elements of `A` according to type conversion and broadcasting
-rules (see [`broadcast`](@ref)).  Compared to [`bcastlazy`](@ref), it is
-guaranteed that the returned array does not share its contents with `A`.
+`bcastcopy([T=eltype(A),] dims, A)` yields a new array of type `T` and
+dimensions `dims` filled with the elements of `A` according to type conversion
+and broadcasting rules (see [`broadcast`](@ref)).  Compared to
+[`bcastlazy`](@ref), it is guaranteed that the returned array does not share
+its contents with `A`.
 
 """
-function bcastcopy(::Type{T}, dims::NTuple{N,Int}, A) where {T,N}
+bcastcopy(dims::Tuple{Vararg{Integer}}, A::AbstractArray{T}) where {T} =
+    bcastcopy(T, dims, A)
+
+function bcastcopy(::Type{T}, dims::Tuple{Vararg{Integer}},
+                   A::AbstractArray) where {T}
     arr = Array{T}(undef, dims)
     @. arr = A
     return arr
 end
 
-"""
-
-`bcastlazy(T, dims, A)` yields a *dense* array of type `T` and dimensions
-`dims` filled with the elements of `A` according to type conversion and
-broadcasting rules (see [`broadcast`](@ref)).  Compared to [`bcastcopy`](@ref),
-making a copy of `A` is avoided if it already has the correct type and
-dimensions.  This means that the result may share the same contents as `A`.
 
 """
-function bcastlazy(::Type{T}, dims::NTuple{N,Int},
-                   A::DenseArray{T,N}) where {T,N}
-    Base.has_offset_axes(A) &&
-        throw(DimensionMismatch("array must have 1-based indices"))
-    size(A) == dims ||
-        throw(DimensionMismatch("array has invalid dimensions"))
-    return A
+
+`bcastlazy([T=eltype(A),] dims, A)` yields a *dense* array of type `T` and
+dimensions `dims` filled with the elements of `A` according to type conversion
+and broadcasting rules (see [`broadcast`](@ref)).  Compared to
+[`bcastcopy`](@ref), making a copy of `A` is avoided if it already has the
+correct type and dimensions or can be reshaped (see [`reshape`](@ref)) to the
+correct type and dimensions.  This means that the result may share the same
+contents as `A`.  Array `A` must have 1-based indices.  The result has 1-based
+indices and contiguous elements which is suitable for fast linear indexing.
+
+"""
+bcastlazy(dims::Tuple{Vararg{Integer}}, A::AbstractArray{T}) where {T} =
+    bcastlazy(T, dims, A)
+
+function bcastlazy(::Type{T}, dims::Tuple{Vararg{Integer}},
+                   A::DenseArray{T}) where {T}
+    Base.has_offset_axes(A) && error("array must have 1-based indices")
+    size(A) == dims && return A
+    bcastdims(size(A), dims)) == dims ||
+        throw(DimensionMismatch("array has incompatible dimensions"))
+    return (length(A) == prod(dims) ? reshape(A, dims) :
+            bcastcopy(T, dims, A))
 end
 
-bcastlazy(::Type{T}, dims::NTuple{N,Int}, A) where {T,N} =
+bcastlazy(::Type{T}, dims::Tuple{Vararg{Integer}}, A::AbstractArray) where {T} =
     bcastcopy(T, dims, A)
 
 """
@@ -79,23 +92,23 @@ bcastdims(::Tuple{}, ::Tuple{}) = ()
 bcastdims(::Tuple{}, b::Tuple{Vararg{Integer}}) = bcastdims(b)
 bcastdims(a::Tuple{Vararg{Integer}}, ::Tuple{}) = bcastdims(a)
 bcastdims(a::Tuple{Vararg{Integer}}, b::Tuple{Vararg{Integer}}) =
-    (_bcastdim(a[1], b[1]), bcastdims(Base.tail(a), Base.tail(b))...)
+    (bcastdim(a[1], b[1]), bcastdims(Base.tail(a), Base.tail(b))...)
 
 # Apply broadcasting rules for a single dimension.
-_bcastdim(a::Integer, b::Integer) = _bcastdim(Int(a), Int(b))
+bcastdim(a::Integer, b::Integer) = bcastdim(Int(a), Int(b))
 @static if false
     # Compared to Base.Broadcasting._bcs1, this version also checks the
     # validity of the dimensions (not just the compatibility). It is nearly as
     # fast (6.4 ns instead of 5.6 ns to build a list of 5 broadcasted
     # dimensions).
-    _bcastdim(a::Int, b::Int) =
+    bcastdim(a::Int, b::Int) =
         (a == b || b == 1 ? (a ≥ 1 ? a : invalid_dimension()) :
          a == 1 ? (b ≥ 1 ? b : invalid_dimension()) :
          throw(DimensionMismatch("arrays could not be broadcast to a common size")))
 else
     # This version does only checks the compatibility of dimensions and is as
     # fast as Base.Broadcasting._bcs1.
-    _bcastdim(a::Int, b::Int) =
+    bcastdim(a::Int, b::Int) =
         (a == b || b == 1 ? a : a == 1 ? b :
          throw(DimensionMismatch("arrays could not be broadcast to a common size")))
 end
