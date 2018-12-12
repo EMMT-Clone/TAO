@@ -46,7 +46,15 @@ making a copy of `A` is avoided if it already has the correct type and
 dimensions.  This means that the result may share the same contents as `A`.
 
 """
-bcastlazy(::Type{T}, dims::NTuple{N,Int}, A::DenseArray{T,N}) where {T,N} = A
+function bcastlazy(::Type{T}, dims::NTuple{N,Int},
+                   A::DenseArray{T,N}) where {T,N}
+    Base.has_offset_axes(A) &&
+        throw(DimensionMismatch("array must have 1-based indices"))
+    size(A) == dims ||
+        throw(DimensionMismatch("array has invalid dimensions"))
+    return A
+end
+
 bcastlazy(::Type{T}, dims::NTuple{N,Int}, A) where {T,N} =
     bcastcopy(T, dims, A)
 
@@ -58,23 +66,26 @@ arguments `A`, `B`, etc.
 
 """
 function bcastdims(A::NTuple{Na,Int}, B::NTuple{Nb,Int}) where {Na,Nb}
+    @noinline baddim(len::Integer) = error("invalid array dimension $len")
+    @noinline baddims(len1::Integer, len2::Integer) =
+        error("incompatible array dimensions $len1 and $len2")
     if Na > Nb
         A, B = B, A
     end
     dims = Array{Int}(undef, Nb)
-    for d in 1:Na
-        A[d] ≥ 1 || error("invalid dimension $(A[d])")
-        B[d] ≥ 1 || error("invalid dimension $(B[d])")
+    @inbounds for d in 1:Na
+        A[d] ≥ 1 || baddim(A[d])
+        B[d] ≥ 1 || baddim(B[d])
         if A[d] == B[d] || B[d] == 1
            dims[d] = A[d]
         elseif A[d] == 1
             dims[d] = B[d]
         else
-            error("incompatible dimensions $(A[d]) and $(B[d])")
+            baddims(A[d], B[d])
         end
     end
-    for i in Na+1:Nb
-        B[d] ≥ 1 || error("invalid dimension $(B[d])")
+    @inbounds for i in Na+1:Nb
+        B[d] ≥ 1 || baddim(B[d])
         dims[d] = B[d]
     end
     return (dims...,)
@@ -82,5 +93,5 @@ end
 
 bcastdims(A::NTuple{N,Int}) where {N} = A
 
-bcastdims(A::NTuple{Na,Int}, B::NTuple{Nb,Int}, args...)  where {Na,Nb} =
+bcastdims(A::NTuple{Na,Int}, B::NTuple{Nb,Int}, args...) where {Na,Nb} =
     bcastdims(bcastdims(A, B), args...)
