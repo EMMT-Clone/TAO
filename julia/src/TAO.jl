@@ -17,6 +17,8 @@ module TAO
 
 import Base: detach, lock, trylock, unlock
 
+using TiPi
+
 export
     #TaoError,
     attach,
