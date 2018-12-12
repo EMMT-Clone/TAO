@@ -62,36 +62,49 @@ bcastlazy(::Type{T}, dims::NTuple{N,Int}, A) where {T,N} =
 
 `bcastdims(size(A), size(B), ...)` yields the dimensions of the array that
 would result from applying broadcasting rules (see [`broadcast`](@ref)) to
-arguments `A`, `B`, etc.
+arguments `A`, `B`, etc.  The result is a tuple of dimensions of type `Int`.
+Call [`checkdims`](@ref) if you want to also make sure that the result is a
+list of valid dimensions.
 
 """
-function bcastdims(A::NTuple{Na,Int}, B::NTuple{Nb,Int}) where {Na,Nb}
-    @noinline baddim(len::Integer) = error("invalid array dimension $len")
-    @noinline baddims(len1::Integer, len2::Integer) =
-        error("incompatible array dimensions $len1 and $len2")
-    if Na > Nb
-        Nmin = Nb
-        Nmax = Na
-        A, B = B, A
-    else
-        Nmin = Na
-        Nmax = Nb
-    end
-    dims = Array{Int}(undef, Nmax)
-    @inbounds for d in 1:Nmin
-        minlen, maxlen = minmax(A[d], B[d])
-        minlen ≥ 1 || baddim(minlen)
-        minlen == maxlen || minlen == 1 || baddims(minlen, maxlen)
-        dims[d] = maxlen
-    end
-    @inbounds for d in Nmin+1:Nmax
-        (len = B[d]) ≥ 1 || baddim(len)
-        dims[d] = len
-    end
-    return (dims...,)
+bcastdims(::Tuple{}) = ()
+bcastdims(a::Tuple{Vararg{Int}}) = a
+bcastdims(a::Tuple{Vararg{Integer}}) = map(Int, a)
+bcastdims(a::Tuple{Vararg{Integer}}, b::Tuple{Vararg{Integer}}, args...) =
+    bcastdims(bcastdims(a, b), args...)
+
+# Use a recursion to build the dimension list from two lists, if code is
+# inlined (for a few number of dimensions), it should be much faster.
+bcastdims(::Tuple{}, ::Tuple{}) = ()
+bcastdims(::Tuple{}, b::Tuple{Vararg{Integer}}) = bcastdims(b)
+bcastdims(a::Tuple{Vararg{Integer}}, ::Tuple{}) = bcastdims(a)
+bcastdims(a::Tuple{Vararg{Integer}}, b::Tuple{Vararg{Integer}}) =
+    (_bcastdim(a[1], b[1]), bcastdims(Base.tail(a), Base.tail(b))...)
+
+# Apply broadcasting rules for a single dimension.
+_bcastdim(a::Integer, b::Integer) = _bcastdim(Int(a), Int(b))
+@static if false
+    # Compared to Base.Broadcasting._bcs1, this version also checks the
+    # validity of the dimensions (not just the compatibility). It is nearly as
+    # fast (6.4 ns instead of 5.6 ns to build a list of 5 broadcasted
+    # dimensions).
+    _bcastdim(a::Int, b::Int) =
+        (a == b || b == 1 ? (a ≥ 1 ? a : invalid_dimension()) :
+         a == 1 ? (b ≥ 1 ? b : invalid_dimension()) :
+         throw(DimensionMismatch("arrays could not be broadcast to a common size")))
+else
+    # This version does only checks the compatibility of dimensions and is as
+    # fast as Base.Broadcasting._bcs1.
+    _bcastdim(a::Int, b::Int) =
+        (a == b || b == 1 ? a : a == 1 ? b :
+         throw(DimensionMismatch("arrays could not be broadcast to a common size")))
 end
 
-bcastdims(A::NTuple{N,Int}) where {N} = A
+"""
 
-bcastdims(A::NTuple{Na,Int}, B::NTuple{Nb,Int}, args...) where {Na,Nb} =
-    bcastdims(bcastdims(A, B), args...)
+`checkdims(dims)` checks whether `dims` is a list of valid dimensions.
+
+"""
+checkdims(::Tuple{}) = true
+checkdims(dims::Tuple{Vararg{Integer}}) =
+    all(d -> d ≥ 1, dims) || error("invalid array dimension(s)")
