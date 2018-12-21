@@ -16,27 +16,32 @@
 # performance reasons, reading/writing the array contents is done without any
 # attempt to lock the object before.  Locking has to be done appropriately
 # when such an object is used.
-@inline Base.eltype(obj::SharedArray{T,N}) where {T,N} = T
-@inline Base.length(obj::SharedArray) = length(obj.arr)
-@inline Base.ndims(obj::SharedArray{T,N}) where {T,N} = N
-@inline Base.size(obj::SharedArray) = size(obj.arr)
-@inline Base.size(obj::SharedArray, d) = size(obj.arr, d)
-@inline Base.axes(obj::SharedArray) = axes(obj.arr)
-@inline Base.axes(obj::SharedArray, d) = axes(obj.arr, d)
-@inline Base.eachindex(obj::SharedArray) = eachindex(obj.arr)
-@inline Base.stride(obj::SharedArray, d) = stride(obj.arr, d)
-@inline Base.strides(obj::SharedArray) = strides(obj.arr)
+Base.eltype(obj::SharedArray{T,N}) where {T,N} = T
+Base.length(obj::SharedArray) = length(obj.arr)
+Base.ndims(obj::SharedArray{T,N}) where {T,N} = N
+Base.size(obj::SharedArray) = size(obj.arr)
+Base.size(obj::SharedArray, d) = size(obj.arr, d)
+Base.axes(obj::SharedArray) = axes(obj.arr)
+Base.axes(obj::SharedArray, d) = axes(obj.arr, d)
+Base.eachindex(obj::SharedArray) = eachindex(obj.arr)
+Base.stride(obj::SharedArray, d) = stride(obj.arr, d)
+Base.strides(obj::SharedArray) = strides(obj.arr)
+Base.firstindex(obj::SharedArray) = 1
+Base.firstindex(obj::SharedArray{T,N}, d) where {T,N} =
+    (@_inline_meta; (d % UInt) - 1 < N ? 1 : error("dimension out of range"))
+Base.lastindex(obj::SharedArray) = length(obj.arr)
+Base.lastindex(obj::SharedArray, d) = size(obj.arr, d)
 
 # FIXME: similar
-@inline Base.similar(obj::SharedArray, args...) = similar(obj.arr, args...)
-@inline Base.reshape(obj::SharedArray, dims...) = reshape(obj.arr, dims...)
-@inline Base.copy(obj::SharedArray) = copy(obj.arr)
-@inline Base.deepcopy(obj::SharedArray) = deepcopy(obj.arr)
-@inline Base.fill!(obj::SharedArray, val) = fill!(obj.arr, val)
+Base.similar(obj::SharedArray, args...) = similar(obj.arr, args...)
+Base.reshape(obj::SharedArray, dims...) = reshape(obj.arr, dims...)
+Base.copy(obj::SharedArray) = copy(obj.arr)
+Base.deepcopy(obj::SharedArray) = deepcopy(obj.arr)
+Base.fill!(obj::SharedArray, val) = fill!(obj.arr, val)
 
-@inline Base.getindex(obj::SharedArray, inds...) =
+Base.getindex(obj::SharedArray, inds...) =
     getindex(obj.arr, inds...)
-@inline Base.setindex!(obj::SharedArray, val, inds...) =
+Base.setindex!(obj::SharedArray, val, inds...) =
     setindex!(obj.arr, val, inds...)
 
 Base.IndexStyle(::Type{<:SharedArray}) = IndexLinear()
