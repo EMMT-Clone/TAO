@@ -39,9 +39,9 @@ Base.copy(obj::SharedArray) = copy(obj.arr)
 Base.deepcopy(obj::SharedArray) = deepcopy(obj.arr)
 Base.fill!(obj::SharedArray, val) = fill!(obj.arr, val)
 
-Base.getindex(obj::SharedArray, inds...) =
+@inline @propagate_inbounds Base.getindex(obj::SharedArray, inds...) =
     getindex(obj.arr, inds...)
-Base.setindex!(obj::SharedArray, val, inds...) =
+@inline @propagate_inbounds Base.setindex!(obj::SharedArray, val, inds...) =
     setindex!(obj.arr, val, inds...)
 
 Base.IndexStyle(::Type{<:SharedArray}) = IndexLinear()
