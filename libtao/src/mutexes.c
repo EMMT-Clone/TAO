@@ -8,7 +8,7 @@
  * This file if part of the TAO software (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #include <errno.h>
@@ -64,12 +64,11 @@ int
 tao_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
 {
     int code = pthread_mutex_lock(mutex);
-    if (code != 0) {
+    if (TAO_UNLIKELY(code != 0)) {
         tao_push_error(errs, "pthread_mutex_lock", code);
         return -1;
-    } else {
-        return 0;
     }
+    return 0;
 }
 
 int
@@ -78,24 +77,23 @@ tao_try_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
     int code = pthread_mutex_trylock(mutex);
     if (code == 0) {
         return 1;
-    } else if (code == EBUSY) {
-        return 0;
-    } else {
-        tao_push_error(errs, "pthread_mutex_trylock", code);
-        return -1;
     }
+    if (code == EBUSY) {
+        return 0;
+    }
+    tao_push_error(errs, "pthread_mutex_trylock", code);
+    return -1;
 }
 
 int
 tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
 {
     int code = pthread_mutex_unlock(mutex);
-    if (code != 0) {
+    if (TAO_UNLIKELY(code != 0)) {
         tao_push_error(errs, "pthread_mutex_unlock", code);
         return -1;
-    } else {
-        return 0;
     }
+    return 0;
 }
 
 int
@@ -132,7 +130,7 @@ int
 tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond)
 {
     int code = pthread_cond_signal(cond);
-    if (code != 0) {
+    if (TAO_UNLIKELY(code != 0)) {
         tao_push_error(errs, "pthread_cond_signal", code);
         return -1;
     }
