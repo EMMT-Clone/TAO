@@ -8,7 +8,7 @@
  * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #ifndef _TAO_MACROS_H_
@@ -50,12 +50,5 @@
 #  undef ALIGNMENT
 #  define ALIGNMENT __BIGGEST_ALIGNMENT__
 #endif
-
-/*
- * Helpers for branch prediction (See
- * http://blog.man7.org/2012/10/how-much-do-builtinexpect-likely-and.html).
- */
-#define likely(expr)      __builtin_expect(!!(expr), 1)
-#define unlikely(expr)    __builtin_expect(!!(expr), 0)
 
 #endif /* _TAO_MACROS_H_ */

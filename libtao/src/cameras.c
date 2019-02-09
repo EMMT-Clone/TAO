@@ -8,7 +8,7 @@
  * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #include <math.h>
@@ -313,14 +313,14 @@ tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam)
 int
 tao_get_shared_camera_ident(const tao_shared_camera_t* cam)
 {
-    return (likely(cam != NULL) ? cam->base.ident : -1);
+    return (TAO_LIKELY(cam != NULL) ? cam->base.ident : -1);
 }
 
 #define GETTER(type, member, def)                                       \
     type                                                                \
     tao_get_shared_camera_##member(const tao_shared_camera_t* cam)      \
     {                                                                   \
-        return (likely(cam != NULL) ? cam->member : (def));             \
+        return (TAO_LIKELY(cam != NULL) ? cam->member : (def));         \
     }
 GETTER(int,    state, -1)
 GETTER(int,    pixel_type, -1)
@@ -341,13 +341,13 @@ GETTER(double, gamma, 0.0)
 uint64_t
 tao_get_last_image_counter(const tao_shared_camera_t* cam)
 {
-    return (likely(cam != NULL) ? cam->last_frame.counter : -1);
+    return (TAO_LIKELY(cam != NULL) ? cam->last_frame.counter : -1);
 }
 
 int
 tao_get_last_image_ident(const tao_shared_camera_t* cam)
 {
-    return (likely(cam != NULL) ? cam->last_frame.ident : -1);
+    return (TAO_LIKELY(cam != NULL) ? cam->last_frame.ident : -1);
 }
 
 tao_shared_camera_t*
@@ -368,7 +368,7 @@ tao_detach_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 int
 tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 {
-    if (unlikely(cam == NULL)) {
+    if (TAO_UNLIKELY(cam == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
@@ -378,7 +378,7 @@ tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 int
 tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 {
-    if (unlikely(cam == NULL)) {
+    if (TAO_UNLIKELY(cam == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
@@ -388,7 +388,7 @@ tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 int
 tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 {
-    if (unlikely(cam == NULL)) {
+    if (TAO_UNLIKELY(cam == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
@@ -431,11 +431,11 @@ CODE(tao_preprocess_image_u16_to_f64, uint16_t, double)
 int
 tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx)
 {
-    if (unlikely(cam == NULL)) {
+    if (TAO_UNLIKELY(cam == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
-    if (unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+    if (TAO_UNLIKELY(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
         tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
         return -1;
     }
@@ -449,11 +449,11 @@ tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx)
 int
 tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx)
 {
-    if (unlikely(cam == NULL)) {
+    if (TAO_UNLIKELY(cam == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
-    if (unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+    if (TAO_UNLIKELY(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
         tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
         return -1;
     }
@@ -472,11 +472,11 @@ int
 tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
                      double secs)
 {
-    if (unlikely(cam == NULL)) {
+    if (TAO_UNLIKELY(cam == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
-    if (unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+    if (TAO_UNLIKELY(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
         tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
         return -1;
     }

@@ -9,7 +9,7 @@
  * This file if part of the TAO software (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #include "config.h"
@@ -228,32 +228,32 @@ tao_unreference_array(tao_array_t* arr)
 tao_element_type_t
 tao_get_array_eltype(const tao_array_t* arr)
 {
-    return (likely(arr != NULL) ? arr->eltype : -1);
+    return (TAO_LIKELY(arr != NULL) ? arr->eltype : -1);
 }
 
 long
 tao_get_array_length(const tao_array_t* arr)
 {
-    return (likely(arr != NULL) ? arr->nelem : 0);
+    return (TAO_LIKELY(arr != NULL) ? arr->nelem : 0);
 }
 
 int
 tao_get_array_ndims(const tao_array_t* arr)
 {
-    return (likely(arr != NULL) ? arr->ndims : 0);
+    return (TAO_LIKELY(arr != NULL) ? arr->ndims : 0);
 }
 
 long
 tao_get_array_size(const tao_array_t* arr, int d)
 {
-    return (likely(arr != NULL) ?
-            (unlikely(d < 1) ? 0 :
-             (unlikely(d > TAO_MAX_NDIMS) ? 1 :
+    return (TAO_LIKELY(arr != NULL) ?
+            (TAO_UNLIKELY(d < 1) ? 0 :
+             (TAO_UNLIKELY(d > TAO_MAX_NDIMS) ? 1 :
               arr->dims[d-1])) : 0);
 }
 
 void*
 tao_get_array_data(const tao_array_t* arr)
 {
-    return (likely(arr != NULL) ? arr->data : NULL);
+    return (TAO_LIKELY(arr != NULL) ? arr->data : NULL);
 }

@@ -8,7 +8,7 @@
  * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #include <sys/types.h>
@@ -317,25 +317,25 @@ tao_detach_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 size_t
 tao_get_shared_object_size(const tao_shared_object_t* obj)
 {
-    return (likely(obj != NULL) ? obj->size : 0);
+    return (TAO_LIKELY(obj != NULL) ? obj->size : 0);
 }
 
 int
 tao_get_shared_object_type(const tao_shared_object_t* obj)
 {
-    return (likely(obj != NULL) ? obj->type : -1);
+    return (TAO_LIKELY(obj != NULL) ? obj->type : -1);
 }
 
 int
 tao_get_shared_object_ident(const tao_shared_object_t* obj)
 {
-    return (likely(obj != NULL) ? obj->ident : -1);
+    return (TAO_LIKELY(obj != NULL) ? obj->ident : -1);
 }
 
 int
 tao_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 {
-    if (unlikely(obj == NULL)) {
+    if (TAO_UNLIKELY(obj == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
@@ -345,7 +345,7 @@ tao_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 int
 tao_try_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 {
-    if (unlikely(obj == NULL)) {
+    if (TAO_UNLIKELY(obj == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
@@ -355,7 +355,7 @@ tao_try_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 int
 tao_unlock_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
 {
-    if (unlikely(obj == NULL)) {
+    if (TAO_UNLIKELY(obj == NULL)) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }

@@ -8,7 +8,7 @@
  * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #ifndef _TAO_H_
@@ -34,6 +34,7 @@
  * @defgroup   DynamicMemory      Dynamic memory
  * @defgroup   Locks              Locks
  * @defgroup   Time               Date and time
+ * @defgroup   Macros             Useful macros
  */
 
 #ifdef __cplusplus
@@ -1843,6 +1844,53 @@ extern int tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
  */
 extern int
 tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond);
+
+/** @} */
+
+/**
+ * @addtogroup Macros
+ *
+ * Useful macros.
+ *
+ * @{
+ */
+
+/*
+ * Helpers for branch prediction (See
+ * http://blog.man7.org/2012/10/how-much-do-builtinexpect-likely-and.html).
+ */
+
+#if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
+#  define TAO_LIKELY(expr)      (__builtin_expect(!!(expr), 1))
+#  define TAO_UNLIKELY(expr)    (__builtin_expect(!!(expr), 0))
+#else
+#  define TAO_LIKELY(expr)      (expr)
+#  define TAO_UNLIKELY(expr)    (expr)
+#endif
+
+/**
+ * @def TAO_LIKELY
+ *
+ * @brief Indicate to the compiler that an expression is expected to be true.
+ *
+ * The @ref TAO_LIKELY and @ref TAO_UNLIKELY macros let the programmer give
+ * hints to the compiler about the expected result of an expression.  Some
+ * compilers can use this information for optimizations.
+ *
+ * @parame expr   The expression to test.
+ *
+ * @see TAO_UNLIKELY.
+ */
+
+/**
+ * @def TAO_UNLIKELY
+ *
+ * @brief Indicate to the compiler that an expression is expected to be false.
+ *
+ * @parame expr   The expression to test.
+ *
+ * @see TAO_LIKELY.
+ */
 
 /** @} */
 
