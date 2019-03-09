@@ -42,10 +42,11 @@ import ...TAO:
     unlock
 
 import Base: show, showerror
+using Base: @propagate_inbounds
 
 # Constant `taolib` is defined in another file which is built at installation
 # time.
-include("../../deps/deps.jl")
+include("../../../deps/deps.jl")
 
 include("types.jl")
 include("errors.jl")

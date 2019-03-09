@@ -27,8 +27,8 @@ Base.eachindex(obj::SharedArray) = eachindex(obj.arr)
 Base.stride(obj::SharedArray, d) = stride(obj.arr, d)
 Base.strides(obj::SharedArray) = strides(obj.arr)
 Base.firstindex(obj::SharedArray) = 1
-Base.firstindex(obj::SharedArray{T,N}, d) where {T,N} =
-    (@_inline_meta; (d % UInt) - 1 < N ? 1 : error("dimension out of range"))
+@inline Base.firstindex(obj::SharedArray{T,N}, d) where {T,N} =
+    ((d % UInt) - 1 < N ? 1 : error("dimension out of range"))
 Base.lastindex(obj::SharedArray) = length(obj.arr)
 Base.lastindex(obj::SharedArray, d) = size(obj.arr, d)
 
