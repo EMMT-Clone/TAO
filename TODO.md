@@ -34,6 +34,15 @@
 
 * Manage to have '-Wall -Werror -O2' the default compilation flags.
 
+* Use 64-bit signed integers for storing the time (since the Epoch) in
+  microseconds.  This is what is done in Apache Portable Runtime library (APR).
+  This is OK for times in the range ±292,271 yr which is largely sufficient for
+  now (and the future!).  The resolution of 1 µs is about what is provided by
+  current real-time Linux kernel and is sufficient for adaptive optics systems.
+
+* Include `stdbool.h` and use the macros provided by this header: `bool` for
+  the type of a boolean and `true` or `false` values.
+
 
 ## Phoenix part
 
