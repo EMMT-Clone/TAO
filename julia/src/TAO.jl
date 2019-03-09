@@ -28,12 +28,12 @@ export
     trylock,
     unlock
 
-include("constants.jl")
-include("types.jl")
-include("clib.jl")
-include("utils.jl")
-include("weighted.jl")
-include("detector.jl")
-include("kolmogorov.jl")
+include("tao/constants.jl")
+include("tao/types.jl")
+include("tao/clib.jl")
+include("tao/utils.jl")
+include("tao/weighted.jl")
+include("tao/detector.jl")
+include("tao/kolmogorov.jl")
 
 end # module
