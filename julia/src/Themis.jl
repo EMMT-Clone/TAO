@@ -19,7 +19,7 @@ module Themis
 #    save,
 #    save!
 
-using Printf, LinearAlgebra
+using Printf, LinearAlgebra, Statistics
 using FITSIO
 using LinearInterpolators.AffineTransforms
 
@@ -34,5 +34,6 @@ include("themis/types.jl")
 include("themis/utils.jl")
 include("themis/config.jl")
 include("themis/fitting.jl")
+include("themis/calibration.jl")
 
 end # module Tao

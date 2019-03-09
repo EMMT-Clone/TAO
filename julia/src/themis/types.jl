@@ -26,6 +26,14 @@ struct Spot{T <: AbstractFloat} # <: AbstractPoint{T}
     #θ::T # angle of major axis with first axis in radians counterclockwise
 end
 
+"""
+
+Concrete singleton type `InteractionMatrix` is used to identify the interaction
+matrix in the methods.
+
+"""
+struct InteractionMatrix end
+
 struct SubPupil{T<:AbstractFloat, B<:CartesianIndices{2}}
     box::B              # bounding box of the sub-pupil image
     ref::Spot{T}        # reference position
