@@ -17,7 +17,7 @@ data to be modified by other processes during some (limited) amount of time.
 To avoid blocking other processes, an object should be locked during the
 shortest possible duration.
 
-For shared arrays which may be accessed in read only mode by several processes
+For shared arrays which may be accessed in read-only mode by several processes
 at the same time, additional rules apply to allow protected access by several
 processes while avoiding locking the array and preventing access to others.
 

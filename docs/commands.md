@@ -20,7 +20,8 @@ following options are available:
 * `-load ID` to load a given preset configuration.  Argument `ID` is a
   nonnegative number.  `ID=0` corresponds to factory settings.
 * `-save ID` to save the configuration.  Argument `ID` is a strictly positive
-  number (`ID=0` corresponding to factory settings cannnot be overwritten).
+  number (`ID=0` corresponding to factory settings which cannot be
+  overwritten).
 * `-depth BITS` to set the number of bits per pixel.
 * `-rate FPS` to set the number of frames per second.
 * `-exposure TIME` to set the exposure duration in seconds.

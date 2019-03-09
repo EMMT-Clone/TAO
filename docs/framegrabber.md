@@ -26,8 +26,8 @@ be considered as read-only by clients.
 | `gain`        |              | yes          | Detector gain                               |
 | `exposure`    | s            | yes          | Exposure time                               |
 | `rate`        | Hz           | yes          | Frame rate                                  |
-| `fullwidth`   | pixels       | yes          | Width of sensor                             |
-| `fullheight`  | pixels       | yes          | Height of sensor                            |
+| `fullwidth`   | pixels       | no           | Width of sensor                             |
+| `fullheight`  | pixels       | no           | Height of sensor                            |
 | `xoff`        | pixels       | yes          | Horizontal offset of ROI relative to sensor |
 | `yoff`        | pixels       | yes          | Vertical offset of ROI relative to sensor   |
 | `width`       | macro-pixels | yes          | Width of acquired images                    |
@@ -50,8 +50,8 @@ know: [Julia](http://julialang.org/) with
 [XPA.jl](https://github.com/emmt/XPA.jl) package, Yorick, Python, Tcl/Tk,
 *etc.*).
 
-Assuming `$cam` is the name of the camera server, for instance
-`virtualcamera1`, the command `xpaset` can be used as follows:
+Assuming `$cam` is the name of the camera server, for instance `virtcam1`, the
+command `xpaset` can be used as follows:
 
 ```sh
 cat data | xpaset TAO:$cam args...
@@ -131,3 +131,58 @@ are available (square brackets `[...]` denote optional arguments):
 
 * `xpaget TAO:$cam shmid` to retrieve the identifier of the shared memory where
   global camera information is stored.
+
+
+
+## Implementation
+
+Typical implementation is the one using the ActiveSilicon Phoenix frame
+grabber.  The server runs in three threads:
+
+1. The server thread handles client commands.
+
+2. The acquisition thread is started by the frame grabber library when an
+   acquisition is running and deals with acquisition events (essentially
+   arrival of frames) via a provided callback function.
+
+3. The processing thread waits on a condition variable to respond to events
+   from the acquisition thread and from the server thread.
+
+There are two kinds of resources:
+
+1. Frame grabber resources needed by the acquisition and processing threads.
+
+2. Shared camera resources used by the processing thread, the server thread and
+   the clients.
+
+These resources have their own locks (see policy described in *Shared
+Objects*).
+
+Here are some scenarii:
+
+- A client requires the current value of a parameter.  Two possibilities:
+
+  - The client locks the shared camera data, reads the parameter value and
+    unlock the shared data.
+
+  - The client sends a request to the server which locks the shared camera
+    data, reads the parameter value, unlocks the shared data and returns the
+    value to the client.
+
+  Obviously the second possibility is slower but may be used by non real-time
+  clients.
+
+- A client asks for changing a parameter.  This can only be done via the server
+  and acquisition must not be running.  The server locks the shared camera data
+  and the frame grabber resources, changes the parameter, update the shared
+  camera data and, if needed, the frame grabber resources, unlocks the shared
+  camera data and the frame grabber resources and reports success to the
+  client.
+
+- A client asks for starting/stopping/aborting the acquisition.  The client
+  sends the corresponding request to the server.  The server locks the shared
+  camera data (because the camera state is about to change) and the frame
+  grabber resources, set the variable indicating the action to perform, signal
+  the condition to the processing thread which performs the action and signal
+  that it has been done (this unlocks the frame grabber resources), the server
+  update the states and reports success (or failure) to the client.
