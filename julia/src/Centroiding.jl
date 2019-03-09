@@ -1,3 +1,16 @@
+#
+# Centroiding.jl -
+#
+# Algorithms for estimating the positions of spots in images.
+#
+#-------------------------------------------------------------------------------
+#
+# This file if part of the TAO software (https://github.com/emmt/TAO) licensed
+# under the MIT license.
+#
+# Copyright (C) 2018-2019, Éric Thiébaut and Michel Tallon.
+#
+
 module Centroiding
 
 #export
@@ -71,6 +84,16 @@ function _get_workspace(shape::SeparableShape, len::Int)
     return wrk
 end
 
+"""
+```julia
+cost([wgt,] dat, shape, siz, x, y)
+```
+
+yields the value of the objective function for a spot whose footprint and size
+are given by `shape` and `siz` and assumed position is `(x,y)`. Arguments `dat`
+`wgt` are the data and their respective weights.
+
+"""
 function cost(wgt::AbstractMatrix{<:AbstractFloat},
               dat::AbstractMatrix{<:AbstractFloat},
               shape::ShapeModel,
@@ -99,8 +122,7 @@ function cost(wgt::AbstractMatrix{<:AbstractFloat},
               siz::Real,
               x::Real,
               y::Real) :: Cdouble
-    return cost(wgt, dat, shape, Cdouble(siz),
-                Cdouble(x), Cdouble(y))
+    return cost(wgt, dat, shape, Cdouble(siz), Cdouble(x), Cdouble(y))
 end
 
 function cost(dat::AbstractMatrix{<:AbstractFloat},
@@ -255,7 +277,7 @@ end
 """
     _cost_result(a, b)
 
-yields the cost given integrated quantities `a` and `b`.
+yields the cost given the integrated quantities `a` and `b`.
 
 """
 _cost_result(a::Cdouble, b::Cdouble) =
@@ -358,7 +380,7 @@ end
 
 
 """
-   fit([wgt,] img, x0, y0) -> (x, y)
+   Centroiding.fit([wgt,] img, x0, y0) -> (x, y)
 
 yeilds the coordnates `(x,y)` of the nearest spots found in image `img`
 starting at positions `(x0,y0)`.  Optional argument `wgt` can be used to
@@ -366,21 +388,43 @@ specify the repective weights for the pixels of `img`.
 
 Mike Powell's `NEWUOA` algorithm is used to carry the optimization.
 
-Allowed keywords:
+In addition to the keywords of `newuoa!`, the following keywords are allowed:
 
-* `shape` specifies the shape model to fit (a separable cubic B-spline by
-  default).
+* Keyword `shape` specifies the shape model to fit (a separable cubic B-spline
+  by default).
 
-* `siz` specifies the *size* of the spots (in pixel units).
+* Keyword `siz` specifies the *size* of the spots (in pixel units).
 
-* `work` can be specified with a workspace vector (of `Cdouble`) which is
-  passed to the optimizer and resized as needed.  This is useful to reduce
+* Keyword `work` can be specified with a workspace vector (of `Cdouble`) which
+  is passed to the optimizer and resized as needed.  This is useful to reduce
   allocations (and garbage collections).
 
-* `rho` is a tuple which specifies the initial and final radius of the trust
-  region (in pixel units).
+* Keyword `rho` is a tuple which specifies the initial and final radius of the
+  trust region (in pixel units).
+
+* Keyword `quiet` can be set `true` to not print warning messages.
+
+When the optimization algorithm makes too many iterations, a warning message is
+printed.  Other errors result in throwing an exception.
 
 """
+function fit(wgt::AbstractMatrix{<:AbstractFloat},
+             img::AbstractMatrix{<:AbstractFloat},
+             x0::Real, y0::Real; kwds...) :: NTuple{2,Cdouble}
+    xy = Vector{Cdouble}(undef, 2)
+    xy[1], xy[2] = x0, y0
+    fit!(wgt, img, xy; kwds...)
+    return (xy[1], xy[2])
+end
+
+function fit(img::AbstractMatrix{<:AbstractFloat},
+             x0::Real, y0::Real; kwds...) :: NTuple{2,Cdouble}
+    xy = Vector{Cdouble}(undef, 2)
+    xy[1], xy[2] = x0, y0
+    fit!(img, xy; kwds...)
+    return (xy[1], xy[2])
+end
+
 function fit(wgt::AbstractMatrix{<:AbstractFloat},
              img::AbstractMatrix{<:AbstractFloat},
              x0::AbstractVector{<:Real},
@@ -403,7 +447,9 @@ function fit(img::AbstractMatrix{<:AbstractFloat},
 end
 
 """
-   fit!([wgt,] img, x, y) -> (x, y)
+```julia
+Centroiding.fit!([wgt,] img, x, y) -> (x, y)
+```
 
 overwrites `x` and `y` with the coordinates of the nearest spots found in image
 `img`.  Optional argument `wgt` can be used to specify the repective weights
@@ -411,16 +457,75 @@ for the pixels of `img`.  For each index `i ∈ 1:n` (where `n` is the number of
 points), `(x[i],y[i])` is replaced by the coordinates of the spot found in
 image `img` starting at `(x[i],y[i])`.
 
-See `fit` for allowed keywords.
+The coordinates may be packed in a single array:
+
+```julia
+Centroiding.fit!([wgt,] img, xy) -> xy
+```
+
+where `xy` can be a vector of 2 elements to search for a single spot or a
+matrix of dimensions `(2,n)` to searcj `n` spots.  On entry, `xy` contains the
+initial coordinates of the spot(s) to search, on return `xy` contains the final
+coordinates of the spot(s).
+
+For this in-place version of [`Centroiding.fit`](@ref), the elements of `x`,
+`y` and `xy` must be of type `Cdouble`.
+
+See [`Centroiding.fit`](@ref) for allowed keywords.
 
 """
-function fit!(img::AbstractMatrix{<:AbstractFloat},
-              x::AbstractVector{<:Real},
-              y::AbstractVector{<:Real};
+function fit!(wgt::AbstractMatrix{<:AbstractFloat},
+              img::AbstractMatrix{<:AbstractFloat},
+              xy::DenseVector{Cdouble};
               shape::ShapeModel = cubicsplinemodel,
               siz::Real = 2.5,
-              rho::Tuple{Real,Real} = (siz, 0.01),
-              work::Vector{Cdouble} = Cdouble[])
+              rho::Tuple{Real,Real} = (1.5*siz, 0.01),
+              work::Vector{Cdouble} = Cdouble[],
+              quiet::Bool = false,
+              kwds...)
+    @assert length(xy) == 2
+    _siz = Cdouble(siz)
+    rep = Newuoa.newuoa!(arg -> cost(wgt, img, shape, _siz, arg[1], arg[2]),
+                         xy, rho...; work = work, kwds...)
+    if (status = rep[1]) != Newuoa.SUCCESS
+        if status == Newuoa.TOO_MANY_EVALUATIONS
+            quiet || @warn "Too many evaluations in NEWUOA"
+        else
+            error(string("`newuoa!` failed: ",
+                         Newuoa.getreason(status)))
+        end
+    end
+    return xy
+end
+
+function fit!(img::AbstractMatrix{<:AbstractFloat},
+              xy::DenseVector{Cdouble};
+              shape::ShapeModel = cubicsplinemodel,
+              siz::Real = 2.5,
+              rho::Tuple{Real,Real} = (1.5*siz, 0.01),
+              work::Vector{Cdouble} = Cdouble[],
+              quiet::Bool = false,
+              kwds...)
+    @assert length(xy) == 2
+    _siz = Cdouble(siz)
+    rep = Newuoa.newuoa!(arg -> cost(img, shape, _siz, arg[1], arg[2]),
+                         xy, rho...; work = work, kwds...)
+    if (status = rep[1]) != Newuoa.SUCCESS
+        if status == Newuoa.TOO_MANY_EVALUATIONS
+            quiet || @warn "Too many evaluations in NEWUOA"
+        else
+            error(string("`newuoa!` failed: ",
+                         Newuoa.getreason(status)))
+        end
+    end
+    return xy
+end
+
+function fit!(img::AbstractMatrix{<:AbstractFloat},
+              x::AbstractVector{Cdouble},
+              y::AbstractVector{Cdouble};
+              work::Vector{Cdouble} = Cdouble[],
+              kwds...)
     # Checks and initializatons.
     len = length(x)
     length(y) == len ||
@@ -432,9 +537,7 @@ function fit!(img::AbstractMatrix{<:AbstractFloat},
         # FIXME: use @thread
         xy[1] = x[i]
         xy[2] = y[i]
-        rep = Newuoa.newuoa!(arg -> cost(img, shape, siz, arg[1], arg[2]),
-                             xy, rho...; work = work)
-        # FIXME: check status in rep[1]
+        fit!(img, xy; work=work, kwds...)
         x[i], y[i] = xy
     end
     return (x, y)
@@ -442,12 +545,13 @@ end
 
 function fit!(wgt::AbstractMatrix{<:AbstractFloat},
               img::AbstractMatrix{<:AbstractFloat},
-              x::AbstractVector{<:Real},
-              y::AbstractVector{<:Real};
+              x::AbstractVector{Cdouble},
+              y::AbstractVector{Cdouble};
               shape::ShapeModel = cubicsplinemodel,
               siz::Real = 2.5,
               rho::Tuple{Real,Real} = (siz, 0.01),
-              work::Vector{Cdouble} = Cdouble[])
+              work::Vector{Cdouble} = Cdouble[],
+              quiet::Bool = false, kwds...)
     # Checks and initializatons.
     len = length(x)
     size(wgt) == size(img)  ||
@@ -461,9 +565,7 @@ function fit!(wgt::AbstractMatrix{<:AbstractFloat},
         # FIXME: use @thread
         xy[1] = x[i]
         xy[2] = y[i]
-        rep = Newuoa.newuoa!(arg -> cost(wgt, img, shape, siz, arg[1], arg[2]),
-                             xy, rho...; work = work)
-        # FIXME: check status in rep[1]
+        fit!(wgt, img, xy; work=work, kwds...)
         x[i], y[i] = xy
     end
     return (x, y)
@@ -471,8 +573,18 @@ end
 
 #------------------------------------------------------------------------------
 
+"""
+```julia
+_getbbox(dims, sup, x, y) -> imin, imax, jmin, jmax
+```
+
+yields the (inclusive) bounding-box of the indices in the intersection of the
+valid indices for an array of dimension `dims` with a square of size `sup`
+centered at position `(x,y)`.
+
+"""
 function _getbbox(dims::NTuple{2,Int}, sup::Real, x::Real, y::Real)
-    rad = Cdouble(sup/2) # radius or ROI
+    rad = Cdouble(sup/2) # radius of ROI
     imin = max( ceil(Int, x - rad), 1)
     imax = min(floor(Int, x + rad), dims[1])
     jmin = max( ceil(Int, y - rad), 1)
