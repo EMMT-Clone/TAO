@@ -13,12 +13,13 @@
 
 module Themis
 
-export
-    find,
-    load,
-    save,
-    save!
+#export
+#    find,
+#    load,
+#    save,
+#    save!
 
+using Printf, LinearAlgebra
 using FITSIO
 using LinearInterpolators.AffineTransforms
 
@@ -32,5 +33,6 @@ function save end
 include("themis/types.jl")
 include("themis/utils.jl")
 include("themis/config.jl")
+include("themis/fitting.jl")
 
 end # module Tao
