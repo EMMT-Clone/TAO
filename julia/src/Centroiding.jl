@@ -474,6 +474,29 @@ For this in-place version of [`Centroiding.fit`](@ref), the elements of `x`,
 See [`Centroiding.fit`](@ref) for allowed keywords.
 
 """
+function fit!(img::AbstractMatrix{<:AbstractFloat},
+              xy::DenseVector{Cdouble};
+              shape::ShapeModel = cubicsplinemodel,
+              siz::Real = 2.5,
+              rho::Tuple{Real,Real} = (1.5*siz, 0.01),
+              work::Vector{Cdouble} = Cdouble[],
+              quiet::Bool = false,
+              kwds...)
+    @assert length(xy) == 2
+    _siz = Cdouble(siz)
+    rep = Newuoa.newuoa!(arg -> cost(img, shape, _siz, arg[1], arg[2]),
+                         xy, rho...; work = work, kwds...)
+    if (status = rep[1]) != Newuoa.SUCCESS
+        if status == Newuoa.TOO_MANY_EVALUATIONS
+            quiet || @warn "Too many evaluations in NEWUOA"
+        else
+            error(string("`newuoa!` failed: ",
+                         Newuoa.getreason(status)))
+        end
+    end
+    return xy
+end
+
 function fit!(wgt::AbstractMatrix{<:AbstractFloat},
               img::AbstractMatrix{<:AbstractFloat},
               xy::DenseVector{Cdouble};
@@ -499,76 +522,115 @@ function fit!(wgt::AbstractMatrix{<:AbstractFloat},
 end
 
 function fit!(img::AbstractMatrix{<:AbstractFloat},
-              xy::DenseVector{Cdouble};
-              shape::ShapeModel = cubicsplinemodel,
-              siz::Real = 2.5,
-              rho::Tuple{Real,Real} = (1.5*siz, 0.01),
-              work::Vector{Cdouble} = Cdouble[],
-              quiet::Bool = false,
-              kwds...)
+              xy::DenseVector{<:AbstractFloat}; kwds...)
     @assert length(xy) == 2
-    _siz = Cdouble(siz)
-    rep = Newuoa.newuoa!(arg -> cost(img, shape, _siz, arg[1], arg[2]),
-                         xy, rho...; work = work, kwds...)
-    if (status = rep[1]) != Newuoa.SUCCESS
-        if status == Newuoa.TOO_MANY_EVALUATIONS
-            quiet || @warn "Too many evaluations in NEWUOA"
-        else
-            error(string("`newuoa!` failed: ",
-                         Newuoa.getreason(status)))
-        end
-    end
+    tmp = Vector{Cdouble}(undef, 2)
+    tmp[1], tmp[2] = xy[1], xy[2]
+    fit!(img, tmp; work=work, kwds...)
+    xy[1], xy[2] = tmp[1], tmp[2]
+    return xy
+end
+
+function fit!(wgt::AbstractMatrix{<:AbstractFloat},
+              img::AbstractMatrix{<:AbstractFloat},
+              xy::DenseVector{<:AbstractFloat}; kwds...)
+    @assert length(xy) == 2
+    tmp = Vector{Cdouble}(undef, 2)
+    tmp[1], tmp[2] = xy[1], xy[2]
+    fit!(wgt, img, tmp; work=work, kwds...)
+    xy[1], xy[2] = tmp[1], tmp[2]
     return xy
 end
 
 function fit!(img::AbstractMatrix{<:AbstractFloat},
-              x::AbstractVector{Cdouble},
-              y::AbstractVector{Cdouble};
+              x::AbstractVector{<:AbstractFloat},
+              y::AbstractVector{<:AbstractFloat};
               work::Vector{Cdouble} = Cdouble[],
               kwds...)
-    # Checks and initializatons.
+    # Checks and initializations.
     len = length(x)
     length(y) == len ||
         throw(DimensionMismatch("`x` and `y` must have the same length"))
-    xy = Vector{Cdouble}(undef, 2)
+    tmp = Vector{Cdouble}(undef, 2)
 
-    # Loop over all nodes.
+    # Loop over all nodes. (FIXME: use @thread)
     for i in 1:len
-        # FIXME: use @thread
-        xy[1] = x[i]
-        xy[2] = y[i]
-        fit!(img, xy; work=work, kwds...)
-        x[i], y[i] = xy
+        tmp[1], tmp[2] = x[i], y[i]
+        fit!(img, tmp; work=work, kwds...)
+        x[i], y[i] = tmp[1], tmp[2]
     end
     return (x, y)
 end
 
 function fit!(wgt::AbstractMatrix{<:AbstractFloat},
               img::AbstractMatrix{<:AbstractFloat},
-              x::AbstractVector{Cdouble},
-              y::AbstractVector{Cdouble};
+              x::AbstractVector{<:AbstractFloat},
+              y::AbstractVector{<:AbstractFloat};
               shape::ShapeModel = cubicsplinemodel,
               siz::Real = 2.5,
               rho::Tuple{Real,Real} = (siz, 0.01),
               work::Vector{Cdouble} = Cdouble[],
               quiet::Bool = false, kwds...)
-    # Checks and initializatons.
+    # Checks and initializations.
     len = length(x)
     size(wgt) == size(img)  ||
         throw(DimensionMismatch("`wgt` and `img` must have the same size"))
     length(y) == len ||
         throw(DimensionMismatch("`x` and `y` must have the same length"))
-    xy = Vector{Cdouble}(undef, 2)
+    tmp = Vector{Cdouble}(undef, 2)
 
-    # Loop over all nodes.
+    # Loop over all nodes. (FIXME: use @thread)
     for i in 1:len
-        # FIXME: use @thread
-        xy[1] = x[i]
-        xy[2] = y[i]
-        fit!(wgt, img, xy; work=work, kwds...)
-        x[i], y[i] = xy
+        tmp[1], tmp[2] = x[i], y[i]
+        fit!(wgt, img, tmp; work=work, kwds...)
+        x[i], y[i] = tmp[1], tmp[2]
     end
     return (x, y)
+end
+
+
+function fit!(img::AbstractMatrix{<:AbstractFloat},
+              xy::DenseMatrix{<:AbstractFloat};
+              work::Vector{Cdouble} = Cdouble[],
+              kwds...)
+    # Checks and initializations.
+    size(xy, 1) == 2 ||
+        throw(DimensionMismatch("first dimension of `xy` must be 2"))
+    len = size(xy, 2)
+    tmp = Vector{Cdouble}(undef, 2)
+
+    # Loop over all nodes. (FIXME: use @thread)
+    for i in 1:len
+        tmp[1], tmp[2] = xy[1,i], xy[2,i]
+        fit!(img, tmp; work=work, kwds...)
+        xy[1,i], xy[2,i] = tmp[1], tmp[2]
+    end
+    return xy
+end
+
+function fit!(wgt::AbstractMatrix{<:AbstractFloat},
+              img::AbstractMatrix{<:AbstractFloat},
+              xy::DenseMatrix{<:AbstractFloat};
+              shape::ShapeModel = cubicsplinemodel,
+              siz::Real = 2.5,
+              rho::Tuple{Real,Real} = (siz, 0.01),
+              work::Vector{Cdouble} = Cdouble[],
+              quiet::Bool = false, kwds...)
+    # Checks and initializations.
+    size(wgt) == size(img)  ||
+        throw(DimensionMismatch("`wgt` and `img` must have the same size"))
+    size(xy, 1) == 2 ||
+        throw(DimensionMismatch("first dimension of `xy` must be 2"))
+    len = size(xy, 2)
+    tmp = Vector{Cdouble}(undef, 2)
+
+    # Loop over all nodes. (FIXME: use @thread)
+    for i in 1:len
+        tmp[1], tmp[2] = xy[1,i], xy[2,i]
+        fit!(wgt, img, tmp; work=work, kwds...)
+        xy[1,i], xy[2,i] = tmp[1], tmp[2]
+    end
+    return xy
 end
 
 #------------------------------------------------------------------------------
