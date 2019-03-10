@@ -18,7 +18,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
-#include <time.h>
 
 /**
  * @defgroup Messages             Messages and logging
@@ -1666,13 +1665,13 @@ tao_fprintf_time(FILE* stream, const tao_time_t* ts);
  * current time (as given by the clock `CLOCK_REALTIME`).
  *
  * @param errs   Address of a variable to track errors.
- * @param ts     Address of `timespec` structure.
+ * @param tm     Address of `tao_time_t` structure.
  * @param secs   Number of seconds from now.
  *
  * @return `0` on success, `-1` on failure.
  */
 extern int
-tao_get_absolute_timeout(tao_error_t** errs, struct timespec* ts, double secs);
+tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs);
 
 /** @} */
 

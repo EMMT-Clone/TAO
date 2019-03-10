@@ -663,9 +663,12 @@ phx_wait(phx_camera_t* cam, double secs, int drop)
     if (secs > TAO_YEAR) {
         forever = TRUE;
     } else {
-        if (tao_get_absolute_timeout(&cam->errs, &ts, secs) != 0) {
+        tao_time_t t;
+        if (tao_get_absolute_timeout(&cam->errs, &t, secs) != 0) {
             goto unlock;
         }
+        ts.tv_sec  = t.s;
+        ts.tv_nsec = t.ns;
         forever = FALSE;
     }
 

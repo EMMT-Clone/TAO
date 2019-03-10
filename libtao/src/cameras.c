@@ -11,10 +11,11 @@
  * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
+#include "config.h"
+
 #include <math.h>
 #include <errno.h>
 
-#include "config.h"
 #include "macros.h"
 #include "tao-private.h"
 
@@ -504,10 +505,13 @@ tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
             return -1;
         }
     } else {
+        tao_time_t t;
         struct timespec ts;
-        if (tao_get_absolute_timeout(errs, &ts, secs) != 0) {
+        if (tao_get_absolute_timeout(errs, &t, secs) != 0) {
             return -1;
         }
+        ts.tv_sec  = t.s;
+        ts.tv_nsec = t.ns;
         if (sem_timedwait(&cam->sem[idx - 1], &ts) != 0) {
             int code = errno;
             if (code == ETIMEDOUT) {

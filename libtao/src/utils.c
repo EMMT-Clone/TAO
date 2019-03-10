@@ -77,36 +77,39 @@ tao_strlen(const char* str)
 #define GIGA 1000000000
 
 #ifdef HAVE_CLOCK_GETTIME
-# define GET_MONOTONIC_TIME(errs, dest) GET_TIME(errs, dest, CLOCK_MONOTONIC)
-# define GET_CURRENT_TIME(errs, dest)   GET_TIME(errs, dest, CLOCK_REALTIME)
-# define GET_TIME(errs, dest, id)                               \
+# define GET_MONOTONIC_TIME(status, errs, dest)         \
+    GET_TIME(status, errs, dest, CLOCK_MONOTONIC)
+# define GET_CURRENT_TIME(status, errs, dest)           \
+    GET_TIME(status, errs, dest, CLOCK_REALTIME)
+# define GET_TIME(status, errs, dest, id)                       \
     do {                                                        \
         struct timespec t;                                      \
         if (clock_gettime(id, &t) == -1) {                      \
             tao_push_system_error(errs, "clock_gettime");       \
             dest->s = 0;                                        \
             dest->ns = 0;                                       \
-            return -1;                                          \
+            status = -1;                                        \
         } else {                                                \
             dest->s = t.tv_sec;                                 \
             dest->ns = t.tv_nsec;                               \
-            return 0;                                           \
+            status = 0;                                         \
         }                                                       \
     } while (0)
 #else /* assume gettimeofday is available */
-# define GET_MONOTONIC_TIME(errs, dest) GET_CURRENT_TIME(errs, dest)
-# define GET_CURRENT_TIME(errs, dest)                           \
+# define GET_MONOTONIC_TIME(status, errs, dest) \
+    GET_CURRENT_TIME(status, errs, dest)
+# define GET_CURRENT_TIME(status, errs, dest)                   \
     do {                                                        \
         struct timeval t;                                       \
         if (gettimeofday(&t, NULL) == -1) {                     \
             tao_push_system_error(errs, "gettimeofday");        \
             dest->s = 0;                                        \
             dest->ns = 0;                                       \
-            return -1;                                          \
+            status = -1;                                        \
         } else {                                                \
             dest->s = t.tv_sec;                                 \
             dest->ns = t.tv_usec*KILO;                          \
-            return 0;                                           \
+            status = 0;                                         \
         }                                                       \
     } while (0)
 #endif
@@ -114,13 +117,17 @@ tao_strlen(const char* str)
 int
 tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest)
 {
-    GET_MONOTONIC_TIME(errs, dest);
+    int status;
+    GET_MONOTONIC_TIME(status, errs, dest);
+    return status;
 }
 
 int
 tao_get_current_time(tao_error_t** errs, tao_time_t* dest)
 {
-    GET_CURRENT_TIME(errs, dest);
+    int status;
+    GET_CURRENT_TIME(status, errs, dest);
+    return status;
 }
 
 #define NORMALIZE_TIME(s, ns)                   \
@@ -251,19 +258,19 @@ tao_fprintf_time(FILE *stream, const tao_time_t* ts)
 }
 
 int
-tao_get_absolute_timeout(tao_error_t** errs, struct timespec* ts, double secs)
+tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs)
 {
     double s = floor(secs);
     long incr_s = (long)s;
     long incr_ns = lround((secs - s)*1e9);
-    if (clock_gettime(CLOCK_REALTIME, ts) != 0) {
-        tao_push_system_error(errs, "clock_gettime");
-        return -1;
+    int status;
+    GET_CURRENT_TIME(status, errs, tm);
+    if (status == 0) {
+        long tm_s  = tm->s + incr_s;
+        long tm_ns = tm->ns + incr_ns;
+        NORMALIZE_TIME(tm_s, tm_ns);
+        tm->s  = tm_s;
+        tm->ns = tm_ns;
     }
-    long tm_s = ts->tv_sec + incr_s;
-    long tm_ns = ts->tv_nsec + incr_ns;
-    NORMALIZE_TIME(tm_s, tm_ns);
-    ts->tv_sec = tm_s;
-    ts->tv_nsec = tm_ns;
-    return 0;
+    return status;
 }
