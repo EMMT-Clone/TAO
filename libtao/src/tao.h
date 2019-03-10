@@ -1515,7 +1515,7 @@ typedef struct tao_time {
  * @param errs   Address of a variable to track errors.
  * @param dest   Address to store the time.
  *
- * @return `0` on success, `-1` on error.  In case of error, 0 seconds and -1
+ * @return `0` on success, `-1` on error.  In case of error, 0 seconds and 0
  * nanoseconds are stored in @b dest.
  */
 extern int
@@ -1531,7 +1531,8 @@ tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest);
  * @param errs   Address of a variable to track errors.
  * @param dest   Address to store the time.
  *
- * @return `0` on success, `-1` on error.
+ * @return `0` on success, `-1` on error.  In case of error, 0 seconds and 0
+ * nanoseconds are stored in @b dest.
  */
 extern int
 tao_get_current_time(tao_error_t** errs, tao_time_t* dest);

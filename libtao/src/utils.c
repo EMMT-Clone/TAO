@@ -85,7 +85,7 @@ tao_strlen(const char* str)
         if (clock_gettime(id, &t) == -1) {                      \
             tao_push_system_error(errs, "clock_gettime");       \
             dest->s = 0;                                        \
-            dest->ns = -1;                                      \
+            dest->ns = 0;                                       \
             return -1;                                          \
         } else {                                                \
             dest->s = t.tv_sec;                                 \
@@ -101,7 +101,7 @@ tao_strlen(const char* str)
         if (gettimeofday(&t, NULL) == -1) {                     \
             tao_push_system_error(errs, "gettimeofday");        \
             dest->s = 0;                                        \
-            dest->ns = -1;                                      \
+            dest->ns = 0;                                       \
             return -1;                                          \
         } else {                                                \
             dest->s = t.tv_sec;                                 \
