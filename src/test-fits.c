@@ -20,20 +20,20 @@
 int
 main(int argc, char* argv[])
 {
-    int pad = 0;
-    int crop = 0;
-    int quiet = 0;
-    int convert = 0;
+    bool pad = false;
+    bool crop = false;
+    bool quiet = false;
+    bool convert = false;
     int i;
     for (i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "-pad") == 0) {
-            pad = 1;
+            pad = true;
         } else if (strcmp(argv[i], "-crop") == 0) {
-            crop = 1;
+            crop = true;
         } else if (strcmp(argv[i], "-convert") == 0) {
-            convert = 1;
+            convert = true;
         } else if (strcmp(argv[i], "-quiet") == 0) {
-            quiet = 1;
+            quiet = true;
         } else {
             break;
         }
