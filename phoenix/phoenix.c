@@ -1190,13 +1190,13 @@ cxp_read(phx_camera_t* cam, uint32_t addr, uint8_t* data, uint32_t* size)
  * Unfortunately, setting some parameters (as the pixel format or the gamma
  * correction) returns an error with an absurd code (PHX_ERROR_MALLOC_FAILED)
  * even if the value has been correctly set.  The error cannot be just ignored
- * as further reads of registers yields wrong values.  The strategy is to close
+ * as further reads of registers yield wrong values.  The strategy is to close
  * and re-open the camera when such an error occurs which solves the problem in
  * practice to the cost of the time spent to close and re-open (0.4 sec.).  To
  * avoid alarming the user, printing of error messages is disabled during this
  * process.
  *
- * I have tried many different things:
+ * Other (unsuccessful) strategies have been tried:
  *
  * - Calling PHX_ControlReset yields a PHX_ERROR_BAD_HANDLE error.
  *
