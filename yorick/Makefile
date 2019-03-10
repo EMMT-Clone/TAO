@@ -2,18 +2,11 @@
 srcdir=.
 
 TAO_SRCDIR = ${srcdir}/../libtao/src
-TAO_DEFS = -I$(TAO_SRCDIR)
+TAO_INCDIR = $(TAO_SRCDIR)
+TAO_LIBDIR = ${srcdir}/../build/src/.libs/
+TAO_DEFS = -I$(TAO_INCDIR)
+TAO_LIBS = -L$(TAO_LIBDIR) -ltao
 TAO_INCS = $(TAO_SRCDIR)/tao.h
-TAO_DEPS = $(TAO_SRCDIR)/tao.h $(TAO_SRCDIR)/tao-private.h $(TAO_SRCDIR)/macros.h
-TAO_OBJS = \
-    buffers.o \
-    cmdline.o \
-    mutexes.o \
-    sharedobjects.o \
-    cameras.o \
-    errors.o \
-    sharedarrays.o \
-    utils.o
 
 # these values filled in by "yorick -batch make.i" or configure script
 Y_MAKEDIR=
@@ -34,7 +27,7 @@ TGT=$(DEFAULT_TGT)
 PKG_NAME=tao_rt
 PKG_I=${srcdir}/tao-rt.i
 
-OBJS=yor-tao-rt.o $(TAO_OBJS)
+OBJS=yor-tao-rt.o
 
 # change to give the executable a name other than yorick
 PKG_EXENAME=yorick
@@ -108,30 +101,6 @@ dummy-default:
 #	$(CC) $(CPPFLAGS) $(CFLAGS) -DMY_SWITCH -o $@ -c myfunc.c
 
 yor-tao-rt.o: ${srcdir}/yor-tao-rt.c $(TAO_INCS)
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
-
-buffers.o: ${TAO_SRCDIR}/buffers.c $(TAO_DEPS)
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
-
-cmdline.o: ${TAO_SRCDIR}/cmdline.c $(TAO_DEPS)
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
-
-mutexes.o: ${TAO_SRCDIR}/mutexes.c $(TAO_DEPS)
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
-
-sharedobjects.o: ${TAO_SRCDIR}/sharedobjects.c $(TAO_DEPS)
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
-
-cameras.o: ${TAO_SRCDIR}/cameras.c $(TAO_DEPS)
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
-
-errors.o: ${TAO_SRCDIR}/errors.c $(TAO_DEPS)
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
-
-sharedarrays.o: ${TAO_SRCDIR}/sharedarrays.c $(TAO_DEPS)
-	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
-
-utils.o: ${TAO_SRCDIR}/utils.c $(TAO_DEPS)
 	$(CC) $(CPPFLAGS) $(TAO_DEFS) $(CFLAGS) -o $@ -c $<
 
 release: $(RELEASE_NAME)
