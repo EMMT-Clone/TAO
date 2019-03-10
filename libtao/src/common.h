@@ -1,7 +1,10 @@
 /*
- * macros.h --
+ * common.h --
  *
- * Definitions of useful macros for TAO.
+ * Common definitions for compiling TAO library.  This file should be included
+ * *before* other headers and should be the only one which includes "config.h".
+ * Since this file includes "config.h", it is not meant to be installed (unlike
+ * "tao.h" or "tao-*.h")
  *
  *-----------------------------------------------------------------------------
  *
@@ -11,8 +14,10 @@
  * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
-#ifndef _TAO_MACROS_H_
-#define _TAO_MACROS_H_ 1
+#ifndef _TAO_COMMON_H
+#define _TAO_COMMON_H 1
+
+#include "config.h"
 
 #define float32_t  float
 #define float64_t  double
@@ -51,4 +56,4 @@
 #  define ALIGNMENT __BIGGEST_ALIGNMENT__
 #endif
 
-#endif /* _TAO_MACROS_H_ */
+#endif /* _TAO_COMMON_H */

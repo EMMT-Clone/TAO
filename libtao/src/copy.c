@@ -11,10 +11,8 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
-#include "config.h"
-#include "macros.h"
+#include "common.h"
 #include "tao-private.h"
-
 
 #define TYPE(id) TYPE1(id)
 #define TYPE1(id) TYPE__##id

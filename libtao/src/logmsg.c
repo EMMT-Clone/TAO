@@ -11,12 +11,13 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
+#include "common.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <pthread.h>
 
-#include "config.h"
 #include "tao-private.h"
 
 /*--------------------------------------------------------------------------*/

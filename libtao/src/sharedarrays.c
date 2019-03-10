@@ -12,8 +12,7 @@
  * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
-#include "config.h"
-#include "macros.h"
+#include "common.h"
 #include "tao-private.h"
 
 int

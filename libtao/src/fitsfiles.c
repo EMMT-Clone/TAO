@@ -12,8 +12,7 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
-#include "config.h"
-#include "macros.h"
+#include "common.h"
 
 /*
  * If FITSIO is not available, we define macro `_FITSIO2_H` and define type

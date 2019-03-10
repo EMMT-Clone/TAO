@@ -11,18 +11,17 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
+#include "common.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 
-#include "config.h"
 #include "tao-private.h"
 
 #define FAILURE  -1
 #define SUCCESS   0
-#define TRUE      1
-#define FALSE     0
 
 #define IS_SPACE(c) ((c) == ' ' || (c) == '\t')
 

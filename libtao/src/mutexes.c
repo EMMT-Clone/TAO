@@ -11,9 +11,10 @@
  * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
+#include "common.h"
+
 #include <errno.h>
 
-#include "config.h"
 #include "tao-private.h"
 
 /* See https://stackoverflow.com/questions/20325146 for configuring mutexes

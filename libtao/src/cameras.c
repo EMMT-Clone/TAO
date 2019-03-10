@@ -11,12 +11,11 @@
  * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
-#include "config.h"
+#include "common.h"
 
 #include <math.h>
 #include <errno.h>
 
-#include "macros.h"
 #include "tao-private.h"
 
 #define NEW(errs, type, number) \

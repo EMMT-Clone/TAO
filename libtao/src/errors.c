@@ -11,15 +11,16 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
-#ifndef _TAO_ERRORS_C_
-#define _TAO_ERRORS_C_ 1
+#ifndef _TAO_ERRORS_C
+#define _TAO_ERRORS_C 1
+
+#include "common.h"
 
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <locale.h>
 
-#include "config.h"
 #include "tao-private.h"
 
 #define USE_STRERROR 0 /* FIXME: should be in config.h */
@@ -252,7 +253,7 @@ tao_transfer_errors(tao_error_t** dest, tao_error_t** src)
 #define GET_ERR_FUNC 2
 #include __FILE__
 
-#else /* _TAO_ERRORS_C_ defined */
+#else /* _TAO_ERRORS_C defined */
 
 #ifdef GET_ERR_FUNC
 
@@ -773,4 +774,4 @@ FUNC(int code)
 
 #endif /* GET_ERR_FUNC defined */
 
-#endif /* _TAO_ERRORS_C_ not defined */
+#endif /* _TAO_ERRORS_C not defined */

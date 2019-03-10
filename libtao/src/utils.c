@@ -11,7 +11,7 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
-#include "config.h"
+#include "common.h"
 
 #include <math.h>
 #ifdef HAVE_STRING_H

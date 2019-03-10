@@ -11,6 +11,8 @@
  * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
+#include "common.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ipc.h>
@@ -19,8 +21,6 @@
 #include <errno.h>
 #include <time.h>
 
-#include "config.h"
-#include "macros.h"
 #include "tao-private.h"
 
 /* Shared objects */

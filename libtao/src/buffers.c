@@ -11,6 +11,8 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
+#include "common.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,7 +20,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "config.h"
 #include "tao-private.h"
 
 #define VOLATILE_STRUCT  (1 << 0)
