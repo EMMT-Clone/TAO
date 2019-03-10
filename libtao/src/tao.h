@@ -1509,6 +1509,9 @@ typedef struct tao_time {
  * if the system administrator manually changes the clock), but is affected by
  * the incremental adjustments performed by adjtime() and NTP.
  *
+ * @warning For systems where it is not possible to retrieve a monotonic time,
+ *          the time given by tao_get_current_time() is returned instead.
+ *
  * @param errs   Address of a variable to track errors.
  * @param dest   Address to store the time.
  *

@@ -11,13 +11,22 @@
  * Copyright (C) 2018, Éric Thiébaut.
  */
 
-#include <math.h>
-#include <time.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/time.h>
-
 #include "config.h"
+
+#include <math.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
+#ifdef HAVE_TIME_H
+# include <time.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif
+
 #include "tao-private.h"
 
 /*---------------------------------------------------------------------------*/
@@ -63,7 +72,14 @@ tao_strlen(const char* str)
 /*---------------------------------------------------------------------------*/
 /* TIME */
 
-#define GET_TIME(errs, dest, id)                                \
+#define KILO 1000
+#define MEGA 1000000
+#define GIGA 1000000000
+
+#ifdef HAVE_CLOCK_GETTIME
+# define GET_MONOTONIC_TIME(errs, dest) GET_TIME(errs, dest, CLOCK_MONOTONIC)
+# define GET_CURRENT_TIME(errs, dest)   GET_TIME(errs, dest, CLOCK_REALTIME)
+# define GET_TIME(errs, dest, id)                               \
     do {                                                        \
         struct timespec t;                                      \
         if (clock_gettime(id, &t) == -1) {                      \
@@ -77,36 +93,35 @@ tao_strlen(const char* str)
             return 0;                                           \
         }                                                       \
     } while (0)
+#else /* assume gettimeofday is available */
+# define GET_MONOTONIC_TIME(errs, dest) GET_CURRENT_TIME(errs, dest)
+# define GET_CURRENT_TIME(errs, dest)                           \
+    do {                                                        \
+        struct timeval t;                                       \
+        if (gettimeofday(&t, NULL) == -1) {                     \
+            tao_push_system_error(errs, "gettimeofday");        \
+            dest->s = 0;                                        \
+            dest->ns = -1;                                      \
+            return -1;                                          \
+        } else {                                                \
+            dest->s = t.tv_sec;                                 \
+            dest->ns = t.tv_usec*KILO;                          \
+            return 0;                                           \
+        }                                                       \
+    } while (0)
+#endif
 
 int
 tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest)
 {
-    GET_TIME(errs, dest, CLOCK_MONOTONIC);
+    GET_MONOTONIC_TIME(errs, dest);
 }
 
 int
 tao_get_current_time(tao_error_t** errs, tao_time_t* dest)
 {
-#if 1
-    GET_TIME(errs, dest, CLOCK_REALTIME);
-#else
-    struct timeval t;
-    if (gettimeofday(&t, NULL) == -1) {
-        tao_push_system_error(errs, "gettimeofday");
-        dest->s = 0;
-        dest->ns = -1;
-        return -1;
-    } else {
-        dest->s = t.tv_sec;
-        dest->ns = t.tv_usec*1000;
-        return 0;
-    }
-#endif
+    GET_CURRENT_TIME(errs, dest);
 }
-
-#define KILO 1000
-#define MEGA 1000000
-#define GIGA 1000000000
 
 #define NORMALIZE_TIME(s, ns)                   \
     do {                                        \
