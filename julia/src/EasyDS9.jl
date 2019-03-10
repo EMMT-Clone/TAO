@@ -14,10 +14,10 @@
 module EasyDS9
 
 export
-    ds9circles,
+    ds9circle,
     ds9connect,
     ds9get,
-    ds9points,
+    ds9point,
     ds9set,
     ds9show
 
@@ -61,46 +61,128 @@ end
 
 # Keyword `shape` can be "circle", "box", "diamond", "cross", "x", "arrow"
 # or "box"
-function ds9points(X::AbstractVector{<:Real},
-                   Y::AbstractVector{<:Real};
-                   shape::String = "x",
-                   size::Real = 7,
-                   color::Union{Nothing,String} = nothing,
-                   width::Union{Nothing,Real} = nothing,
-                   movable::Bool = false)
-    @assert length(X) == length(Y)
-    cmd = ["regions command { point", "x", "y",
-           string("# point=", shape, " ", size)]
-    color === nothing || push!(cmd, string("color=", color))
-    width === nothing || push!(cmd, string("width=", width))
-    push!(cmd, "}")
-    for i in eachindex(X, Y)
-        cmd[2] = string(X[i])
-        cmd[3] = string(Y[i])
-        ds9set(join(cmd, " "))
+
+"""
+
+```julia
+ds9circle(x, y)
+```
+
+draw a circle at position `(x,y)` in current SAOImage/DS9 frame.  Keywords
+`radius`, `color` and `width` can be used to set the attributes of the circle.
+
+Arguments `x` and `y` may be vectors (of same length) to draw multiple circles
+with the same attributes.
+
+The coordinates may be packed:
+
+```julia
+ds9circle(xy)
+```
+
+where `xy` is a 2-element vector or tuple to draw a single circle or matrix of
+size `(2,n)` to draw `n` circles (with the same attributes).
+
+See [`ds9point`](@ref).
+
+"""
+function ds9circle end
+
+"""
+
+```julia
+ds9point(x, y)
+```
+
+draw a point at position `(x,y)` in current SAOImage/DS9 frame.  Keywords
+`shape`, `size`, `color` and `width` can be used to set the attributes of the
+point.
+
+Arguments `x` and `y` may be vectors (of same length) to draw multiple points
+with the same attributes.
+
+The coordinates may be packed:
+
+```julia
+ds9point(xy)
+```
+
+where `xy` is a 2-element vector or tuple to draw a single point or matrix of
+size `(2,n)` to draw `n` points (with the same attributes).
+
+See [`ds9circle`](@ref).
+
+"""
+function ds9point end
+
+for id in ("circle", "point")
+    fn  = Symbol("ds9", id)
+    opt = Symbol("_region_", id)
+    @eval begin
+
+        function $fn(x::Real, y::Real; kwds...)
+            pfx, sfx = $opt(; kwds...)
+            ds9set(pfx, x, y, sfx)
+            nothing
+        end
+
+        $fn(xy::Tuple{Real,Real}; kwds...) =
+            $fn(xy[1], xy[2]; kwds...)
+
+        $fn(xy::AbstractVector{<:Real}; kwds...) =
+            (@assert length(xy) == 2; $fn(xy[1], xy[2]; kwds...))
+
+        # For multiple points/circles/... we just send a DS9 command for each
+        # item to draw.  Packing multiple commands (separated by semi-columns)
+        # does not really speed-up things and is more complicated because there
+        # is a limit to the total length of an XPA command (given by
+        # XPA.SZ_LINE I guess).
+
+        function $fn(x::AbstractVector{<:Real},
+                     y::AbstractVector{<:Real}; kwds...)
+            @assert length(x) == length(y)
+            pfx, sfx = $opt(; kwds...)
+            for i in eachindex(x, y)
+                ds9set(pfx, x[i], y[i], sfx)
+            end
+            nothing
+        end
+
+        function $fn(xy::AbstractMatrix{<:Real}; kwds...)
+            @assert size(xy, 1) == 2
+            pfx, sfx = $opt(; kwds...)
+            for i in 1:size(xy, 2)
+                ds9set(pfx, xy[1,i], xy[2,i], sfx)
+            end
+            nothing
+        end
+
     end
-    return nothing
 end
 
-function ds9circles(X::AbstractVector{<:Real},
-                    Y::AbstractVector{<:Real};
-                    radius::Real = 5,
-                    color::Union{Nothing,String} = "plum",
-                    width::Union{Nothing,Real} = nothing,
-                    movable::Bool = false,
-                    selectable::Bool = false,
-                    fill::Bool = false)
-    @assert length(X) == length(Y)
-    cmd = ["regions command { circle", "x", "y", string(radius), "#"]
-    color === nothing || push!(cmd, string("color=", color))
-    width === nothing || push!(cmd, string("width=", width))
-    push!(cmd, "}")
-    for i in eachindex(X, Y)
-        cmd[2] = string(X[i])
-        cmd[3] = string(Y[i])
-        ds9set(join(cmd, " "))
-    end
-    return nothing
+function _region_circle(;
+                        radius::Real = 5,
+                        color::Union{Nothing,String} = "plum",
+                        width::Union{Nothing,Real} = nothing,
+                        movable::Bool = false,
+                        selectable::Bool = false,
+                        fill::Bool = false)
+    str = string(radius, " #")
+    color === nothing || (str *= string(" color=", color))
+    width === nothing || (str *= string(" width=", width))
+    return ("regions command { circle", str*" }")
+end
+
+function _region_point(;
+                       shape::String = "x",
+                       size::Real = 11,
+                       color::Union{Nothing,String} = "orange",
+                       width::Union{Nothing,Real} = nothing,
+                       movable::Bool = false)
+    str = string("# point=", shape, " ", size)
+    color === nothing || (str *= string(" color=", color))
+    width === nothing || (str *= string(" width=", width))
+    return ("regions command { point", str*" }")
 end
 
 function __init__()
