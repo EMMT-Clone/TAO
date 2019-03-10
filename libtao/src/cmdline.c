@@ -109,12 +109,12 @@ tao_split_command(tao_error_t** errs, const char*** list,
 
     /* Parse the command line into words. */
     int iarg = 0;
-    int sep = TRUE; /* a separator is not needed for the first word */
+    bool sep = true; /* a separator is not needed for the first word */
     for (long i = 0; i < length; ++i) {
         /* Get next first non-space character. */
         int c = cmd[i];
         if (IS_SPACE(c)) {
-            sep = TRUE;
+            sep = true;
             while (++i < length) {
                 c = cmd[i];
                 if (! IS_SPACE(c)) {
@@ -133,13 +133,13 @@ tao_split_command(tao_error_t** errs, const char*** list,
             tao_push_error(errs, __func__, TAO_MISSING_SEPARATOR);
             return FAILURE;
         }
-        sep = FALSE;
+        sep = false;
 
         /* Parse next word. */
         long j = 0; /* word index */
         if (c == '\'') {
             /* Singly quoted string. */
-            while (TRUE) {
+            while (true) {
                 if (++i >= length) {
                     goto missing_close;
                 }
@@ -154,7 +154,7 @@ tao_split_command(tao_error_t** errs, const char*** list,
             }
         } else if (c == '"') {
             /* Doubly quoted string. */
-            while (TRUE) {
+            while (true) {
                 if (++i >= length) {
                     goto missing_close;
                 }
@@ -184,7 +184,7 @@ tao_split_command(tao_error_t** errs, const char*** list,
             }
         } else {
             /* Ordinary word. */
-            while (TRUE) {
+            while (true) {
                 /* At that point, we know that current character is not a space
                  * (and not a quote if it is the 1st character of the word). */
                 switch (c) {
@@ -203,7 +203,7 @@ tao_split_command(tao_error_t** errs, const char*** list,
                 c = cmd[i];
                 if (IS_SPACE(c)) {
                     /* End of word but remember that a space has been seen. */
-                    sep = TRUE;
+                    sep = true;
                     break;
                 }
             }
@@ -277,7 +277,7 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
          */
         int quote = 0;
         long len = 0, esc = 0;
-        while (TRUE) {
+        while (true) {
             int c = word[len];
             if (c == '\0') {
                 break;

@@ -259,7 +259,7 @@ tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr)
 
 int
 tao_save_array_to_fits_file(tao_error_t** errs, const tao_array_t* arr,
-                            const char* filename, int overwrite)
+                            const char* filename, bool overwrite)
 {
 #if HAVE_FITSIO
     int code, status = 0;

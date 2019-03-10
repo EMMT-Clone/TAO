@@ -262,7 +262,7 @@ tao_detach_shared_object(tao_error_t** errs, tao_shared_object_t* obj)
            let the other process unlock the mutex and re-call
            `pthread_mutex_destroy(3)`.  This is repeated untill success. */
         long nsec = 2000; /* wait 2µs if first attempt fails */
-        while (1) {
+        while (true) {
             int code = pthread_mutex_destroy(&obj->mutex);
             if (code == 0) {
                 /* Success. */

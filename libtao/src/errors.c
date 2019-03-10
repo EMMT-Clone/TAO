@@ -746,10 +746,10 @@ FUNC(int code)
         /* Unknown system error. */
 #if GET_ERR_FUNC == 1
 #    if defined(USE_STRERROR) && (USE_STRERROR != 0)
-        static int init = 0;
+        static bool init = false;
         if (! init) {
             (void)setlocale(LC_ALL, "C");
-            init = 1;
+            init = true;
         }
 	return strerror(code);
 #    else

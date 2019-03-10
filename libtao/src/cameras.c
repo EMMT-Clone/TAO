@@ -96,7 +96,7 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
         return NULL;
     }
     for (int i = 0; i < TAO_SHARED_CAMERA_SEMAPHORES; ++i) {
-        if (sem_init(&shared->sem[i], TRUE, 0) != 0) {
+        if (sem_init(&shared->sem[i], true, 0) != 0) {
             /* The only possible error here is that the system does not support
                process-shared semaphores.  This could be treated as a fatal
                error because this feature is a requirement in TAO.  We
@@ -179,20 +179,20 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
     tao_shared_array_t* arr = frame_list[index];
 
     if (arr != NULL) {
-        int drop = 0;
+        bool drop = false;
         if (arr->base.ident == shared->last_frame.ident) {
             /* We do not want to overwrite the previous last frame. */
-            drop = 1;
+            drop = true;
         } else if (! check_frame(arr, shared)) {
             /* Array must have the correct element type and dimensions. */
-            drop = 1;
+            drop = true;
         } else {
             /* Make sure array is not used by others. */
             if (tao_lock_shared_array(errs, arr) != 0) {
                 return NULL;
             }
             if (arr->nreaders != 0 || arr->nwriters != 0) {
-                drop = 1;
+                drop = true;
             } else {
                 arr->nwriters = 1;
             }

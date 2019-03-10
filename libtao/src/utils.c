@@ -94,7 +94,7 @@ tao_strlen(const char* str)
             dest->ns = t.tv_nsec;                               \
             status = 0;                                         \
         }                                                       \
-    } while (0)
+    } while (false)
 #else /* assume gettimeofday is available */
 # define GET_MONOTONIC_TIME(status, errs, dest) \
     GET_CURRENT_TIME(status, errs, dest)
@@ -111,7 +111,7 @@ tao_strlen(const char* str)
             dest->ns = t.tv_usec*KILO;                          \
             status = 0;                                         \
         }                                                       \
-    } while (0)
+    } while (false)
 #endif
 
 int
@@ -138,7 +138,7 @@ tao_get_current_time(tao_error_t** errs, tao_time_t* dest)
             (s) -= 1;                           \
             (ns) += GIGA;                       \
         }                                       \
-    } while (0)
+    } while (false)
 
 tao_time_t*
 tao_normalize_time(tao_time_t* ts)
@@ -220,7 +220,7 @@ tao_sprintf_time(char* str, const tao_time_t* ts)
     int64_t s  = ts->s;
     int64_t ns = ts->ns;
     NORMALIZE_TIME(s, ns);
-    int negate = (s < 0);
+    bool negate = (s < 0);
     if (negate) {
         s = -s;
         ns = -ns;

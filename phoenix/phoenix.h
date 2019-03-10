@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <pthread.h>
 #include <tao.h>
 #include <phx_api.h>
@@ -50,8 +51,8 @@ extern "C" {
  */
 
 /**
- * Structure storing describing a camera connected to and ActiveSilicon
- * *Phoenix* frame grabber.
+ * Structure describing a camera connected to an ActiveSilicon *Phoenix* frame
+ * grabber.
  */
 typedef struct phx_camera phx_camera_t;
 
@@ -130,8 +131,8 @@ struct phx_camera {
                                  acquisition started). */
 
     /* Members for CoaXPress cameras. */
-    int coaxpress;         /**< Camera has CoaXPress connection */
-    int swap;              /**< Byteswapping needed for CoaXPress connection */
+    bool coaxpress;        /**< Camera has CoaXPress connection */
+    bool swap;             /**< Byteswapping needed for CoaXPress connection */
     uint32_t timeout;      /**< CoaXPress connection timeout (milliseconds) */
     char vendor[CXP_DEVICE_VENDOR_NAME_LENGTH + 1];
     char model[CXP_DEVICE_MODEL_NAME_LENGTH + 1];
@@ -144,8 +145,8 @@ struct phx_camera {
     phx_imgbuf_t* bufs;    /**< Image buffers for acquisition */
     int nbufs;             /**< Number of acquisition buffers */
     int last;              /**< Index of last captured image buffer */
-    int pending;           /**< Number of pending image buffers */
-    int quitting;          /**< Acquisition is about to finish */
+    long pending;          e /**< Number of pending image buffers */
+    bool quitting;         /**< Acquisition is about to finish */
     size_t bufsize;        /**< Size of acquisition buffers */
     uint32_t events;       /**< Mask of events to be signaled */
 };
@@ -393,7 +394,7 @@ phx_start(phx_camera_t* cam, int nbufs);
  * @param cam    Address of camera instance.
  * @param secs   Maximum number of seconds to wait.  Must be nonnegative.
  *               Wait forever if @b secs is larger than one year.
- * @param drop   If non-zero, the very last image is always delivered,  the
+ * @param drop   If true, the very last image is always delivered,  the
  *               older unprocessed images, if any, are discarded.
  *
  * @return The index (starting at 1) of the next image available in the ring of
@@ -406,7 +407,7 @@ phx_start(phx_camera_t* cam, int nbufs);
  * @see phx_release_buffer().
  */
 extern int
-phx_wait(phx_camera_t* cam, double secs, int drop);
+phx_wait(phx_camera_t* cam, double secs, bool drop);
 
 /**
  * Release usage of acquisition buffer.

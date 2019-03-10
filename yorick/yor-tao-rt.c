@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
@@ -76,7 +77,7 @@ report_errors(tao_error_t** errs)
     buflen = 0;
     while (tao_pop_error(errs, &func, &code, &proc)) {
         tao_retrieve_error_details(code, &reason, &info, proc, smallbuf);
-        while (1) {
+        while (true) {
             long len = snprintf(buffer + buflen, bufsiz - buflen,
                                 "%s in function `%s` [%s]\n",
                                 reason, func, info);
@@ -847,7 +848,7 @@ Y_tao_get_timestamp(int argc)
     push_array_timestamp(get_shared_array(0));
 }
 
-static void initialize_type(size_t size, int ytype, int floatingpoint)
+static void initialize_type(size_t size, int ytype, bool floatingpoint)
 {
     if (floatingpoint) {
         if (size == 4) {
@@ -890,12 +891,12 @@ Y__tao_init(int argc)
     for (i = Y_CHAR; i <= Y_DOUBLE; ++i) {
         yorick_to_tao_types[i - Y_CHAR] = -1;
     }
-    initialize_type(sizeof(char),   Y_CHAR,   0);
-    initialize_type(sizeof(short),  Y_SHORT,  0);
-    initialize_type(sizeof(int),    Y_INT,    0);
-    initialize_type(sizeof(long),   Y_LONG,   0);
-    initialize_type(sizeof(float),  Y_FLOAT,  1);
-    initialize_type(sizeof(double), Y_DOUBLE, 1);
+    initialize_type(sizeof(char),   Y_CHAR,   false);
+    initialize_type(sizeof(short),  Y_SHORT,  false);
+    initialize_type(sizeof(int),    Y_INT,    false);
+    initialize_type(sizeof(long),   Y_LONG,   false);
+    initialize_type(sizeof(float),  Y_FLOAT,  true);
+    initialize_type(sizeof(double), Y_DOUBLE, true);
 
     /* Define some constants. */
 #define DEF_LONG_CONST(id)                      \
@@ -903,7 +904,7 @@ Y__tao_init(int argc)
         ypush_long(id);                         \
         yput_global(yfind_global(#id, 0), 0);   \
         yarg_drop(1);                           \
-    } while (0)
+    } while (false)
     DEF_LONG_CONST(TAO_SHARED_MAGIC);
     DEF_LONG_CONST(TAO_SHARED_OBJECT);
     DEF_LONG_CONST(TAO_SHARED_ARRAY);

@@ -28,7 +28,7 @@
             tao_push_error(errs, __func__, TAO_ASSERTION_FAILED);       \
             return code;                                                \
         }                                                               \
-    } while (0)
+    } while (false)
 
 /**
  * Get the offset of a member in a structure.
@@ -44,14 +44,6 @@
  * Round-up `a` by chuncks of size `b`.
  */
 #define TAO_ROUND_UP(a, b)  ((((a) + ((b) - 1))/(b))*(b))
-
-/**
- * Boolean value.
- */
-typedef enum {
-    TAO_FALSE = 0,
-    TAO_TRUE  = 1
-} tao_boolean_t;
 
 /**
  * Private structure to store a multi-dimensional array.

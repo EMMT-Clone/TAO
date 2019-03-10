@@ -23,6 +23,7 @@
 # include <fitsio2.h>
 #endif
 
+#include <stdbool.h>
 #include <tao.h>
 
 _TAO_BEGIN_DECLS
@@ -93,7 +94,7 @@ tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr);
  */
 extern int
 tao_save_array_to_fits_file(tao_error_t** errs, const tao_array_t* arr,
-                            const char* filename, int overwrite);
+                            const char* filename, bool overwrite);
 
 /**
  * Save a multi-dimensional array to a provided FITS handle.

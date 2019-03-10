@@ -59,7 +59,7 @@ main(int argc, char* argv[])
     phx_config_t cfg;
     int load_id = -1;
     int save_id = -1;
-    int quiet = 0;
+    bool quiet = false;
     char c;
     char buffer[30];
 
@@ -259,7 +259,7 @@ main(int argc, char* argv[])
                     cfg.connection.channels = channels;
                 }
             } else if (strcmp(opt, "quiet") == 0) {
-                quiet = 1;
+                quiet = true;
             } else {
                 fatal("unknown option `%s`, try `-help` for a short help",
                       argv[i]);

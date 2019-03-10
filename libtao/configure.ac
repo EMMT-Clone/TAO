@@ -24,6 +24,7 @@ AC_CHECK_HEADERS([semaphore.h])
 AC_CHECK_HEADERS([fitsio2.h])
 AC_CHECK_HEADERS([time.h])
 AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADERS([stdbool.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 

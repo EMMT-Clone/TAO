@@ -100,7 +100,7 @@ tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
 int
 tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
 {
-    while (1) {
+    while (true) {
         /* Attempt to destroy the mutex. */
         int code = pthread_mutex_destroy(mutex);
         if (code == 0) {

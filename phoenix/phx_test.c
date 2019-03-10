@@ -59,13 +59,13 @@ main(int argc, char* argv[])
     phx_config_t cfg;
     int load_id = -1;
     int save_id = -1;
-    int quiet = 0;
+    bool quiet = false;
     char c;
     char buffer[30];
     long count = 1;
     long skip = 2;
     int nbufs = 4;
-    int drop = 1;
+    bool drop = true;
     double timeout = 10.0;
 
     /*
@@ -305,9 +305,9 @@ main(int argc, char* argv[])
                     continue;
                 }
                 if (strcmp(argv[i], "yes") == 0) {
-                    drop = 1;
+                    drop = true;
                 } else if (strcmp(argv[i], "no") == 0) {
-                    drop = 0;
+                    drop = false;
                 } else {
                     invalid_argument(opt);
                 }
@@ -332,7 +332,7 @@ main(int argc, char* argv[])
                     invalid_argument(opt);
                 }
             } else if (strcmp(opt, "quiet") == 0) {
-                quiet = 1;
+                quiet = true;
             } else {
                 fatal("unknown option `%s`, try `-help` for a short help",
                       argv[i]);
@@ -403,7 +403,7 @@ main(int argc, char* argv[])
             return 1;
         }
         tao_get_monotonic_time(NULL, &t0);
-        while (1) {
+        while (true) {
             int index = phx_wait(cam, timeout, drop);
             if (index < 0) {
             error:

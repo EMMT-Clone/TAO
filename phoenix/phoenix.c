@@ -15,7 +15,7 @@
 #include "phoenix.h"
 
 #ifdef _PHX_POSIX
-#include <termios.h>
+#  include <termios.h>
 #endif
 
 #define ALIGNMENT 32
@@ -592,7 +592,7 @@ phx_start(phx_camera_t* cam, int nbufs)
      * success.
      */
     cam->state = 2;
-    cam->quitting = 0;
+    cam->quitting = false;
     status = 0;
 
     /* Unlock the camera and return status. */
@@ -634,10 +634,11 @@ phx_release_buffer(phx_camera_t* cam)
 }
 
 int
-phx_wait(phx_camera_t* cam, double secs, int drop)
+phx_wait(phx_camera_t* cam, double secs, bool drop)
 {
     struct timespec ts;
-    int forever, code;
+    bool forever;
+    int code;
 
     /*
      * Lock camera and check state.  Assume failure (index = -1) because any
@@ -661,7 +662,7 @@ phx_wait(phx_camera_t* cam, double secs, int drop)
         goto unlock;
     }
     if (secs > TAO_YEAR) {
-        forever = TRUE;
+        forever = true;
     } else {
         tao_time_t t;
         if (tao_get_absolute_timeout(&cam->errs, &t, secs) != 0) {
@@ -669,7 +670,7 @@ phx_wait(phx_camera_t* cam, double secs, int drop)
         }
         ts.tv_sec  = t.s;
         ts.tv_nsec = t.ns;
-        forever = FALSE;
+        forever = false;
     }
 
     /*
@@ -760,7 +761,7 @@ stop_acquisition(phx_camera_t* cam, phx_acquisition_t command)
 
     /* Change camera state and signal the end of the acquisition to others. */
     cam->state = 1;
-    cam->quitting = 1;
+    cam->quitting = true;
     phx_signal_condition(cam);
 
  unlock:
@@ -792,7 +793,7 @@ check_coaxpress(phx_camera_t* cam)
     if (phx_get_parameter(cam, PHX_CXP_INFO, &info) != 0) {
         return -1;
     }
-    cam->coaxpress = FALSE;
+    cam->coaxpress = false;
     if ((info & PHX_CXP_CAMERA_DISCOVERED) != 0) {
         /*
          * The frame grabber thinks that we have a CoaXPress camera.  We check
@@ -810,7 +811,7 @@ check_coaxpress(phx_camera_t* cam)
             }
             cam->swap = ! cam->swap;
         }
-        cam->coaxpress = TRUE;
+        cam->coaxpress = true;
 
         /*
          * Get pixel format, current image size (full width and full height must
@@ -860,8 +861,8 @@ phx_create(tao_error_t** errs,
     }
     cam->timeout = 500;
     cam->state = -3;
-    cam->swap = FALSE;
-    cam->coaxpress = FALSE;
+    cam->swap = false;
+    cam->coaxpress = false;
 
     /* Initialize lock. */
     code = pthread_mutex_init(&cam->mutex, NULL);
@@ -1384,7 +1385,7 @@ print_board_info(phx_camera_t* cam, const char* pfx, FILE* stream)
         if ((bits & (msk)) == (msk)) {                  \
             fprintf(stream, "%s%s\n", pfx, txt);        \
         }                                               \
-    } while (0)
+    } while (false)
 #define CASE(cst, txt) case cst: fprintf(stream, "%s%s\n", pfx, txt); break
 #define CASE1(cst) CASE(cst, #cst)
 

@@ -293,15 +293,15 @@ tao_copy_checked_args(void* dstdata, tao_element_type_t dsttype,
      * conversion) along the inner dimension(s) and outer iterations over
      * the other indices.
      */
-    int fastcopy;
+    bool fastcopy;
     if (ndims <= 1) {
-        fastcopy = TRUE;
+        fastcopy = true;
     } else {
         fastcopy = (dstoff == 0 && srcoff == 0);
         if (fastcopy) {
             for (int d = 0; d < ndims; ++d) {
                 if (dstdims[d] != lens[d] || srcdims[d] != lens[d]) {
-                    fastcopy = FALSE;
+                    fastcopy = false;
                     break;
                 }
             }

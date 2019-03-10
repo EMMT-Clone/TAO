@@ -41,7 +41,7 @@
             tao_push_error(errs, __func__, TAO_CORRUPTED);      \
             return code;                                        \
         }                                                       \
-    } while (0)
+    } while (false)
 
 /* Yields next size of buffer when growing.  If size is less or equal MINSIZE,
    return MINSIZE; otherwise, return 1.5 times the size rounded up to GRAIN
