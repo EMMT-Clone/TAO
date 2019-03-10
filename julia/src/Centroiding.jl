@@ -380,7 +380,10 @@ end
 
 
 """
-   Centroiding.fit([wgt,] img, x0, y0) -> (x, y)
+
+```julia
+Centroiding.fit([wgt,] img, x0, y0) -> (x, y)
+```
 
 yeilds the coordnates `(x,y)` of the nearest spots found in image `img`
 starting at positions `(x0,y0)`.  Optional argument `wgt` can be used to
@@ -407,29 +410,47 @@ In addition to the keywords of `newuoa!`, the following keywords are allowed:
 When the optimization algorithm makes too many iterations, a warning message is
 printed.  Other errors result in throwing an exception.
 
+The coordinates may be packed in a single array:
+
+```julia
+Centroiding.fit([wgt,] img, x0y0) -> xy
+```
+
+where `x0y0` can be a vector of 2 elements to search for a single spot or a
+matrix of dimensions `(2,n)` to search for `n` spots.  The returned result,
+`xy`, has the same dimensions as `x0y0`.
+
+See also [`Centroiding.fit!`](@ref) for an in-place version.
+
 """
 function fit(wgt::AbstractMatrix{<:AbstractFloat},
              img::AbstractMatrix{<:AbstractFloat},
              x0::Real, y0::Real; kwds...) :: NTuple{2,Cdouble}
-    xy = Vector{Cdouble}(undef, 2)
-    xy[1], xy[2] = x0, y0
+    xy = Cdouble[x0, y0]
     fit!(wgt, img, xy; kwds...)
     return (xy[1], xy[2])
 end
 
 function fit(img::AbstractMatrix{<:AbstractFloat},
              x0::Real, y0::Real; kwds...) :: NTuple{2,Cdouble}
-    xy = Vector{Cdouble}(undef, 2)
     xy[1], xy[2] = x0, y0
     fit!(img, xy; kwds...)
     return (xy[1], xy[2])
 end
 
+function fit(img::AbstractMatrix{<:AbstractFloat},
+             x0::AbstractVector{<:Real},
+             y0::AbstractVector{<:Real}; kwds...)
+    return fit!(img,
+                copyto!(Vector{Cdouble}(undef, length(x0)), x0),
+                copyto!(Vector{Cdouble}(undef, length(y0)), y0);
+                kwds...)
+end
+
 function fit(wgt::AbstractMatrix{<:AbstractFloat},
              img::AbstractMatrix{<:AbstractFloat},
              x0::AbstractVector{<:Real},
-             y0::AbstractVector{<:Real};
-             kwds...)
+             y0::AbstractVector{<:Real}; kwds...)
     return fit!(wgt, img,
                 copyto!(Vector{Cdouble}(undef, length(x0)), x0),
                 copyto!(Vector{Cdouble}(undef, length(y0)), y0);
@@ -437,13 +458,29 @@ function fit(wgt::AbstractMatrix{<:AbstractFloat},
 end
 
 function fit(img::AbstractMatrix{<:AbstractFloat},
-             x0::AbstractVector{<:Real},
-             y0::AbstractVector{<:Real};
-             kwds...)
+             x0y0::AbstractVector{<:Real}; kwds...)
+    length(x0y0) == 2 || _baddims("`x0y0` must be a 2 element vector")
+    return fit!(img, Cdouble[x0y0[1], x0y0[2]]; kwds...)
+end
+
+function fit(wgt::AbstractMatrix{<:AbstractFloat},
+             img::AbstractMatrix{<:AbstractFloat},
+             x0y0::AbstractVector{<:Real}; kwds...)
+    length(x0y0) == 2 || _baddims("`x0y0` must be a 2 element vector")
+    return fit!(wgt, img, Cdouble[x0y0[1], x0y0[2]]; kwds...)
+end
+
+function fit(img::AbstractMatrix{<:AbstractFloat},
+             x0y0::AbstractMatrix{<:Real}; kwds...)
     return fit!(img,
-                copyto!(Vector{Cdouble}(undef, length(x0)), x0),
-                copyto!(Vector{Cdouble}(undef, length(y0)), y0);
-                kwds...)
+                copyto!(Matrix{Cdouble}(undef, size(x0y0)), x0y0); kwds...)
+end
+
+function fit(wgt::AbstractMatrix{<:AbstractFloat},
+             img::AbstractMatrix{<:AbstractFloat},
+             x0y0::AbstractMatrix{<:Real}; kwds...)
+    return fit!(wgt, img,
+                copyto!(Matrix{Cdouble}(undef, size(x0y0)), x0y0); kwds...)
 end
 
 """
@@ -464,14 +501,15 @@ Centroiding.fit!([wgt,] img, xy) -> xy
 ```
 
 where `xy` can be a vector of 2 elements to search for a single spot or a
-matrix of dimensions `(2,n)` to searcj `n` spots.  On entry, `xy` contains the
-initial coordinates of the spot(s) to search, on return `xy` contains the final
-coordinates of the spot(s).
+matrix of dimensions `(2,n)` to search for `n` spots.  On entry, `xy` contains
+the initial coordinates of the spot(s) to search, on return `xy` contains the
+final coordinates of the spot(s).
 
-For this in-place version of [`Centroiding.fit`](@ref), the elements of `x`,
-`y` and `xy` must be of type `Cdouble`.
+For this in-place version of [`Centroiding.fit`](@ref), arguments `x`, `y` and
+`xy` must have floating-point valued elements.
 
-See [`Centroiding.fit`](@ref) for allowed keywords.
+See [`Centroiding.fit`](@ref) for an out-of-place version and for allowed
+keywords.
 
 """
 function fit!(img::AbstractMatrix{<:AbstractFloat},
@@ -482,7 +520,7 @@ function fit!(img::AbstractMatrix{<:AbstractFloat},
               work::Vector{Cdouble} = Cdouble[],
               quiet::Bool = false,
               kwds...)
-    @assert length(xy) == 2
+    length(xy) == 2 || _baddims("`xy` must be a 2 element vector")
     _siz = Cdouble(siz)
     rep = Newuoa.newuoa!(arg -> cost(img, shape, _siz, arg[1], arg[2]),
                          xy, rho...; work = work, kwds...)
@@ -506,7 +544,7 @@ function fit!(wgt::AbstractMatrix{<:AbstractFloat},
               work::Vector{Cdouble} = Cdouble[],
               quiet::Bool = false,
               kwds...)
-    @assert length(xy) == 2
+    length(xy) == 2 || _baddims("`xy` must be a 2 element vector")
     _siz = Cdouble(siz)
     rep = Newuoa.newuoa!(arg -> cost(wgt, img, shape, _siz, arg[1], arg[2]),
                          xy, rho...; work = work, kwds...)
@@ -523,9 +561,8 @@ end
 
 function fit!(img::AbstractMatrix{<:AbstractFloat},
               xy::DenseVector{<:AbstractFloat}; kwds...)
-    @assert length(xy) == 2
-    tmp = Vector{Cdouble}(undef, 2)
-    tmp[1], tmp[2] = xy[1], xy[2]
+    length(xy) == 2 || _baddims("`xy` must be a 2 element vector")
+    tmp = Cdouble[xy[1], xy[2]]
     fit!(img, tmp; work=work, kwds...)
     xy[1], xy[2] = tmp[1], tmp[2]
     return xy
@@ -534,9 +571,8 @@ end
 function fit!(wgt::AbstractMatrix{<:AbstractFloat},
               img::AbstractMatrix{<:AbstractFloat},
               xy::DenseVector{<:AbstractFloat}; kwds...)
-    @assert length(xy) == 2
-    tmp = Vector{Cdouble}(undef, 2)
-    tmp[1], tmp[2] = xy[1], xy[2]
+    length(xy) == 2 || _baddims("`xy` must be a 2 element vector")
+    tmp = Cdouble[xy[1], xy[2]]
     fit!(wgt, img, tmp; work=work, kwds...)
     xy[1], xy[2] = tmp[1], tmp[2]
     return xy
@@ -549,8 +585,7 @@ function fit!(img::AbstractMatrix{<:AbstractFloat},
               kwds...)
     # Checks and initializations.
     len = length(x)
-    length(y) == len ||
-        throw(DimensionMismatch("`x` and `y` must have the same length"))
+    length(y) == len || _baddims("`x` and `y` must have the same length")
     tmp = Vector{Cdouble}(undef, 2)
 
     # Loop over all nodes. (FIXME: use @thread)
@@ -572,11 +607,10 @@ function fit!(wgt::AbstractMatrix{<:AbstractFloat},
               work::Vector{Cdouble} = Cdouble[],
               quiet::Bool = false, kwds...)
     # Checks and initializations.
+    size(wgt) == size(img) ||
+        _baddims("`wgt` and `img` must have the same size")
     len = length(x)
-    size(wgt) == size(img)  ||
-        throw(DimensionMismatch("`wgt` and `img` must have the same size"))
-    length(y) == len ||
-        throw(DimensionMismatch("`x` and `y` must have the same length"))
+    length(y) == len || _baddims("`x` and `y` must have the same length")
     tmp = Vector{Cdouble}(undef, 2)
 
     # Loop over all nodes. (FIXME: use @thread)
@@ -588,14 +622,12 @@ function fit!(wgt::AbstractMatrix{<:AbstractFloat},
     return (x, y)
 end
 
-
 function fit!(img::AbstractMatrix{<:AbstractFloat},
               xy::DenseMatrix{<:AbstractFloat};
               work::Vector{Cdouble} = Cdouble[],
               kwds...)
     # Checks and initializations.
-    size(xy, 1) == 2 ||
-        throw(DimensionMismatch("first dimension of `xy` must be 2"))
+    size(xy, 1) == 2 || _baddims("first dimension of `xy` must be 2")
     len = size(xy, 2)
     tmp = Vector{Cdouble}(undef, 2)
 
@@ -617,10 +649,9 @@ function fit!(wgt::AbstractMatrix{<:AbstractFloat},
               work::Vector{Cdouble} = Cdouble[],
               quiet::Bool = false, kwds...)
     # Checks and initializations.
-    size(wgt) == size(img)  ||
-        throw(DimensionMismatch("`wgt` and `img` must have the same size"))
-    size(xy, 1) == 2 ||
-        throw(DimensionMismatch("first dimension of `xy` must be 2"))
+    size(wgt) == size(img) ||
+        _baddims("`wgt` and `img` must have the same size")
+    size(xy, 1) == 2 || _baddims("first dimension of `xy` must be 2")
     len = size(xy, 2)
     tmp = Vector{Cdouble}(undef, 2)
 
@@ -653,5 +684,7 @@ function _getbbox(dims::NTuple{2,Int}, sup::Real, x::Real, y::Real)
     jmax = min(floor(Int, y + rad), dims[2])
     return imin, imax, jmin, jmax
 end
+
+_baddims(msg::AbstractString) = throw(DimensionMismatch(msg))
 
 end # module
