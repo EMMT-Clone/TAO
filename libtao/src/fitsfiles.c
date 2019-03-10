@@ -14,6 +14,24 @@
 
 #include "config.h"
 #include "macros.h"
+
+/*
+ * If FITSIO is not available, we define macro `_FITSIO2_H` and define type
+ * `fitsfile` to be an opaque structure in order to be able to compile the
+ * code.
+ */
+#undef HAVE_FITSIO
+#undef _FITSIO2_H
+#ifdef HAVE_FITSIO2_H
+# include <fitsio2.h>
+# define HAVE_FITSIO 1
+#else
+# define HAVE_FITSIO 0
+# define _FITSIO2_H /* to avoid #include <fitsio2.h> in "tao.h" */
+typedef struct _fitsfile fitsfile; /* opaque structure */
+#endif
+
+#include "tao-fits.h"
 #include "tao-private.h"
 
 #include <sys/types.h>
@@ -21,6 +39,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#if HAVE_FITSIO
 static void
 get_fits_error_details(int status, const char** reason, const char** info)
 {
@@ -31,13 +50,17 @@ get_fits_error_details(int status, const char** reason, const char** info)
         *info = NULL;
     }
 }
+#endif /* HAVE_FITSIO */
 
-void
-tao_push_fits_error(tao_error_t** errs, const char* func, int status)
+#if HAVE_FITSIO
+static void
+push_fits_error(tao_error_t** errs, const char* func, int status)
 {
     tao_push_other_error(errs, func, status, get_fits_error_details);
 }
+#endif /* HAVE_FITSIO */
 
+#if HAVE_FITSIO
 /*
  * Yields TAO element type given FITSIO bitpix, -1 in case of error.  Beware
  * that the BITPIX symbolic names used in FITSIO are somewhat misleading (for
@@ -67,7 +90,9 @@ bitpix_to_element_type(int bitpix)
 #undef FLOAT
 
 }
+#endif /* HAVE_FITSIO */
 
+#if HAVE_FITSIO
 /* Yields FITSIO bitpix given TAO element type, -1 in case of error. */
 static int
 element_type_to_bitpix(tao_element_type_t eltype)
@@ -93,7 +118,9 @@ element_type_to_bitpix(tao_element_type_t eltype)
 #undef FLOAT
 
 }
+#endif /* HAVE_FITSIO */
 
+#if HAVE_FITSIO
 /* Yields FITSIO datatype given TAO element type, -1 in case of error. */
 static int
 element_type_to_datatype(tao_element_type_t eltype)
@@ -135,11 +162,13 @@ element_type_to_datatype(tao_element_type_t eltype)
 #undef SIGNED
 
 }
+#endif /* HAVE_FITSIO */
 
 tao_array_t*
 tao_load_array_from_fits_file(tao_error_t** errs, const char* filename,
                               char* extname)
 {
+#if HAVE_FITSIO
     int status = 0;
     fitsfile* fptr;
     tao_array_t* arr = NULL;
@@ -162,22 +191,27 @@ tao_load_array_from_fits_file(tao_error_t** errs, const char* filename,
         if (arr != NULL) {
             tao_unreference_array(arr);
         }
-        tao_push_fits_error(errs, __func__, status);
+        push_fits_error(errs, __func__, status);
         return NULL;
     }
     return arr;
+#else
+    tao_push_error(errs, __func__, TAO_NO_FITS_SUPPORT);
+    return NULL;
+#endif
 }
 
 tao_array_t*
 tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr)
 {
+#if HAVE_FITSIO
     int bitpix, ndims;
     int status = 0;
     long dims[TAO_MAX_NDIMS];
 
     /* Get the type of the elements. */
     if (fits_get_img_equivtype(fptr, &bitpix, &status) != 0) {
-        tao_push_fits_error(errs, "fits_get_img_equivtype", status);
+        push_fits_error(errs, "fits_get_img_equivtype", status);
         return NULL;
     }
     tao_element_type_t eltype = bitpix_to_element_type(bitpix);
@@ -189,7 +223,7 @@ tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr)
 
     /* Get the dimensions array. */
     if (fits_get_img_dim(fptr, &ndims, &status) != 0) {
-        tao_push_fits_error(errs, "fits_get_img_dim", status);
+        push_fits_error(errs, "fits_get_img_dim", status);
         return NULL;
     }
     if (ndims > TAO_MAX_NDIMS) {
@@ -197,7 +231,7 @@ tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr)
         return NULL;
     }
     if (fits_get_img_size(fptr, ndims, dims, &status) != 0) {
-        tao_push_fits_error(errs, "fits_get_img_size", status);
+        push_fits_error(errs, "fits_get_img_size", status);
         return NULL;
     }
 
@@ -213,17 +247,22 @@ tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr)
     int anynull;
     if (fits_read_img(fptr, datatype, 1, nelem,
                       NULL, data, &anynull, &status) != 0) {
-        tao_push_fits_error(errs, "fits_read_img", status);
+        push_fits_error(errs, "fits_read_img", status);
         tao_unreference_array(arr);
         return NULL;
     }
     return arr;
+#else
+    tao_push_error(errs, __func__, TAO_NO_FITS_SUPPORT);
+    return NULL;
+#endif
 }
 
 int
 tao_save_array_to_fits_file(tao_error_t** errs, const tao_array_t* arr,
                             const char* filename, int overwrite)
 {
+#if HAVE_FITSIO
     int code, status = 0;
     fitsfile* fptr;
 
@@ -239,15 +278,19 @@ tao_save_array_to_fits_file(tao_error_t** errs, const tao_array_t* arr,
     }
     unlink(filename);
     if (fits_create_file(&fptr, filename, &status) != 0) {
-        tao_push_fits_error(errs, "fits_create_file", status);
+        push_fits_error(errs, "fits_create_file", status);
         return -1;
     }
     code = tao_save_array_to_fits_handle(errs, arr, fptr, NULL, NULL);
     if (fits_close_file(fptr, &status) != 0) {
-        tao_push_fits_error(errs, "fits_close_file", status);
+        push_fits_error(errs, "fits_close_file", status);
         code = -1;
     }
     return code;
+#else
+    tao_push_error(errs, __func__, TAO_NO_FITS_SUPPORT);
+    return -1;
+#endif
 }
 
 int
@@ -256,6 +299,7 @@ tao_save_array_to_fits_handle(tao_error_t** errs, const tao_array_t* arr,
                               int (*callback)(tao_error_t**, fitsfile*, void*),
                               void* ctx)
 {
+#if HAVE_FITSIO
     /* Get BITPIX and datatype from array element type. */
     if (arr == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
@@ -277,7 +321,7 @@ tao_save_array_to_fits_handle(tao_error_t** errs, const tao_array_t* arr,
     }
     int status = 0;
     if (fits_create_img(fptr, bitpix, ndims, dims, &status) != 0) {
-        tao_push_fits_error(errs, "fits_create_img", status);
+        push_fits_error(errs, "fits_create_img", status);
         return -1;
     }
 
@@ -292,8 +336,12 @@ tao_save_array_to_fits_handle(tao_error_t** errs, const tao_array_t* arr,
     long nelem = tao_get_array_length(arr);
     void* data = tao_get_array_data(arr);
     if (fits_write_img(fptr, datatype, 1, nelem, data, &status) != 0) {
-        tao_push_fits_error(errs, "fits_write_img", status);
+        push_fits_error(errs, "fits_write_img", status);
         return -1;
     }
     return 0;
+#else
+    tao_push_error(errs, __func__, TAO_NO_FITS_SUPPORT);
+    return -1;
+#endif
 }

@@ -1,5 +1,5 @@
 lib_LTLIBRARIES = libtao.la
-include_HEADERS = tao.h
+include_HEADERS = tao.h tao-fits.h
 libtao_la_SOURCES = \
     arrays.c \
     buffers.c \

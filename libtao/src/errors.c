@@ -272,6 +272,7 @@ const char*
 FUNC(int code)
 {
     switch (code) {
+        CASE(TAO_NO_FITS_SUPPORT, "Compiled with no FITS support");
         CASE(TAO_ALREADY_EXIST, "Destination already exists");
         CASE(TAO_UNSUPPORTED, "Unsupported feature");
         CASE(TAO_ACQUISITION_RUNNING, "Acquisition running");
@@ -287,7 +288,7 @@ FUNC(int code)
         CASE(TAO_MISSING_SEPARATOR, "Separator missing");
         CASE(TAO_DESTROYED, "Ressource has been destroyed");
         CASE(TAO_CORRUPTED, "Corrupted structure");
-        CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory for tracking error");
+        CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory to track errors");
         CASE(TAO_BAD_CHANNELS, "Invalid number of channels");
         CASE(TAO_BAD_SPEED, "Invalid connection speed");
         CASE(TAO_BAD_ROI, "Invalid region of interest");

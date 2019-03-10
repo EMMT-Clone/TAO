@@ -1,10 +1,30 @@
+# Prelude.
 AC_INIT([tao], [0.0.1], [eric.thiebaut@univ-lyon1.fr])
-AC_CONFIG_AUX_DIR([tools])
+AC_CONFIG_SRCDIR([src/tao.h])
+AC_CONFIG_AUX_DIR([autotools])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror dist-bzip2])
+
+# Checks for programs.
 AM_PROG_AR
-LT_INIT
+LT_INIT([shared])
 AC_PROG_CC_C99
+
+# Checks for header files.
+AC_CHECK_HEADERS([pthread.h])
+AC_CHECK_HEADERS([sys/ipc.h sys/shm.h])
+AC_CHECK_HEADERS([semaphore.h])
+AC_CHECK_HEADERS([fitsio2.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
+AC_CHECK_LIB([pthread], [pthread_mutex_lock],
+             [PTHREADLIB=-lpthread],
+             [PTHREADLIB=])
+AC_SUBST([PTHREADLIB])
+
+# Output files.
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
