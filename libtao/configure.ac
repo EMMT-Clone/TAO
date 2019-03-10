@@ -10,6 +10,13 @@ AM_PROG_AR
 LT_INIT([shared])
 AC_PROG_CC_C99
 
+# Turn on all warnings for gcc.  (Options -Wall -Werror in AM_INIT_AUTOMAKE
+# have no effects.)
+if [[ "$GCC" = "yes" ]]; then
+    #CFLAGS="$CFLAGS -Wall -Werror -Wsign-compare -Wconversion"
+    CFLAGS="$CFLAGS -Wall -Werror"
+fi
+
 # Checks for header files.
 AC_CHECK_HEADERS([pthread.h])
 AC_CHECK_HEADERS([sys/ipc.h sys/shm.h])
