@@ -1,5 +1,5 @@
 #
-# calibration.jl -
+# themis/calibration.jl -
 #
 # Methods for the calibration of the Themis adaptive optics system.
 #
@@ -32,7 +32,7 @@ slope in the `j`-th sub-aperture of the wavefront sensor during the `k`-th
 frame.
 
 Keyword `recenter` (`true` by default) specifies whether to subtract their time
-average values to the measured wavefront slopes.
+average values to the commands and measured wavefront slopes.
 
 Keyword `theoretical` (`false` by default) specifies whether to use the
 theoritical covariance of the random perturbations.  The theoritical covariance
@@ -54,11 +54,12 @@ function fit(::Type{InteractionMatrix},
         error("synchronization not yet implemented")
     end
 
-    ncmds, ntimes = size(U)
+    nacts, ntimes = size(U)
     nsubs = size(V,2)
     @assert size(V) == (2, nsubs, ntimes)
     if recenter
         # Recenter the slopes V by subtracting their time average.
+        U = U .- mean(U; dims=2)
         V = V .- mean(V; dims=3)
     end
     # FIXME: Use generalized matrix product in LazyAlgebra (lgemm)
@@ -67,20 +68,23 @@ function fit(::Type{InteractionMatrix},
     if theoretical
         # Fit theoretical covariance distributution.
         if stdev === nothing
-            a = sum(U.*U)/ncmds
+            a = sum(U.*U)/nacts
         else
             a = stdev^2
         end
         @. Gx *= (1/a)
         @. Gy *= (1/a)
     else
-        A = cholesky!(U*U')
-        rdiv!(Gx, A)
-        rdiv!(Gy, A)
+        # A = cholesky!(U*U')
+        # FIXME: rdiv!(Gx, A)
+        # FIXME: rdiv!(Gy, A)
+        A = U*U'
+        Gx = Gx/A
+        Gy = Gy/A
     end
 
     # FIXME: use hcat/vcat?
-    G = Array{eltype(Gx),3}(undef, 2, nsubs, ncmds)
+    G = Array{eltype(Gx),3}(undef, 2, nsubs, nacts)
     G[1,:,:] = Gx
     G[2,:,:] = Gy
     return G
