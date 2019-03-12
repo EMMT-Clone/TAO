@@ -12,56 +12,6 @@
 # Copyright (C) 2018-2019, Éric Thiébaut & Michel Tallon.
 #
 
-# FIXME: This a hack which sould be removed once Phoenix package has been
-#        fixed.
-function Phoenix.read(cam::Phoenix.Camera, ::Type{T}, num::Int;
-                      skip::Integer = 0,
-                      timeout::Real = defaulttimeout(cam),
-                      truncate::Bool = false,
-                      drop::Bool = true,
-                      nbufs::Integer = 8) where {T}
-    # Check arguments.
-    num ≥ 1 || throw(ArgumentError("invalid number of images"))
-    nbufs ≥ 2 || throw(ArgumentError("invalid number of buffers"))
-    skip ≥ 0 || throw(ArgumentError("invalid number of images to skip"))
-    timeout > zero(timeout) || throw(ArgumentError("invalid timeout"))
-
-    # Start acquisition with given callback and collect images.
-    imgs = Vector{Array{T,2}}(undef, num)
-    cnt = 0
-    start(cam, T, nbufs)
-    while cnt < num
-        try
-            img, ticks = wait(cam, timeout, drop)
-            if skip > zero(skip)
-                # Skip this frame.
-                skip -= one(skip)
-                release(cam)
-            else
-                # Store this frame.
-                cnt += 1
-                imgs[cnt] = img
-                release(cam)
-            end
-        catch err
-            if truncate && isa(err, Phoenix.TimeoutError)
-                @warn "Acquisition timeout after $cnt image(s)"
-                num = cnt
-                resize!(imgs, num)
-            else
-                abort(cam)
-                rethrow(err)
-            end
-        end
-    end
-
-    # Stop immediately.
-    abort(cam)
-
-    # Return images.
-    return imgs
-end
-
 """
 ```julia
 runloop(cam, gain, bias, [beforeimage,] afterimage) -> count
