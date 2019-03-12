@@ -14,8 +14,8 @@
 module ThemisRealTime
 
 using Printf, LinearAlgebra, Statistics
-using Phoenix, Alpao
-using Phoenix: TimeoutError, Camera
+using ScientificCameras, Phoenix, Alpao
+using ScientificCameras: TimeoutError, ScientificCamera
 using Themis
 import Themis: InteractionMatrix
 

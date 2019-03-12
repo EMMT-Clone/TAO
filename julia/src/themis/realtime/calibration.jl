@@ -73,7 +73,7 @@ Other keywords are passed to `Centroiding.fit!`.
 
 """
 function calibrate(::Type{<:InteractionMatrix},
-                   cam::Phoenix.Camera,
+                   cam::ScientificCamera,
                    dm::Alpao.DeformableMirror,
                    cref::Vector{Cdouble},
                    xyref::Matrix{Cdouble},

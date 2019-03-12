@@ -48,7 +48,7 @@ to continue the loop.  The provided image `img` is an instance of
 `bias`.
 
 """
-function runloop(cam::Phoenix.Camera,
+function runloop(cam::ScientificCamera,
                  gain::DenseMatrix{T},
                  bias::DenseMatrix{T},
                  beforeimage::Function,
@@ -106,7 +106,7 @@ function runloop(cam::Phoenix.Camera,
 end
 
 # This version provide a `beforeimage` callback which does nothing.
-function runloop(cam::Phoenix.Camera,
+function runloop(cam::ScientificCamera,
                  gain::DenseMatrix{T},
                  bias::DenseMatrix{T},
                  afterimage::Function;
@@ -117,7 +117,7 @@ end
 #beforeimage(count::Int) = true
 #afterimage(img::Matrix{T}, count::Int, ticks) where {T<:AbstractFloat} = true
 
-function closeloop(cam::Phoenix.Camera,
+function closeloop(cam::ScientificCamera,
                    dm::Alpao.DeformableMirror,
                    G::AbstractArray{Cdouble};
                    cref::Vector{Cdouble},
