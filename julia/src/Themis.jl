@@ -33,6 +33,7 @@ function save end
 include("themis/types.jl")
 include("themis/utils.jl")
 include("themis/config.jl")
+include("themis/preprocessing.jl")
 include("themis/fitting.jl")
 include("themis/calibration.jl")
 
