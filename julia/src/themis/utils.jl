@@ -1,5 +1,5 @@
 #
-# utils.jl -
+# themis/utils.jl -
 #
 # Utilities for Themis adaptive optics software.
 #

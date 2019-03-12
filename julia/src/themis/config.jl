@@ -1,5 +1,5 @@
 #
-# config.jl -
+# themis/config.jl -
 #
 # Routines for saving/loading Themis adaptive optics configuration.
 #

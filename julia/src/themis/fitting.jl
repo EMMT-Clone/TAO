@@ -1,5 +1,5 @@
 #
-# fitting.jl -
+# themis/fitting.jl -
 #
 # Fitting correction for Themis adaptive optics software.
 #

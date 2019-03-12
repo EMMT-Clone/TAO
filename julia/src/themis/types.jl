@@ -1,5 +1,5 @@
 #
-# types.jl --
+# themis/types.jl --
 #
 # Type definitions for julia module Themis.
 #
