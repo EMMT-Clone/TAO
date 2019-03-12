@@ -1,5 +1,5 @@
 #
-# themis/realtime/hardware.jl --
+# themis/realtime/loop.jl --
 #
 # Methods related to the hardware of the Themis adaptive optics system (the
 # deformable mirror, the wavefront sensor camera, etc.).

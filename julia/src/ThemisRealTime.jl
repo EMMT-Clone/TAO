@@ -19,7 +19,7 @@ using Phoenix: TimeoutError, Camera
 using Themis
 import Themis: InteractionMatrix
 
-include("themis/realtime/hardware.jl")
+include("themis/realtime/loop.jl")
 include("themis/realtime/calibration.jl")
 
 end # module ThemisRealTime
