@@ -155,6 +155,7 @@ function runloop(cam::Phoenix.Camera,
     return count
 end
 
+# This version provide a `beforeimage` callback which does nothing.
 function runloop(cam::Phoenix.Camera,
                  gain::DenseMatrix{T},
                  bias::DenseMatrix{T},
@@ -169,10 +170,6 @@ end
 function closeloop(cam::Phoenix.Camera,
                    dm::Alpao.DeformableMirror,
                    G::AbstractArray{Cdouble};
-                   skip::Integer = 10,
-                   timeout::Real = defaulttimeout(cam),
-                   drop::Bool = true,
-                   nbufs::Integer = 8,
                    cref::Vector{Cdouble},
                    xyref::Matrix{Cdouble},
                    gain::AbstractMatrix,
@@ -180,27 +177,35 @@ function closeloop(cam::Phoenix.Camera,
                    order::Integer = 2,
                    mu::Real = 2.0,
                    gamma::Real = 1.0,
-                   amp::Real = 0.03,
+                   sigma::Real = 0.03,
+                   alpha::Real = 0.1,
                    nloops::Integer=1000,
-                   msk::AbstractArray{Bool} = Themis.DM_SHAPE)
+                   msk::AbstractArray{Bool} = Themis.DM_SHAPE,
+                   history::Bool = false,
+                   debug::Bool = false,
+                   kwds...)
 
-    local ctot, crnd, ccor
+    local cmd, crnd, ccor, crms, perr
 
-    @assert 0 < gamma ≤ 1
-    P = ThemisUtils.subsamplingmatrix(msk; flat=true);
-    q = ThemisUtils.matrices4map(G, msk, order)
-    ncmds = length(dm)
-    crnd = amp.*randn(ncmds)
-    ccor = zeros(Cdouble, ncmds)
+    @assert 0 < sigma
+    @assert 0 ≤ alpha ≤ 1
+    @assert 0 ≤ gamma ≤ 1
+    P = Themis.subsamplingmatrix(msk; flat=true);
+    q = Themis.matrices4map(G, msk, order)
+    nacts = length(dm)
+    crnd = Cdouble(sigma).*randn(nacts)
+    beta = sqrt(1.0 - Cdouble(alpha)^2)
+    ccor = zeros(Cdouble, nacts)
+    perr = Cdouble(0)
 
     function before(cnt::Int)
-        ctot = cref .+ (crnd .- ccor)
-        crms = norm(ctot)/sqrt(ncmds)
-        if minimum(ctot) < -0.9 || maximum(ctot) > 0.9
+        cmd = cref .+ (crnd .- ccor)
+        crms = norm(cmd)/sqrt(nacts)
+        if norminf(cmd) > 1.0
             println("\ndiverging...")
             return false
         else
-            send(dm, ctot)
+            send(dm, cmd)
             return true
         end
     end
@@ -208,23 +213,34 @@ function closeloop(cam::Phoenix.Camera,
     function after(img::DenseMatrix{T},
                    cnt::Int,
                    ticks) where {T<:AbstractFloat}
-        xy = Centroiding.fit(img, xyref[1,:], xyref[2,:]);
-        d = hcat(xy[1] .- xyref[1,:], xy[2] .- xyref[2,:])';
-        ccor += gamma.*P*ThemisUtils.solvemapproblem(q..., mu, d);
-        cerr1 = crnd .- ccor
-        crnd += amp.*randn(ncmds) .- mean(crnd) # Markov chain
-        cerr2 = crnd .- ccor
-        @printf("\r%5d %12.6f %12.6f %12.6f %12.3f", iter,
-                norm(cerr1)/sqrt(ncmds),
-                norm(cerr2)/sqrt(ncmds),
-                crms,
-                norm(crnd)/sqrt(ncmds))
-        flush(stdout)
+        d = Centroiding.fit(img, xyref) .- xyref;
+        ccor += gamma.*P*Themis.solvemapproblem(q..., mu, d);
+        cerr1 = norm(crnd .- ccor)/sqrt(nacts) - perr
+        # Combine old random perturbation (recentered to avoid drifting of
+        # piston) with new random values.  FIXME: Recentering changes (a bit)
+        # the variance: fix it!
+        crnd .= (Cdouble(beta).*(crnd .- mean(crnd))
+                 .+ Cdouble(alpha*sigma).*randn(nacts))
+        cerr2 = norm(crnd .- ccor)/sqrt(nacts)
+        cerr3 = norm(crnd)/sqrt(nacts)
+        if history
+            @printf("%5d %12.6f %12.6f %12.6f %12.3f\n", cnt,
+                    cerr1, cerr2, crms, cerr3)
+        else
+            @printf("\r%5d %12.6f %12.6f %12.6f %12.3f", cnt,
+                    cerr1, cerr2, crms, cerr3)
+            flush(stdout)
+        end
+        perr = cerr2
         return cnt < nloops
     end
 
-    println("Iter. Error (RMS)  Delayed Err. Comm. (RMS)  Mean Energy")
+    println("Iter. ΔError       Resid. (RMS) Comm. (RMS)  Mean Energy")
     println("----- ------------ ------------ ------------ ------------")
     runloop(cam, gain, bias, before, after; kwds...)
-    println()
+    history || println()
+    debug || send(dm, cref)
 end
+
+# Same as `norm(x,Inf)`?
+norminf(x) = (ex = extrema(x); @inbounds max(-ex[1], ex[2]))
