@@ -153,7 +153,7 @@ See [`RandomWavefronts.structfn`](@ref) for more explanations.
 function covar(K::Val{:Kolmogorov},
                dims::Dims{2};
                r0::Real = 1.0,
-               sigma::Real = defaultsigma(K, hypot(n1 - 1, n2 - 1)/r0),
+               sigma::Real = defaultsigma(K, hypot(dims[1] -1, dims[2] - 1)/r0),
                flatten::Bool=false)
     n1, n2 = dims
     T = Float64
