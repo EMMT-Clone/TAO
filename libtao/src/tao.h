@@ -1695,7 +1695,6 @@ tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs);
  *               processes; otherwise, the mutex will be *private* (that is,
  *               only accessible by threads in the same process as the caller).
  *
- *
  * @return `0` if successful; `-1` in case of error.
  */
 extern int
@@ -1738,12 +1737,19 @@ tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
 /**
  * Destroy a mutex.
  *
+ * This function destroys a mutex that has been initialized by
+ * tao_initialize_mutex().
+ *
  * @param errs   Address of a variable to track errors.
  * @param mutex  Pointer to the mutex to destroy.
+ * @param wait   If the mutex is locked, this parameter specifies whether the
+ *               function should block until the mutex is unlocked by its
+ *               owner.
  *
  * @return `0` if successful; `-1` in case of error.
  */
-extern int tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
+extern int tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex,
+                             bool wait);
 
 /**
  * Signal a condition variable.

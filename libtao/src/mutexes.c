@@ -97,9 +97,19 @@ tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
     return 0;
 }
 
+/*
+ * Attempt to destroy the mutex, possibly blocking until the mutex is
+ * unlocked (signaled by pthread_mutex_destroy returning EBUSY).
+ */
 int
-tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
+tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex, bool wait)
 {
+    /*
+     * Attempt to destroy the mutex, possibly blocking until the mutex is
+     * unlocked (signaled by a pthread_mutex_destroy returning EBUSY).  In
+     * order to not consume CPU, if the mutex was locked, we wait to become the
+     * owner of the lock before re-trying to destroy the mutex.
+     */
     while (true) {
         /* Attempt to destroy the mutex. */
         int code = pthread_mutex_destroy(mutex);
@@ -107,7 +117,7 @@ tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
             /* Operation was successful. */
             return 0;
         }
-        if (code != EBUSY) {
+        if (!wait || code != EBUSY) {
             tao_push_error(errs, "pthread_mutex_destroy", code);
             return -1;
         }
@@ -118,12 +128,12 @@ tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
         if (code != 0) {
             tao_push_error(errs, "pthread_mutex_lock", code);
             return -1;
-         }
+        }
         code = pthread_mutex_unlock(mutex);
         if (code != 0) {
             tao_push_error(errs, "pthread_mutex_unlock", code);
             return -1;
-         }
+        }
     }
 }
 
