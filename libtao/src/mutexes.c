@@ -124,14 +124,8 @@ tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex, bool wait)
 
         /* The mutex is currently locked.  Wait for the owner of the lock
            to unlock before re-trying to destroy the mutex. */
-        code = pthread_mutex_lock(mutex);
-        if (code != 0) {
-            tao_push_error(errs, "pthread_mutex_lock", code);
-            return -1;
-        }
-        code = pthread_mutex_unlock(mutex);
-        if (code != 0) {
-            tao_push_error(errs, "pthread_mutex_unlock", code);
+        if (tao_lock_mutex(errs, mutex) != 0 ||
+            tao_unlock_mutex(errs, mutex) != 0) {
             return -1;
         }
     }
