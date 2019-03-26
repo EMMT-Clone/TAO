@@ -19,8 +19,12 @@
 
 #include "config.h"
 
-#define float32_t  float
-#define float64_t  double
+#if SIZEOF_FLOAT == 4
+#  define float32_t  float
+#endif
+#if SIZEOF_DOUBLE == 8
+#  define float64_t  double
+#endif
 
 #ifndef __cplusplus
 #  ifdef HAVE_STDBOOL_H
