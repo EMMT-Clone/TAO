@@ -665,7 +665,7 @@ Y_tao_get_current_time(int argc)
 {
     long dims[2];
     long* ptr;
-    tao_time_t t;
+    struct timespec t;
     tao_error_t* errs = TAO_NO_ERRORS;
     tao_get_current_time(&errs, &t);
     if (errs != TAO_NO_ERRORS) {
@@ -674,8 +674,8 @@ Y_tao_get_current_time(int argc)
     dims[0] = 1;
     dims[1] = 2;
     ptr = ypush_l(dims);
-    ptr[0] = t.s;
-    ptr[1] = t.ns;
+    ptr[0] = t.tv_sec;
+    ptr[1] = t.tv_nsec;
 }
 
 void
@@ -683,7 +683,7 @@ Y_tao_get_monotonic_time(int argc)
 {
     long dims[2];
     long* ptr;
-    tao_time_t t;
+    struct timespec t;
     tao_error_t* errs = TAO_NO_ERRORS;
     tao_get_monotonic_time(&errs, &t);
     if (errs != TAO_NO_ERRORS) {
@@ -692,8 +692,8 @@ Y_tao_get_monotonic_time(int argc)
     dims[0] = 1;
     dims[1] = 2;
     ptr = ypush_l(dims);
-    ptr[0] = t.s;
-    ptr[1] = t.ns;
+    ptr[0] = t.tv_sec;
+    ptr[1] = t.tv_nsec;
 }
 
 /* lock + unlock ~ 0.14 µs */

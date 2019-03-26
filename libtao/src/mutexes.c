@@ -14,11 +14,23 @@
 #include "common.h"
 
 #include <errno.h>
+#include <math.h>
 
 #include "tao-private.h"
 
 #define if_likely(expr)   if TAO_LIKELY(expr)
 #define if_unlikely(expr) if TAO_UNLIKELY(expr)
+
+/*
+ * Notes:
+ *
+ * a. In Linux POSIX Threads doc., it is written that pthread_cond_init(),
+ *    pthread_cond_signal(), pthread_cond_broadcast(), and pthread_cond_wait()
+ *    never return an error.  However, in the Open Group Specifications (Issue
+ *    7, 2018 edition IEEE Std 1003.1-2017, Revision of IEEE Std 1003.1-2008),
+ *    it is written that, if successful, these functions shall return zero;
+ *    otherwise, an error number shall be returned to indicate the error.
+ */
 
 /* See https://stackoverflow.com/questions/20325146 for configuring mutexes
    and condition variables shared between processes. */
@@ -139,6 +151,7 @@ tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond)
 {
     int code = pthread_cond_signal(cond);
     if_unlikely(code != 0) {
+        /* This should never happen on Linux (see Note a.). */
         tao_push_error(errs, "pthread_cond_signal", code);
         return -1;
     }

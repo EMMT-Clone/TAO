@@ -391,7 +391,7 @@ main(int argc, char* argv[])
     }
 
     if (count > 0) {
-        tao_time_t t0, t1, dt;
+        struct timespec t0, t1, dt;
         double secs;
         long errors = 0;
         long frames = 0;

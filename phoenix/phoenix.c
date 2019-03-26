@@ -664,13 +664,10 @@ phx_wait(phx_camera_t* cam, double secs, bool drop)
     if (secs > TAO_YEAR) {
         forever = true;
     } else {
-        tao_time_t t;
-        if (tao_get_absolute_timeout(&cam->errs, &t, secs) != 0) {
+        if (tao_get_absolute_timeout(&cam->errs, &ts, secs) != 0) {
             goto unlock;
         }
-        ts.tv_sec  = t.s;
-        ts.tv_nsec = t.ns;
-        forever = false;
+        forever = ! tao_is_finite_absolute_time(&ts);
     }
 
     /*
@@ -701,6 +698,7 @@ phx_wait(phx_camera_t* cam, double secs, bool drop)
     if (! cam->quitting) {
         /*
          * If requested, get rid of unprocessed pending image buffers.
+         * FIXME: Do this in the acquisition callback.
          */
         if (drop) {
             while (cam->pending > 1) {

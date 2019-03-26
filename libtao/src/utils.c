@@ -90,16 +90,11 @@ tao_strlen(const char* str)
     GET_TIME(status, errs, dest, CLOCK_REALTIME)
 # define GET_TIME(status, errs, dest, id)                       \
     do {                                                        \
-        struct timespec t;                                      \
-        if (clock_gettime(id, &t) == -1) {                      \
+        status = clock_gettime(id, dest);                       \
+        if_unlikely(status != 0) {                              \
             tao_push_system_error(errs, "clock_gettime");       \
-            dest->s = 0;                                        \
-            dest->ns = 0;                                       \
-            status = -1;                                        \
-        } else {                                                \
-            dest->s = t.tv_sec;                                 \
-            dest->ns = t.tv_nsec;                               \
-            status = 0;                                         \
+            dest->tv_sec = 0;                                   \
+            dest->tv_nsec = 0;                                  \
         }                                                       \
     } while (false)
 #else /* assume gettimeofday is available */
@@ -107,22 +102,21 @@ tao_strlen(const char* str)
     GET_CURRENT_TIME(status, errs, dest)
 # define GET_CURRENT_TIME(status, errs, dest)                   \
     do {                                                        \
-        struct timeval t;                                       \
-        if (gettimeofday(&t, NULL) == -1) {                     \
+        struct timeval tv;                                      \
+        status = gettimeofday(&tv, NULL);                       \
+        if_unlikely(status != 0) {                              \
             tao_push_system_error(errs, "gettimeofday");        \
-            dest->s = 0;                                        \
-            dest->ns = 0;                                       \
-            status = -1;                                        \
+            dest->tv_sec = 0;                                   \
+            dest->tv_nsec = 0;                                  \
         } else {                                                \
-            dest->s = t.tv_sec;                                 \
-            dest->ns = t.tv_usec*KILO;                          \
-            status = 0;                                         \
+            dest->tv_sec  = tv.tv_sec;                          \
+            dest->tv_nsec = t.tv_usec*KILO;                     \
         }                                                       \
     } while (false)
 #endif
 
 int
-tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest)
+tao_get_monotonic_time(tao_error_t** errs, struct timespec* dest)
 {
     int status;
     GET_MONOTONIC_TIME(status, errs, dest);
@@ -130,7 +124,7 @@ tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest)
 }
 
 int
-tao_get_current_time(tao_error_t** errs, tao_time_t* dest)
+tao_get_current_time(tao_error_t** errs, struct timespec* dest)
 {
     int status;
     GET_CURRENT_TIME(status, errs, dest);
@@ -147,61 +141,62 @@ tao_get_current_time(tao_error_t** errs, tao_time_t* dest)
         }                                       \
     } while (false)
 
-tao_time_t*
-tao_normalize_time(tao_time_t* ts)
+struct timespec*
+tao_normalize_time(struct timespec* ts)
 {
-    int64_t s  = ts->s;
-    int64_t ns = ts->ns;
+    time_t s  = ts->tv_sec;
+    time_t ns = ts->tv_nsec;
     NORMALIZE_TIME(s, ns);
-    ts->s = s;
-    ts->ns = ns;
+    ts->tv_sec  = s;
+    ts->tv_nsec = ns;
     return ts;
 }
 
-tao_time_t*
-tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b)
+struct timespec*
+tao_add_times(struct timespec* dest,
+              const struct timespec* a, const struct timespec* b)
 {
-    int64_t s  = a->s  + b->s;
-    int64_t ns = a->ns + b->ns;
+    time_t s  = a->tv_sec  + b->tv_sec;
+    time_t ns = a->tv_nsec + b->tv_nsec;
     NORMALIZE_TIME(s, ns);
-    dest->s = s;
-    dest->ns = ns;
+    dest->tv_sec = s;
+    dest->tv_nsec = ns;
     return dest;
 }
 
-tao_time_t*
-tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b)
+struct timespec*
+tao_subtract_times(struct timespec* dest, const struct timespec* a, const struct timespec* b)
 {
-    int64_t s  = a->s  - b->s;
-    int64_t ns = a->ns - b->ns;
+    time_t s  = a->tv_sec  - b->tv_sec;
+    time_t ns = a->tv_nsec - b->tv_nsec;
     NORMALIZE_TIME(s, ns);
-    dest->s = s;
-    dest->ns = ns;
+    dest->tv_sec = s;
+    dest->tv_nsec = ns;
     return dest;
 }
 
 double
-tao_time_to_seconds(const tao_time_t* t)
+tao_time_to_seconds(const struct timespec* t)
 {
-    return (double)t->s + 1E-9*(double)t->ns;
+    return (double)t->tv_sec + 1E-9*(double)t->tv_nsec;
 }
 
-tao_time_t*
-tao_seconds_to_time(tao_time_t* dest, double secs)
+struct timespec*
+tao_seconds_to_time(struct timespec* dest, double secs)
 {
     /*
      * Take care of overflows (even though such overflows probably indicate an
      * invalid usage of the time).
      */
     if (isnan(secs)) {
-        dest->s = 0;
-        dest->ns = -1;
+        dest->tv_sec = 0;
+        dest->tv_nsec = -1;
     } else if (secs >= INT64_MAX) {
-        dest->s = INT64_MAX;
-        dest->ns = 0;
+        dest->tv_sec = INT64_MAX;
+        dest->tv_nsec = 0;
     } else if (secs <= INT64_MIN) {
-        dest->s = INT64_MIN;
-        dest->ns = 0;
+        dest->tv_sec = INT64_MIN;
+        dest->tv_nsec = 0;
     } else {
         /*
          * Compute the number of seconds (as a floating-point) and the number
@@ -210,22 +205,22 @@ tao_seconds_to_time(tao_time_t* dest, double secs)
          * one billion so fix it.
          */
         double s = floor(secs);
-        int64_t ns = lround((secs - s)*1E9);
+        time_t ns = lround((secs - s)*1E9);
         if (ns >= GIGA) {
             ns -= GIGA;
             s += 1;
         }
-        dest->s = (int64_t)s;
-        dest->ns = ns;
+        dest->tv_sec = (time_t)s;
+        dest->tv_nsec = ns;
     }
     return dest;
 }
 
 char*
-tao_sprintf_time(char* str, const tao_time_t* ts)
+tao_sprintf_time(char* str, const struct timespec* ts)
 {
-    int64_t s  = ts->s;
-    int64_t ns = ts->ns;
+    time_t s  = ts->tv_sec;
+    time_t ns = ts->tv_nsec;
     NORMALIZE_TIME(s, ns);
     bool negate = (s < 0);
     if (negate) {
@@ -238,7 +233,7 @@ tao_sprintf_time(char* str, const tao_time_t* ts)
 }
 
 size_t
-tao_snprintf_time(char* str, size_t size, const tao_time_t* ts)
+tao_snprintf_time(char* str, size_t size, const struct timespec* ts)
 {
     char buf[32];
     tao_sprintf_time(buf, ts);
@@ -257,7 +252,7 @@ tao_snprintf_time(char* str, size_t size, const tao_time_t* ts)
 }
 
 void
-tao_fprintf_time(FILE *stream, const tao_time_t* ts)
+tao_fprintf_time(FILE *stream, const struct timespec* ts)
 {
     char buf[32];
     tao_sprintf_time(buf, ts);
@@ -265,7 +260,7 @@ tao_fprintf_time(FILE *stream, const tao_time_t* ts)
 }
 
 int
-tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs)
+tao_get_absolute_timeout(tao_error_t** errs, struct timespec* tm, double secs)
 {
     if_unlikely(isnan(secs) || secs < 0) {
         tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
@@ -285,23 +280,23 @@ tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs)
        check for `time_t` overflow.  We are assuming that current time since
        the Epoch is not near the limit TIME_T_MAX. */
     double incr_s = floor(secs);
-    long tm_s  = tm->s;
-    long tm_ns = tm->ns + lround((secs - incr_s)*1e9);
+    time_t tm_s  = tm->tv_sec;
+    time_t tm_ns = tm->tv_nsec + lround((secs - incr_s)*1e9);
     NORMALIZE_TIME(tm_s, tm_ns);
     if (tm_s + incr_s > (double)TIME_T_MAX) {
-        tm->s = TIME_T_MAX;
-        tm->ns = GIGA - 1;
+        tm->tv_sec = TIME_T_MAX;
+        tm->tv_nsec = GIGA - 1;
     } else {
-        tm->s  = tm_s + (long)incr_s;
-        tm->ns = tm_ns;
+        tm->tv_sec  = tm_s + (time_t)incr_s;
+        tm->tv_nsec = tm_ns;
     }
     return 0;
 }
 
 bool
-tao_is_finite_absolute_time(tao_time_t* tm)
+tao_is_finite_absolute_time(struct timespec* tm)
 {
-    return (tm->s < TIME_T_MAX || tm->ns < GIGA - 1);
+    return (tm->tv_sec < TIME_T_MAX || tm->tv_nsec < GIGA - 1);
 }
 
 double

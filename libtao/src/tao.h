@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <time.h>
 #include <pthread.h>
 
 /**
@@ -1438,12 +1439,12 @@ tao_free(void* ptr);
  *
  * Measurement of time and time intervals.
  *
- * Time is stored in a structure of type @ref tao_time_t with a nanosecond
- * resolution.  The actual precision however depends on the resolution of the
- * functions provided by the system to get a time.  The maximum time amplitude
- * that can be repesented is @f$\approx\pm2.9\times10^{11}@f$ years (nearly 20
- * times the age of the Universe).  So it is probably sufficient to represent
- * any absolute time.
+ * Time is stored in a structure of type `struct timespec` which is defined in
+ * `<time.h>` and which has a nanosecond resolution.  The actual precision
+ * however depends on the resolution of the functions provided by the system to
+ * get a time.  The maximum time amplitude that can be repesented is
+ * @f$\approx\pm2.9\times10^{11}@f$ years (nearly 20 times the age of the
+ * Universe).  So it is probably sufficient to represent any absolute time.
  *
  * The function tao_get_monotonic_time() can be used to precisely measure time
  * intervals, while the function tao_get_current_time() can be called to get
@@ -1493,14 +1494,6 @@ tao_free(void* ptr);
 #define TAO_YEAR (365.25*TAO_DAY)
 
 /**
- * Structure to store time with a nanosecond resolution.
- */
-typedef struct tao_time {
-    int64_t s;   /**< Seconds */
-    int64_t ns;  /**< Nanoseconds */
-} tao_time_t;
-
-/**
  * Get monotonic time.
  *
  * This function yields a monotonic time since some unspecified starting point
@@ -1518,7 +1511,7 @@ typedef struct tao_time {
  * nanoseconds are stored in @b dest.
  */
 extern int
-tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest);
+tao_get_monotonic_time(tao_error_t** errs, struct timespec* dest);
 
 /**
  * Get the current time.
@@ -1534,7 +1527,7 @@ tao_get_monotonic_time(tao_error_t** errs, tao_time_t* dest);
  * nanoseconds are stored in @b dest.
  */
 extern int
-tao_get_current_time(tao_error_t** errs, tao_time_t* dest);
+tao_get_current_time(tao_error_t** errs, struct timespec* dest);
 
 /**
  * Normalize time-stamp.
@@ -1546,8 +1539,8 @@ tao_get_current_time(tao_error_t** errs, tao_time_t* dest);
  *
  * @return The address @a ts.
  */
-extern tao_time_t*
-tao_normalize_time(tao_time_t* ts);
+extern struct timespec*
+tao_normalize_time(struct timespec* ts);
 
 /**
  * Add times.
@@ -1565,8 +1558,8 @@ tao_normalize_time(tao_time_t* ts);
  *
  * @return The address @a dest.
  */
-extern tao_time_t*
-tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
+extern struct timespec*
+tao_add_times(struct timespec* dest, const struct timespec* a, const struct timespec* b);
 
 /**
  * Subtract times.
@@ -1584,8 +1577,9 @@ tao_add_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
  *
  * @return The address @a dest.
  */
-extern tao_time_t*
-tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
+extern struct timespec*
+tao_subtract_times(struct timespec* dest,
+                   const struct timespec* a, const struct timespec* b);
 
 /**
  * Convert time in seconds.
@@ -1595,7 +1589,7 @@ tao_subtract_times(tao_time_t* dest, const tao_time_t* a, const tao_time_t* b);
  * @return The number of seconds given by the time stored in @b t.
  */
 extern double
-tao_time_to_seconds(const tao_time_t* t);
+tao_time_to_seconds(const struct timespec* t);
 
 /**
  * Convert a number of seconds into a time structure.
@@ -1614,8 +1608,8 @@ tao_time_to_seconds(const tao_time_t* t);
  * It is therefore always possible guess from the stored time whether @b secs
  * was representable as a time structure with nanosecond precision.
  */
-extern tao_time_t*
-tao_seconds_to_time(tao_time_t* dest, double secs);
+extern struct timespec*
+tao_seconds_to_time(struct timespec* dest, double secs);
 
 /**
  * Print a time-stamp in a human readable form to a string.
@@ -1627,7 +1621,7 @@ tao_seconds_to_time(tao_time_t* dest, double secs);
  * @return The address @b str.
  */
 extern char*
-tao_sprintf_time(char* str, const tao_time_t* ts);
+tao_sprintf_time(char* str, const struct timespec* ts);
 
 /**
  * Print a time-stamp in a human readable form to a string.
@@ -1647,7 +1641,7 @@ tao_sprintf_time(char* str, const tao_time_t* ts);
  * means that the output was truncated.
  */
 extern size_t
-tao_snprintf_time(char* str, size_t size, const tao_time_t* ts);
+tao_snprintf_time(char* str, size_t size, const struct timespec* ts);
 
 /**
  * Print a time-stamp in a human readable form to a file stream.
@@ -1656,7 +1650,7 @@ tao_snprintf_time(char* str, size_t size, const tao_time_t* ts);
  * @param ts     Time stamp.
  */
 extern void
-tao_fprintf_time(FILE* stream, const tao_time_t* ts);
+tao_fprintf_time(FILE* stream, const struct timespec* ts);
 
 /**
  * Compute absolute timeout.
@@ -1668,13 +1662,13 @@ tao_fprintf_time(FILE* stream, const tao_time_t* ts);
  * tao_is_finite_timeout() to check whether that happens.
  *
  * @param errs   Address of a variable to track errors.
- * @param tm     Address of `tao_time_t` structure.
+ * @param tm     Address of `struct timespec` structure.
  * @param secs   Number of seconds from now.
  *
  * @return `0` on success, `-1` on failure.
  */
 extern int
-tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs);
+tao_get_absolute_timeout(tao_error_t** errs, struct timespec* tm, double secs);
 
 /**
  * Check whether the absolute time is finite.
@@ -1682,11 +1676,11 @@ tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs);
  * This function checks whether the time since the Epoch (absolute time) stored
  * in @a ts is strictly less than the maximum possible value.
  *
- * @param tm     Address of `tao_time_t` structure.
+ * @param tm     Address of `struct timespec` structure.
  *
  * @return A boolean value.
  */
-extern bool tao_is_finite_absolute_time(tao_time_t* tm);
+extern bool tao_is_finite_absolute_time(struct timespec* tm);
 
 /**
  * Maximum number of seconds since the Epoch.
