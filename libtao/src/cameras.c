@@ -18,6 +18,9 @@
 
 #include "tao-private.h"
 
+#define if_likely(expr)   if TAO_LIKELY(expr)
+#define if_unlikely(expr) if TAO_UNLIKELY(expr)
+
 #define NEW(errs, type, number) \
     ((type*)tao_calloc(errs, number, sizeof(type)))
 
@@ -241,22 +244,22 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
 {
     /* Check arguments.  FIXME: We may also want to check that arr is
        cam->frames[cam->index]. */
-    if (cam == NULL || arr == NULL) {
+    if_unlikely(cam == NULL || arr == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
     tao_shared_camera_t* shared = cam->shared;
-    if (check_frame(arr, shared)) {
+    if_unlikely(check_frame(arr, shared)) {
         tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
 
     /* Increment image number and update image. */
-    if (tao_lock_shared_array(errs, arr) != 0) {
+    if_unlikely(tao_lock_shared_array(errs, arr) != 0) {
         return -1;
     }
     int status = 0;
-    if (arr->nreaders != 0 || arr->nwriters != 1) {
+    if_unlikely(arr->nreaders != 0 || arr->nwriters != 1) {
         tao_push_error(errs, __func__, TAO_ASSERTION_FAILED);
         status = -1;
         goto unlock;
@@ -265,22 +268,22 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
     arr->counter = ++shared->last_frame.counter;
     shared->last_frame.ident = arr->base.ident;
  unlock:
-    if (tao_unlock_shared_array(errs, arr) != 0) {
+    if_unlikely(tao_unlock_shared_array(errs, arr) != 0) {
         status = -1;
     }
-    if (status != 0) {
+    if_unlikely(status != 0) {
         return -1;
     }
 
     /* Signal that a new image is available. */
     for (int i = 0; i < TAO_SHARED_CAMERA_SEMAPHORES; ++i) {
         int val;
-        if (sem_getvalue(&shared->sem[i], &val) != 0) {
+        if_unlikely(sem_getvalue(&shared->sem[i], &val) != 0) {
             tao_push_system_error(errs, "sem_getvalue");
             return -1;
         }
         if (val == 0) {
-            if (sem_post(&shared->sem[i]) != 0) {
+            if_unlikely(sem_post(&shared->sem[i]) != 0) {
                 tao_push_system_error(errs, "sem_post");
                 return -1;
             }
@@ -290,7 +293,7 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
     /* If no array has been pre-allocated, allocate one. */
     if (cam->spare == NULL) {
         cam->spare = allocate_frame(errs, cam);
-        if (cam->spare == NULL) {
+        if_unlikely(cam->spare == NULL) {
             return -1;
         }
     }
@@ -301,7 +304,7 @@ tao_shared_array_t*
 tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam)
 {
     /* Check arguments. */
-    if (cam == NULL) {
+    if_unlikely(cam == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return NULL;
     }
@@ -368,7 +371,7 @@ tao_detach_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 int
 tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 {
-    if (TAO_UNLIKELY(cam == NULL)) {
+    if_unlikely(cam == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
@@ -378,7 +381,7 @@ tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 int
 tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 {
-    if (TAO_UNLIKELY(cam == NULL)) {
+    if_unlikely(cam == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
@@ -388,7 +391,7 @@ tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 int
 tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam)
 {
-    if (TAO_UNLIKELY(cam == NULL)) {
+    if_unlikely(cam == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
@@ -431,15 +434,15 @@ CODE(tao_preprocess_image_u16_to_f64, uint16_t, double)
 int
 tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx)
 {
-    if (TAO_UNLIKELY(cam == NULL)) {
+    if_unlikely(cam == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
-    if (TAO_UNLIKELY(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+    if_unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES) {
         tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
         return -1;
     }
-    if (sem_wait(&cam->sem[idx - 1]) != 0) {
+    if_unlikely(sem_wait(&cam->sem[idx - 1]) != 0) {
         tao_push_system_error(errs, "sem_wait");
         return -1;
     }
@@ -449,11 +452,11 @@ tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx)
 int
 tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx)
 {
-    if (TAO_UNLIKELY(cam == NULL)) {
+    if_unlikely(cam == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
-    if (TAO_UNLIKELY(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+    if_unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES) {
         tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
         return -1;
     }
@@ -472,15 +475,15 @@ int
 tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
                      double secs)
 {
-    if (TAO_UNLIKELY(cam == NULL)) {
+    if_unlikely(cam == NULL) {
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
-    if (TAO_UNLIKELY(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES)) {
+    if_unlikely(idx < 1 || idx > TAO_SHARED_CAMERA_SEMAPHORES) {
         tao_push_error(errs, __func__, TAO_OUT_OF_RANGE);
         return -1;
     }
-    if (isnan(secs) || secs < 0) {
+    if_unlikely(isnan(secs) || secs < 0) {
         tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
@@ -497,8 +500,8 @@ tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
             return -1;
         }
     } else if (secs > TAO_YEAR) {
-        /* For a very long timeout (the above limit is about one year), we just
-           call `sem_wait`. */
+        /* For a very long timeout, we just call `sem_wait`. */
+    forever:
         if (sem_wait(&cam->sem[idx - 1]) != 0) {
             tao_push_system_error(errs, "sem_wait");
             return -1;
@@ -508,6 +511,9 @@ tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx,
         struct timespec ts;
         if (tao_get_absolute_timeout(errs, &t, secs) != 0) {
             return -1;
+        }
+        if (! tao_is_finite_absolute_time(&t)) {
+            goto forever;
         }
         ts.tv_sec  = t.s;
         ts.tv_nsec = t.ns;
