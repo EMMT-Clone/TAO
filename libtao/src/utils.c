@@ -39,7 +39,7 @@ void*
 tao_malloc(tao_error_t** errs, size_t size)
 {
     void* ptr = malloc(size);
-    if (ptr == NULL) {
+    if_unlikely(ptr == NULL) {
         tao_push_system_error(errs, "malloc");
     }
     return ptr;
@@ -49,7 +49,7 @@ void*
 tao_calloc(tao_error_t** errs, size_t nelem, size_t elsize)
 {
     void* ptr = calloc(nelem, elsize);
-    if (ptr == NULL) {
+    if_unlikely(ptr == NULL) {
         tao_push_system_error(errs, "calloc");
     }
     return ptr;
@@ -58,7 +58,7 @@ tao_calloc(tao_error_t** errs, size_t nelem, size_t elsize)
 void
 tao_free(void* ptr)
 {
-    if (ptr != NULL) {
+    if_likely(ptr != NULL) {
         free(ptr);
     }
 }
@@ -69,7 +69,7 @@ tao_free(void* ptr)
 size_t
 tao_strlen(const char* str)
 {
-    return (str == NULL ? 0 : strlen(str));
+    return (TAO_UNLIKELY(str == NULL) ? 0 : strlen(str));
 }
 
 /*---------------------------------------------------------------------------*/
