@@ -19,6 +19,7 @@
 #   define inline static
 #endif
 
+#include <limits.h>
 #include <semaphore.h>
 #include "tao.h"
 
@@ -44,6 +45,29 @@
  * Round-up `a` by chuncks of size `b`.
  */
 #define TAO_ROUND_UP(a, b)  ((((a) + ((b) - 1))/(b))*(b))
+
+/**
+ * @def TAO_MAX_SIGNED_INT
+ *
+ * @brief Yeilds the maximum value of a signed integer.
+ *
+ * @param T   A signed integer type.
+ *
+ * @see TAO_MAX_UNSIGNED_INT.
+ */
+#define TAO_MAX_SIGNED_INT(T) ((((T)1 << (sizeof(T)*CHAR_BIT - 2)) - 1)*2 + 1)
+/* CHAR_BIT is defined in <limits.h> */
+
+/**
+ * @def TAO_MAX_UNSIGNED_INT
+ *
+ * @brief Yeilds the maximum value of an unsigned integer.
+ *
+ * @param T   An unsigned integer type.
+ *
+ * @see TAO_MAX_SIGNED_INT.
+ */
+#define TAO_MAX_UNSIGNED_INT(T) (~((T)0))
 
 /**
  * Private structure to store a multi-dimensional array.
