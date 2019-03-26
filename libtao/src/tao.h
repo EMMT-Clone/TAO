@@ -1776,8 +1776,9 @@ tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond);
  */
 
 /*
- * Helpers for branch prediction (See
- * http://blog.man7.org/2012/10/how-much-do-builtinexpect-likely-and.html).
+ * Helpers for branch prediction.  See
+ * http://blog.man7.org/2012/10/how-much-do-builtinexpect-likely-and.html
+ * and https://stackoverflow.com/questions/109710/how-does-the-likely-unlikely-macros-in-the-linux-kernel-works-and-what-is-their.
  */
 
 #if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)

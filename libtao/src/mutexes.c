@@ -17,6 +17,9 @@
 
 #include "tao-private.h"
 
+#define if_likely(expr)   if TAO_LIKELY(expr)
+#define if_unlikely(expr) if TAO_UNLIKELY(expr)
+
 /* See https://stackoverflow.com/questions/20325146 for configuring mutexes
    and condition variables shared between processes. */
 int
@@ -27,7 +30,7 @@ tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, int shared)
 
     /* Initialise attribute of mutex. */
     code = pthread_mutexattr_init(&attr);
-    if (code != 0) {
+    if_unlikely(code != 0) {
         /* This should never occur, but... */
         tao_push_error(errs, "pthread_mutexattr_init", code);
         return -1;
@@ -35,7 +38,7 @@ tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, int shared)
     code = pthread_mutexattr_setpshared(&attr, (shared ?
                                                 PTHREAD_PROCESS_SHARED :
                                                 PTHREAD_PROCESS_PRIVATE));
-    if (code != 0) {
+    if_unlikely(code != 0) {
         pthread_mutexattr_destroy(&attr);
         tao_push_error(errs, "pthread_mutexattr_setpshared", code);
         return -1;
@@ -43,7 +46,7 @@ tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, int shared)
 
     /* Initialise mutex. */
     code = pthread_mutex_init(mutex, &attr);
-    if (code != 0) {
+    if_unlikely(code != 0) {
         pthread_mutexattr_destroy(&attr);
         tao_push_error(errs, "pthread_mutex_init", code);
         return -1;
@@ -51,7 +54,7 @@ tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, int shared)
 
     /* Destroy mutex attributes. */
     code = pthread_mutexattr_destroy(&attr);
-    if (code != 0) {
+    if_unlikely(code != 0) {
         /* This should never occur, but... */
         tao_push_error(errs, "pthread_mutexattr_destroy", code);
         return -1;
@@ -65,7 +68,7 @@ int
 tao_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
 {
     int code = pthread_mutex_lock(mutex);
-    if (TAO_UNLIKELY(code != 0)) {
+    if_unlikely(code != 0) {
         tao_push_error(errs, "pthread_mutex_lock", code);
         return -1;
     }
@@ -90,7 +93,7 @@ int
 tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex)
 {
     int code = pthread_mutex_unlock(mutex);
-    if (TAO_UNLIKELY(code != 0)) {
+    if_unlikely(code != 0) {
         tao_push_error(errs, "pthread_mutex_unlock", code);
         return -1;
     }
@@ -135,7 +138,7 @@ int
 tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond)
 {
     int code = pthread_cond_signal(cond);
-    if (TAO_UNLIKELY(code != 0)) {
+    if_unlikely(code != 0) {
         tao_push_error(errs, "pthread_cond_signal", code);
         return -1;
     }
