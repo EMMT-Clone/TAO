@@ -8,7 +8,7 @@
  * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #include "common.h"
@@ -28,6 +28,9 @@
 #endif
 
 #include "tao-private.h"
+
+#define if_likely(expr)   if TAO_LIKELY(expr)
+#define if_unlikely(expr) if TAO_UNLIKELY(expr)
 
 /*---------------------------------------------------------------------------*/
 /* DYNAMIC MEMORY */
@@ -72,9 +75,13 @@ tao_strlen(const char* str)
 /*---------------------------------------------------------------------------*/
 /* TIME */
 
-#define KILO 1000
-#define MEGA 1000000
-#define GIGA 1000000000
+/* Maximum value for `time_t`, assuming that it is a signed integer.  See
+   https://stackoverflow.com/questions/5617925/maximum-values-for-time-t-struct-timespec */
+#define TIME_T_MAX  TAO_MAX_SIGNED_INT(time_t)
+
+#define KILO        1000
+#define MEGA        1000000
+#define GIGA        1000000000
 
 #ifdef HAVE_CLOCK_GETTIME
 # define GET_MONOTONIC_TIME(status, errs, dest)         \
@@ -260,17 +267,45 @@ tao_fprintf_time(FILE *stream, const tao_time_t* ts)
 int
 tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs)
 {
-    double s = floor(secs);
-    long incr_s = (long)s;
-    long incr_ns = lround((secs - s)*1e9);
+    if_unlikely(isnan(secs) || secs < 0) {
+        tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
+        return -1;
+    }
+
+    /* Get current time as soon as possible, so that the time consumed by the
+       following (expensive) computations is automatically taken cinto
+       account. */
     int status;
     GET_CURRENT_TIME(status, errs, tm);
-    if (status == 0) {
-        long tm_s  = tm->s + incr_s;
-        long tm_ns = tm->ns + incr_ns;
-        NORMALIZE_TIME(tm_s, tm_ns);
-        tm->s  = tm_s;
+    if_unlikely(status != 0) {
+        return -1;
+    }
+
+    /* First just add the number of nanoseconds and normalise the result, then
+       check for `time_t` overflow.  We are assuming that current time since
+       the Epoch is not near the limit TIME_T_MAX. */
+    double incr_s = floor(secs);
+    long tm_s  = tm->s;
+    long tm_ns = tm->ns + lround((secs - incr_s)*1e9);
+    NORMALIZE_TIME(tm_s, tm_ns);
+    if (tm_s + incr_s > (double)TIME_T_MAX) {
+        tm->s = TIME_T_MAX;
+        tm->ns = GIGA - 1;
+    } else {
+        tm->s  = tm_s + (long)incr_s;
         tm->ns = tm_ns;
     }
-    return status;
+    return 0;
+}
+
+bool
+tao_is_finite_absolute_time(tao_time_t* tm)
+{
+    return (tm->s < TIME_T_MAX || tm->ns < GIGA - 1);
+}
+
+double
+tao_get_maximum_absolute_time()
+{
+    return (double)TIME_T_MAX;
 }

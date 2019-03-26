@@ -1661,8 +1661,11 @@ tao_fprintf_time(FILE* stream, const tao_time_t* ts);
 /**
  * Compute absolute timeout.
  *
- * This function compute an absolute timeout given a duration relative to the
- * current time (as given by the clock `CLOCK_REALTIME`).
+ * This function computes an absolute timeout given a duration relative to the
+ * current time (as given by the clock `CLOCK_REALTIME`).  The function tries
+ * to avoid overflows (integers would wrap with negative values in that case)
+ * and stores the maximum possible value in @a ts.  Call
+ * tao_is_finite_timeout() to check whether that happens.
  *
  * @param errs   Address of a variable to track errors.
  * @param tm     Address of `tao_time_t` structure.
@@ -1672,6 +1675,33 @@ tao_fprintf_time(FILE* stream, const tao_time_t* ts);
  */
 extern int
 tao_get_absolute_timeout(tao_error_t** errs, tao_time_t* tm, double secs);
+
+/**
+ * Check whether the absolute time is finite.
+ *
+ * This function checks whether the time since the Epoch (absolute time) stored
+ * in @a ts is strictly less than the maximum possible value.
+ *
+ * @param tm     Address of `tao_time_t` structure.
+ *
+ * @return A boolean value.
+ */
+extern bool tao_is_finite_absolute_time(tao_time_t* tm);
+
+/**
+ * Maximum number of seconds since the Epoch.
+ *
+ * This function yields the maximum number of seconds that fit in a `time_t`
+ * integer.  Type `time_t` is at least 32-bit signed integer which gives a
+ * maximum of 2.147483647e9 seconds (more than 68 years) since the Epoch.  On
+ * most modern systems, `time_t` is 64-bit signed integer which gives a maximum
+ * of about 9.223372036854776e18 seconds (more than 2.9e11 years) since the
+ * Epoch.  Note that ISO-C standard only specifies that `time_t` should be a
+ * real, but I've never seen a system where it was not a signed integer.
+ *
+ * @return A large number of seconds.
+ */
+extern double tao_get_maximum_absolute_time();
 
 /** @} */
 

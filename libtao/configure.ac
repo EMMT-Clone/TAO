@@ -27,6 +27,7 @@ AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([stdbool.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_SIZEOF(time_t, [], [#include <time.h>])
 
 # Checks for library functions.
 AC_CHECK_FUNCS([clock_gettime])
