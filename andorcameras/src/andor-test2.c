@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <andorcameras.h>
+#include <andor-features.h>
 
 int main(int argc, char* argv[])
 {
@@ -37,9 +38,17 @@ int main(int argc, char* argv[])
     }
     feature_names = andor_get_feature_names();
     if (feature_types == NULL) {
+        long nfeatures = 0;
         for (long k = 0; feature_names[k] != NULL; ++k) {
             fprintf(stdout, "%3ld: %ls\n", k, feature_names[k]);
+            ++nfeatures;
         }
+        if (nfeatures != ANDOR_NFEATURES) {
+            fprintf(stderr, "ANDOR_NFEATURES = %d, while %ld features found\n",
+                    ANDOR_NFEATURES, nfeatures);
+            return EXIT_FAILURE;
+        }
+        fprintf(stdout, "ANDOR_NFEATURES = %d (OK)\n", ANDOR_NFEATURES);
     } else {
         for (long k = 0; feature_names[k] != NULL; ++k) {
             const char* typename = NULL;

@@ -198,11 +198,49 @@
     _ANDOR_FEATURE(UsbProductId,                X, X) \
     _ANDOR_FEATURE(VerticallyCentreAOI,         X, B)
 
+_TAO_BEGIN_DECLS
+
 #undef _ANDOR_FEATURE
 #define _ANDOR_FEATURE(f,s,z) f,
 typedef enum andor_feature andor_feature_t;
 enum andor_feature {_ANDOR_FEATURES};
 
 #define ANDOR_NFEATURES (1 + VerticallyCentreAOI)
+
+extern int _andor_get_boolean(tao_error_t** errs, AT_H handle,
+                              andor_feature_t key, bool* ptr,
+                              const char* info);
+extern int _andor_get_integer(tao_error_t** errs, AT_H handle,
+                              andor_feature_t key, long* ptr,
+                              const char* info);
+extern int _andor_get_float(tao_error_t** errs, AT_H handle,
+                            andor_feature_t key, double* ptr,
+                            const char* info);
+
+_TAO_END_DECLS
+
+/* The following macros are needed when no `andor_camera_t` structure is
+   available. */
+
+#define ANDOR_GET_BOOLEAN0(errs, handle, key, ptr) \
+    _andor_get_boolean(errs, handle, key, ptr, "AT_GetBool("#key")")
+
+#define ANDOR_GET_INTEGER0(errs, handle, key, ptr)                      \
+    _andor_get_integer(errs, handle, key, ptr, "AT_GetInt("#key")")
+
+#define ANDOR_GET_FLOAT0(errs, handle, key, ptr)                        \
+    _andor_get_float(errs, handle, key, ptr, "AT_GetFloat("#key")")
+
+
+/* The following macros work with a `andor_camera_t` structure. */
+
+#define ANDOR_GET_BOOLEAN(cam, key, ptr)                                \
+    _andor_get_boolean(&cam->errs, cam->handle, key, ptr, "AT_GetBool("#key")")
+
+#define ANDOR_GET_INTEGER(cam, key, ptr) \
+    _andor_get_integer(&cam->errs, cam->handle, key, ptr, "AT_GetInt("#key")")
+
+#define ANDOR_GET_FLOAT(cam, key, ptr) \
+    _andor_get_float(&cam->errs, cam->handle, key, ptr, "AT_GetFloat("#key")")
 
 #endif /* _ANDOR_FEATURES_H */

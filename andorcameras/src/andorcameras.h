@@ -80,9 +80,25 @@ struct andor_feature_value {
     } value;
 };
 
+extern const wchar_t* andor_feature_names[];
+extern const andor_feature_type_t andor_simcam_feature_types[];
+extern const andor_feature_type_t andor_zyla_feature_types[];
+
 extern const wchar_t** andor_get_feature_names();
 extern const andor_feature_type_t* andor_get_simcam_feature_types();
 extern const andor_feature_type_t* andor_get_zyla_feature_types();
+
+typedef struct andor_camera andor_camera_t;
+struct andor_camera
+{
+    AT_H handle;
+    tao_error_t* errs;
+    long sensorwidth;
+    long sensorheight;
+};
+
+extern andor_camera_t* andor_open_camera(tao_error_t** errs, long dev);
+extern void andor_close_camera(andor_camera_t* cam);
 
 _TAO_END_DECLS
 

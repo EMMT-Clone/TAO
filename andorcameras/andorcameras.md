@@ -174,6 +174,26 @@
 
 `DeviceCount` is also available via `AT_HANDLE_SYSTEM`.
 
+If macros `ANDOR_GET_INTEGER`, `ANDOR_GET_FLOAT`, etc. are used, the name of
+the feature is automatically concatenated to that of the function to have more
+informative messages in case of errors.  These macros are provided by the
+header file `andor-features.h` and must be used with the symbolic names of the
+features.  For instance:
+
+```c
+#include <andor-features.h>
+
+double get_temperature(andor_camera_t* cam)
+{
+    double temperature;
+    if (ANDOR_GET_FLOAT(cam, SensorTemperature, &temperature) != 0) {
+        tao_report_error(&cam->errs);
+        exit(EXIT_FAILURE);
+    }
+    return temperature;
+}
+```
+
 # Error management
 
 ## Status codes per type of operations

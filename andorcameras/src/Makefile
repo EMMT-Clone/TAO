@@ -27,14 +27,26 @@ clean:
 dist-clean: clean
 	rm -f ${LIBRARY} ${OBJECTS}
 
-test: andor-test1 andor-test2
+tests: test1 test2 test3
+
+test1: andor-test1
 	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test1
+
+test2: andor-test2
 	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test2
+	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test2 zyla
+	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test2 simcam
+
+test3: andor-test3
+	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test3
 
 andor-test1: ${srcdir}/andor-test1.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
 
 andor-test2: ${srcdir}/andor-test2.c ${DEPS} ${LIBRARY}
+	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
+
+andor-test3: ${srcdir}/andor-test3.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
 
 ${LIBRARY}: ${OBJECTS}
@@ -43,4 +55,4 @@ ${LIBRARY}: ${OBJECTS}
 %.o: ${srcdir}/%.c ${DEPS}
 	${CC} -c ${CPPFLAGS} ${CFLAGS} $< -o $@
 
-.PHOONY: all default clean dist-clean
+.PHOONY: all default clean dist-clean tests test1 test2 test3

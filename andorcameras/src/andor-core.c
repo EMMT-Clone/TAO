@@ -16,7 +16,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
 #include "andorcameras.h"
+#include "andor-features.h"
 
 static int
 check0(tao_error_t** errs, const char* func, int code)
@@ -133,4 +135,58 @@ andor_initialize(tao_error_t** errs)
         ndevices = ival;
     }
     return 0;
+}
+
+andor_camera_t*
+andor_open_camera(tao_error_t** errs, long dev)
+{
+    andor_camera_t* cam;
+    int status;
+    long ndevices;
+
+    ndevices = andor_get_ndevices(errs);
+    if (ndevices < 0) {
+        return NULL;
+    }
+    if (dev < 0 || dev >= ndevices) {
+        tao_push_error(errs, __func__, TAO_BAD_DEVICE);
+        return NULL;
+    }
+    cam = (andor_camera_t*)tao_calloc(errs, 1, sizeof(andor_camera_t));
+    if (cam == NULL) {
+        return NULL;
+    }
+    cam->handle = AT_HANDLE_SYSTEM;
+    cam->errs = TAO_NO_ERRORS;
+    status = AT_Open(dev, &cam->handle);
+    if (status != AT_SUCCESS) {
+        andor_push_error(errs, "AT_Open", status);
+        goto error;
+    }
+    if (ANDOR_GET_INTEGER(cam, SensorWidth,  &cam->sensorwidth) != 0 ||
+        ANDOR_GET_INTEGER(cam, SensorHeight, &cam->sensorheight) != 0) {
+        goto error;
+    }
+    return cam;
+
+    /* We branch here in case of errors. */
+ error:
+    if (cam != NULL) {
+        tao_transfer_errors(errs, &cam->errs);
+        cam->handle = AT_HANDLE_SYSTEM;
+        andor_close_camera(cam);
+    }
+    return NULL;
+}
+
+void
+andor_close_camera(andor_camera_t* cam)
+{
+    if (cam != NULL) {
+        tao_discard_errors(&cam->errs);
+        if (cam->handle != AT_HANDLE_SYSTEM) {
+            (void)AT_Close(cam->handle);
+        }
+        free((void*)cam);
+    }
 }
