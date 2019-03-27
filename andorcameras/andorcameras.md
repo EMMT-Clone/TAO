@@ -1,3 +1,179 @@
+
+# Features
+
+| Feature                     | SimCam  | Zyla    |
+|:----------------------------|---------|:--------|
+| AOIBinning                  |         | Enum    |
+| AOIHBin                     | Integer | Integer |
+| AOIHeight                   | Integer | Integer |
+| AOILayout                   |         | Enum    |
+| AOILeft                     | Integer | Integer |
+| AOIStride                   |         | Integer |
+| AOITop                      | Integer | Integer |
+| AOIVBin                     | Integer | Integer |
+| AOIWidth                    | Integer | Integer |
+| AccumulateCount             |         | Integer |
+| AcquiredCount               |         |         |
+| AcquisitionStart            | Command | Command |
+| AcquisitionStop             | Command | Command |
+| AlternatingReadoutDirection |         | Boolean |
+| AuxOutSourceTwo             |         | Enum    |
+| AuxiliaryOutSource          |         | Enum    |
+| BackoffTemperatureOffset    |         |         |
+| Baseline                    |         | Integer |
+| BitDepth                    |         | Enum    |
+| BufferOverflowEvent         |         | Integer |
+| BytesPerPixel               |         | Integer |
+| CameraAcquiring             | Boolean | Boolean |
+| CameraFamily                |         |         |
+| CameraMemory                |         |         |
+| CameraModel                 | String  | String  |
+| CameraName                  |         | String  |
+| CameraPresent               |         | Boolean |
+| ColourFilter                |         |         |
+| ControllerID                |         | String  |
+| CoolerPower                 |         | Float   |
+| CycleMode                   | Enum    | Enum    |
+| DDGIOCEnable                |         |         |
+| DDGIOCNumberOfPulses        |         |         |
+| DDGIOCPeriod                |         |         |
+| DDGOpticalWidthEnable       |         |         |
+| DDGOutputDelay              |         |         |
+| DDGOutputEnable             |         |         |
+| DDGOutputPolarity           |         |         |
+| DDGOutputSelector           |         |         |
+| DDGOutputStepEnable         |         |         |
+| DDGOutputWidth              |         |         |
+| DDGStepCount                |         |         |
+| DDGStepDelayCoefficientA    |         |         |
+| DDGStepDelayCoefficientB    |         |         |
+| DDGStepDelayMode            |         |         |
+| DDGStepEnabled              |         |         |
+| DDGStepUploadModeValues     |         |         |
+| DDGStepUploadProgress       |         |         |
+| DDGStepUploadRequired       |         |         |
+| DDGStepWidthCoefficientA    |         |         |
+| DDGStepWidthCoefficientB    |         |         |
+| DDGStepWidthMode            |         |         |
+| DDR2Type                    |         |         |
+| DeviceCount                 | Integer | Integer |
+| DeviceVideoIndex            |         | Integer |
+| DisableShutter              |         |         |
+| DriverVersion               |         |         |
+| ElectronicShutteringMode    | Enum    | Enum    |
+| EventEnable                 |         | Boolean |
+| EventSelector               |         | Enum    |
+| EventsMissedEvent           |         | Integer |
+| ExposedPixelHeight          |         | Integer |
+| ExposureEndEvent            |         | Integer |
+| ExposureStartEvent          |         | Integer |
+| ExposureTime                | Float   | Float   |
+| ExternalIOReadout           |         |         |
+| ExternalTriggerDelay        |         | Float   |
+| FanSpeed                    | Enum    | Enum    |
+| FastAOIFrameRateEnable      |         | Boolean |
+| FirmwareVersion             |         | String  |
+| ForceShutterOpen            |         |         |
+| FrameCount                  | Integer | Integer |
+| FrameGenFixedPixelValue     |         |         |
+| FrameGenMode                |         |         |
+| FrameInterval               |         |         |
+| FrameIntervalTiming         |         |         |
+| FrameRate                   | Float   | Float   |
+| FullAOIControl              |         | Boolean |
+| GateMode                    |         |         |
+| HeatSinkTemperature         |         |         |
+| I2CAddress                  |         |         |
+| I2CByte                     |         |         |
+| I2CByteCount                |         |         |
+| I2CByteSelector             |         |         |
+| I2CRead                     |         |         |
+| I2CWrite                    |         |         |
+| IOControl                   |         |         |
+| IODirection                 |         |         |
+| IOInvert                    |         | Boolean |
+| IOSelector                  |         | Enum    |
+| IOState                     |         |         |
+| IRPreFlashEnable            |         |         |
+| ImageSizeBytes              | Integer | Integer |
+| InputVoltage                |         |         |
+| InsertionDelay              |         |         |
+| InterfaceType               |         | String  |
+| KeepCleanEnable             |         |         |
+| KeepCleanPostExposureEnable |         |         |
+| LUTIndex                    |         | Integer |
+| LUTValue                    |         | Integer |
+| LineScanSpeed               |         | Float   |
+| LogLevel                    | Enum    | Enum    |
+| MCPGain                     |         |         |
+| MCPIntelligate              |         |         |
+| MCPVoltage                  |         |         |
+| MaxInterfaceTransferRate    |         | Float   |
+| MetadataEnable              |         | Boolean |
+| MetadataFrame               |         | Boolean |
+| MetadataTimestamp           |         | Boolean |
+| MicrocodeVersion            |         |         |
+| MultitrackBinned            |         | Boolean |
+| MultitrackCount             |         | Integer |
+| MultitrackEnd               |         | Integer |
+| MultitrackSelector          |         | Integer |
+| MultitrackStart             |         | Integer |
+| Overlap                     |         | Boolean |
+| PIVEnable                   |         |         |
+| PixelCorrection             | Enum    |         |
+| PixelEncoding               | Enum    | Enum    |
+| PixelHeight                 | Float   | Float   |
+| PixelReadoutRate            | Enum    | Enum    |
+| PixelWidth                  | Float   | Float   |
+| PortSelector                |         |         |
+| PreAmpGain                  | Enum    |         |
+| PreAmpGainChannel           | Enum    |         |
+| PreAmpGainControl           |         |         |
+| PreAmpGainSelector          | Enum    |         |
+| PreAmpGainValue             |         |         |
+| PreAmpOffsetValue           |         |         |
+| PreTriggerEnable            |         |         |
+| ReadoutTime                 |         | Float   |
+| RollingShutterGlobalClear   |         | Boolean |
+| RowNExposureEndEvent        |         | Integer |
+| RowNExposureStartEvent      |         | Integer |
+| RowReadTime                 |         | Float   |
+| ScanSpeedControlEnable      |         | Boolean |
+| SensorCooling               | Boolean | Boolean |
+| SensorHeight                | Integer | Integer |
+| SensorModel                 |         |         |
+| SensorReadoutMode           |         | Enum    |
+| SensorTemperature           | Float   | Float   |
+| SensorType                  |         |         |
+| SensorWidth                 | Integer | Integer |
+| SerialNumber                | String  | String  |
+| ShutterAmpControl           |         |         |
+| ShutterMode                 |         | Enum    |
+| ShutterOutputMode           |         | Enum    |
+| ShutterState                |         |         |
+| ShutterStrobePeriod         |         |         |
+| ShutterStrobePosition       |         |         |
+| ShutterTransferTime         |         | Float   |
+| SimplePreAmpGainControl     |         | Enum    |
+| SoftwareTrigger             |         | Command |
+| SoftwareVersion             | String  | String  |
+| SpuriousNoiseFilter         |         | Boolean |
+| StaticBlemishCorrection     |         | Boolean |
+| SynchronousTriggering       | Boolean |         |
+| TargetSensorTemperature     | Float   |         |
+| TemperatureControl          |         | Enum    |
+| TemperatureStatus           |         | Enum    |
+| TimestampClock              |         | Integer |
+| TimestampClockFrequency     |         | Integer |
+| TimestampClockReset         |         | Command |
+| TransmitFrames              |         |         |
+| TriggerMode                 | Enum    | Enum    |
+| UsbDeviceId                 |         |         |
+| UsbProductId                |         |         |
+| VerticallyCentreAOI         |         | Boolean |
+
+`DeviceCount` is also available via `AT_HANDLE_SYSTEM`.
+
 # Error management
 
 ## Status codes per type of operations

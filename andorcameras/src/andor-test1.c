@@ -1,3 +1,17 @@
+/*
+ * andor-test1.c --
+ *
+ * Simple tests for Andor cameras library: initialize library and query number
+ * of available devices.
+ *
+ *-----------------------------------------------------------------------------
+ *
+ * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
+ * under the MIT license.
+ *
+ * Copyright (C) 2019, Éric Thiébaut.
+ */
+
 #include <stdio.h>
 #include <andorcameras.h>
 

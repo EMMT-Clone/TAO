@@ -1,3 +1,16 @@
+/*
+ * andorcameras.h --
+ *
+ * Definitions for Andor cameras library.
+ *
+ *-----------------------------------------------------------------------------
+ *
+ * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
+ * under the MIT license.
+ *
+ * Copyright (C) 2019, Éric Thiébaut.
+ */
+
 #ifndef _ANDORCAMERAS_H
 #define _ANDORCAMERAS_H 1
 
@@ -38,17 +51,38 @@ andor_initialize(tao_error_t** errs);
  *
  * @return The number of available devices, `-1L` on error.
  */
-extern long
-andor_get_ndevices(tao_error_t** errs);
+extern long andor_get_ndevices(tao_error_t** errs);
 
-extern const char*
-andor_get_error_reason(int code);
+extern const char* andor_get_error_reason(int code);
 
-extern const char*
-andor_get_error_name(int code);
+extern const char* andor_get_error_name(int code);
 
-extern void
-andor_push_error(tao_error_t** errs, const char* func, int code);
+extern void andor_push_error(tao_error_t** errs, const char* func, int code);
+
+typedef enum andor_feature_type {
+    ANDOR_NOT_IMPLEMENTED,
+    ANDOR_BOOLEAN,
+    ANDOR_INTEGER,
+    ANDOR_FLOAT,
+    ANDOR_ENUMERATED,
+    ANDOR_STRING,
+    ANDOR_COMMAND
+} andor_feature_type_t;
+
+typedef struct andor_feature_value andor_feature_value_t;
+struct andor_feature_value {
+    andor_feature_type_t type;
+    union {
+        bool boolean;
+        long integer;
+        double floatingpoint;
+        wchar_t* string;
+    } value;
+};
+
+extern const wchar_t** andor_get_feature_names();
+extern const andor_feature_type_t* andor_get_simcam_feature_types();
+extern const andor_feature_type_t* andor_get_zyla_feature_types();
 
 _TAO_END_DECLS
 

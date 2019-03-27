@@ -16,8 +16,8 @@ TAO_DEFS = -I${TAO_SRCDIR}
 TAO_LIBS = ${srcdir}/../../build/src/.libs/libtao.a -lpthread -lm
 
 LIBRARY = libandorcameras.a
-OBJECTS = andor-errors.o andor-core.o
-DEPS = ${srcdir}/andorcameras.h ${TAO_SRCDIR}/tao.h
+OBJECTS = andor-errors.o andor-core.o andor-features.o
+DEPS = ${srcdir}/andorcameras.h ${srcdir}/andor-features.h ${TAO_SRCDIR}/tao.h
 
 all: ${LIBRARY}
 
@@ -27,10 +27,14 @@ clean:
 dist-clean: clean
 	rm -f ${LIBRARY} ${OBJECTS}
 
-test: andor-test1
+test: andor-test1 andor-test2
 	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test1
+	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test2
 
 andor-test1: ${srcdir}/andor-test1.c ${DEPS} ${LIBRARY}
+	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
+
+andor-test2: ${srcdir}/andor-test2.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
 
 ${LIBRARY}: ${OBJECTS}
