@@ -181,42 +181,43 @@ typedef struct tao_error tao_error_t;
  */
 typedef enum tao_error_code {
     TAO_SUCCESS             =   0, /**< Operation was successful */
-    TAO_ASSERTION_FAILED    =  -1, /**< Assertion failed */
-    TAO_BAD_ADDRESS         =  -2, /**< Invalid address */
-    TAO_BAD_ARGUMENT        =  -3, /**< Invalid argument */
-    TAO_BAD_CHARACTER       =  -4, /**< Illegal character */
-    TAO_BAD_ESCAPE          =  -5, /**< Unknown escape sequence */
-    TAO_BAD_MAGIC           =  -6, /**< Invalid magic number */
-    TAO_BAD_RANK            =  -7, /**< Invalid number of dimensions */
-    TAO_BAD_SERIAL          =  -8, /**< Invalid serial number */
-    TAO_BAD_SIZE            =  -9, /**< Invalid size */
-    TAO_BAD_TYPE            = -10, /**< Invalid type */
+    TAO_ACQUISITION_RUNNING =  -1, /**< Acquisition running */
+    TAO_ALREADY_EXIST       =  -2, /**< Destination already exists */
+    TAO_ALREADY_IN_USE      =  -3, /**< Resource already in use */
+    TAO_ASSERTION_FAILED    =  -4, /**< Assertion failed */
+    TAO_BAD_ADDRESS         =  -5, /**< Invalid address */
+    TAO_BAD_ARGUMENT        =  -6, /**< Invalid argument */
+    TAO_BAD_BIAS            =  -7, /**< Invalid detector bias */
+    TAO_BAD_CHANNELS        =  -8, /**< Invalid number of channels */
+    TAO_BAD_CHARACTER       =  -9, /**< Illegal character */
+    TAO_BAD_DEPTH           = -10, /**< Invalid bits per pixel */
     TAO_BAD_DEVICE          = -11, /**< Invalid device */
-    TAO_BAD_DEPTH           = -12, /**< Invalid bits per pixel */
-    TAO_BAD_BIAS            = -13, /**< Invalid detector bias */
+    TAO_BAD_ESCAPE          = -12, /**< Unknown escape sequence */
+    TAO_BAD_EXPOSURE        = -13, /**< Invalid exposure time */
     TAO_BAD_GAIN            = -14, /**< Invalid detector gain */
-    TAO_BAD_EXPOSURE        = -15, /**< Invalid exposure time */
-    TAO_BAD_RATE            = -16, /**< Invalid acquistion frame rate */
-    TAO_BAD_ROI             = -17, /**< Invalid region of interest */
-    TAO_BAD_SPEED           = -18, /**< Invalid connection speed */
-    TAO_BAD_CHANNELS        = -19, /**< Invalid number of channels */
-    TAO_CANT_TRACK_ERROR    = -20, /**< Insufficient memory to track errors */
-    TAO_CORRUPTED           = -21, /**< Corrupted structure */
-    TAO_DESTROYED           = -22, /**< Resource has been destroyed */
-    TAO_MISSING_SEPARATOR   = -23, /**< Separator missing */
-    TAO_OUT_OF_RANGE        = -24, /**< Out of range argument */
-    TAO_SYSTEM_ERROR        = -25, /**< Unknown system error */
-    TAO_UNCLOSED_STRING     = -26, /**< Unclosed string */
-    TAO_UNREADABLE          = -27, /**< Not readable */
-    TAO_UNWRITABLE          = -28, /**< Not writable */
-    TAO_ALREADY_IN_USE      = -29, /**< Resource already in use */
-    TAO_NOT_FOUND           = -30, /**< Item not found */
-    TAO_NOT_READY           = -31, /**< Device not ready */
-    TAO_NO_ACQUISITION      = -32, /**< Acquisition not started */
-    TAO_ACQUISITION_RUNNING = -33, /**< Acquisition running */
-    TAO_UNSUPPORTED         = -34, /**< Unsupported feature */
-    TAO_ALREADY_EXIST       = -35, /**< Destination already exists */
-    TAO_NO_FITS_SUPPORT     = -40, /**< Compiled with no FITS support */
+    TAO_BAD_MAGIC           = -15, /**< Invalid magic number */
+    TAO_BAD_NAME            = -16, /**< Bad parameter name */
+    TAO_BAD_RANK            = -17, /**< Invalid number of dimensions */
+    TAO_BAD_RATE            = -18, /**< Invalid acquistion frame rate */
+    TAO_BAD_ROI             = -19, /**< Invalid region of interest */
+    TAO_BAD_SERIAL          = -20, /**< Invalid serial number */
+    TAO_BAD_SIZE            = -21, /**< Invalid size */
+    TAO_BAD_SPEED           = -22, /**< Invalid connection speed */
+    TAO_BAD_TYPE            = -23, /**< Invalid type */
+    TAO_CANT_TRACK_ERROR    = -24, /**< Insufficient memory to track errors */
+    TAO_CORRUPTED           = -25, /**< Corrupted structure */
+    TAO_DESTROYED           = -26, /**< Resource has been destroyed */
+    TAO_MISSING_SEPARATOR   = -27, /**< Separator missing */
+    TAO_NOT_FOUND           = -28, /**< Item not found */
+    TAO_NOT_READY           = -29, /**< Device not ready */
+    TAO_NO_ACQUISITION      = -30, /**< Acquisition not started */
+    TAO_NO_FITS_SUPPORT     = -31, /**< Compiled with no FITS support */
+    TAO_OUT_OF_RANGE        = -32, /**< Out of range argument */
+    TAO_SYSTEM_ERROR        = -33, /**< Unknown system error */
+    TAO_UNCLOSED_STRING     = -34, /**< Unclosed string */
+    TAO_UNREADABLE          = -35, /**< Not readable */
+    TAO_UNSUPPORTED         = -40, /**< Unsupported feature */
+    TAO_UNWRITABLE          = -41, /**< Not writable */
 } tao_error_code_t;
 
 
@@ -1822,7 +1823,7 @@ tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond);
  * hints to the compiler about the expected result of an expression.  Some
  * compilers can use this information for optimizations.
  *
- * @parame expr   The expression to test.
+ * @param expr   The expression to test.
  *
  * @see TAO_UNLIKELY.
  */
@@ -1832,7 +1833,7 @@ tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond);
  *
  * @brief Indicate to the compiler that an expression is expected to be false.
  *
- * @parame expr   The expression to test.
+ * @param expr   The expression to test.
  *
  * @see TAO_LIKELY.
  */

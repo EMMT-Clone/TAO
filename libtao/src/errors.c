@@ -273,42 +273,43 @@ const char*
 FUNC(int code)
 {
     switch (code) {
-        CASE(TAO_NO_FITS_SUPPORT, "Compiled with no FITS support");
-        CASE(TAO_ALREADY_EXIST, "Destination already exists");
-        CASE(TAO_UNSUPPORTED, "Unsupported feature");
-        CASE(TAO_ACQUISITION_RUNNING, "Acquisition running");
-        CASE(TAO_NO_ACQUISITION, "Acquisition not started");
-        CASE(TAO_NOT_READY, "Device not ready");
-        CASE(TAO_NOT_FOUND, "Item not found");
-        CASE(TAO_ALREADY_IN_USE, "Resource already in use");
         CASE(TAO_UNWRITABLE, "Not writable");
+        CASE(TAO_UNSUPPORTED, "Unsupported feature");
         CASE(TAO_UNREADABLE, "Not readable");
         CASE(TAO_UNCLOSED_STRING, "Unclosed string");
         CASE(TAO_SYSTEM_ERROR, "Unknown system error");
         CASE(TAO_OUT_OF_RANGE, "Out of range argument");
+        CASE(TAO_NO_FITS_SUPPORT, "Compiled with no FITS support");
+        CASE(TAO_NO_ACQUISITION, "Acquisition not started");
+        CASE(TAO_NOT_READY, "Device not ready");
+        CASE(TAO_NOT_FOUND, "Item not found");
         CASE(TAO_MISSING_SEPARATOR, "Separator missing");
         CASE(TAO_DESTROYED, "Ressource has been destroyed");
         CASE(TAO_CORRUPTED, "Corrupted structure");
         CASE(TAO_CANT_TRACK_ERROR, "Insufficient memory to track errors");
-        CASE(TAO_BAD_CHANNELS, "Invalid number of channels");
-        CASE(TAO_BAD_SPEED, "Invalid connection speed");
-        CASE(TAO_BAD_ROI, "Invalid region of interest");
-        CASE(TAO_BAD_RATE, "Invalid acquistion frame rate");
-        CASE(TAO_BAD_EXPOSURE, "Invalid exposure time");
-        CASE(TAO_BAD_GAIN, "Invalid detector gain");
-        CASE(TAO_BAD_BIAS, "Invalid detector bias");
-        CASE(TAO_BAD_DEPTH, "Invalid bits per pixel");
-        CASE(TAO_BAD_DEVICE, "Invalid device");
         CASE(TAO_BAD_TYPE, "Invalid type");
+        CASE(TAO_BAD_SPEED, "Invalid connection speed");
         CASE(TAO_BAD_SIZE, "Invalid size");
         CASE(TAO_BAD_SERIAL, "Invalid serial number");
+        CASE(TAO_BAD_ROI, "Invalid region of interest");
+        CASE(TAO_BAD_RATE, "Invalid acquistion frame rate");
         CASE(TAO_BAD_RANK, "Invalid number of dimensions");
+        CASE(TAO_BAD_NAME, "Bad parameter name");
         CASE(TAO_BAD_MAGIC, "Invalid magic number");
+        CASE(TAO_BAD_GAIN, "Invalid detector gain");
+        CASE(TAO_BAD_EXPOSURE, "Invalid exposure time");
         CASE(TAO_BAD_ESCAPE, "Unknown escape sequence");
+        CASE(TAO_BAD_DEVICE, "Invalid device");
+        CASE(TAO_BAD_DEPTH, "Invalid bits per pixel");
         CASE(TAO_BAD_CHARACTER, "Illegal character");
+        CASE(TAO_BAD_CHANNELS, "Invalid number of channels");
+        CASE(TAO_BAD_BIAS, "Invalid detector bias");
         CASE(TAO_BAD_ARGUMENT, "Invalid argument");
         CASE(TAO_BAD_ADDRESS, "Invalid address");
         CASE(TAO_ASSERTION_FAILED, "Assertion failed");
+        CASE(TAO_ALREADY_IN_USE, "Resource already in use");
+        CASE(TAO_ALREADY_EXIST, "Destination already exists");
+        CASE(TAO_ACQUISITION_RUNNING, "Acquisition running");
         CASE(TAO_SUCCESS, "Operation was successful");
 
 #ifdef EPERM
