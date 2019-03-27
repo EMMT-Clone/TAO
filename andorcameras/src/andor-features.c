@@ -20,7 +20,7 @@
 #define L(str) L##str
 
 #undef _ANDOR_FEATURE
-#define _ANDOR_FEATURE(f,s,z) L(#f),
+#define _ANDOR_FEATURE(key, sys, sim, zyl) L(#key),
 const wchar_t* andor_feature_names[] = {_ANDOR_FEATURES NULL};
 
 const wchar_t**
@@ -40,13 +40,13 @@ andor_get_feature_names()
 #define FEATURE_TYPE_C ANDOR_COMMAND
 
 #undef _ANDOR_FEATURE
-#define _ANDOR_FEATURE(f,s,z) FEATURE_TYPE(s),
+#define _ANDOR_FEATURE(key, sys, sim, zyl) FEATURE_TYPE(sim),
 const andor_feature_type_t andor_simcam_feature_types[] = {
     _ANDOR_FEATURES -1
 };
 
 #undef _ANDOR_FEATURE
-#define _ANDOR_FEATURE(f,s,z) FEATURE_TYPE(z),
+#define _ANDOR_FEATURE(key, sys, sim, zyl) FEATURE_TYPE(zyl),
 const andor_feature_type_t andor_zyla_feature_types[] = {
     _ANDOR_FEATURES -1
 };

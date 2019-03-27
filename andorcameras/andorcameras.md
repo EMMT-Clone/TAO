@@ -172,7 +172,8 @@
 | UsbProductId                |         |         |
 | VerticallyCentreAOI         |         | Boolean |
 
-`DeviceCount` is also available via `AT_HANDLE_SYSTEM`.
+In spite of what says the doc., `DeviceCount` and `SoftwareVersion` are only
+available via `AT_HANDLE_SYSTEM`.
 
 If macros `ANDOR_GET_INTEGER`, `ANDOR_GET_FLOAT`, etc. are used, the name of
 the feature is automatically concatenated to that of the function to have more
