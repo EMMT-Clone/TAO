@@ -207,15 +207,77 @@ enum andor_feature {_ANDOR_FEATURES};
 
 #define ANDOR_NFEATURES (1 + VerticallyCentreAOI)
 
+/* Low-level getters and setters to correctly report errors. */
+
+extern int _andor_is_implemented(tao_error_t** errs, AT_H handle,
+                                 andor_feature_t key, bool* ptr,
+                                 const char* info);
+extern int _andor_is_readable(tao_error_t** errs, AT_H handle,
+                              andor_feature_t key, bool* ptr,
+                              const char* info);
+extern int _andor_is_writable(tao_error_t** errs, AT_H handle,
+                              andor_feature_t key, bool* ptr,
+                              const char* info);
+extern int _andor_is_readonly(tao_error_t** errs, AT_H handle,
+                              andor_feature_t key, bool* ptr,
+                              const char* info);
+extern int _andor_set_boolean(tao_error_t** errs, AT_H handle,
+                              andor_feature_t key, bool val,
+                              const char* info);
 extern int _andor_get_boolean(tao_error_t** errs, AT_H handle,
                               andor_feature_t key, bool* ptr,
+                              const char* info);
+extern int _andor_set_integer(tao_error_t** errs, AT_H handle,
+                              andor_feature_t key, long val,
                               const char* info);
 extern int _andor_get_integer(tao_error_t** errs, AT_H handle,
                               andor_feature_t key, long* ptr,
                               const char* info);
+extern int _andor_get_integer_min(tao_error_t** errs, AT_H handle,
+                                  andor_feature_t key, long* ptr,
+                                  const char* info);
+extern int _andor_get_integer_max(tao_error_t** errs, AT_H handle,
+                                  andor_feature_t key, long* ptr,
+                                  const char* info);
+extern int _andor_set_float(tao_error_t** errs, AT_H handle,
+                            andor_feature_t key, double val,
+                            const char* info);
 extern int _andor_get_float(tao_error_t** errs, AT_H handle,
                             andor_feature_t key, double* ptr,
                             const char* info);
+extern int _andor_get_float_min(tao_error_t** errs, AT_H handle,
+                                andor_feature_t key, double* ptr,
+                                const char* info);
+extern int _andor_get_float_max(tao_error_t** errs, AT_H handle,
+                                andor_feature_t key, double* ptr,
+                                const char* info);
+extern int _andor_set_enum_index(tao_error_t** errs, AT_H handle,
+                                 andor_feature_t key, int val,
+                                 const char* info);
+extern int _andor_set_enum_string(tao_error_t** errs, AT_H handle,
+                                  andor_feature_t key, const AT_WC* val,
+                                  const char* info);
+extern int _andor_get_enum_index(tao_error_t** errs, AT_H handle,
+                                 andor_feature_t key, int* ptr,
+                                 const char* info);
+extern int _andor_get_enum_count(tao_error_t** errs, AT_H handle,
+                                 andor_feature_t key, int* ptr,
+                                 const char* info);
+extern int _andor_is_enum_index_available(tao_error_t** errs, AT_H handle,
+                                          andor_feature_t key, int idx,
+                                          bool* ptr, const char* info);
+extern int _andor_is_enum_index_implemented(tao_error_t** errs, AT_H handle,
+                                            andor_feature_t key, int idx,
+                                            bool* ptr, const char* info);
+extern int _andor_set_string(tao_error_t** errs, AT_H handle,
+                             andor_feature_t key, const AT_WC* val,
+                             const char* info);
+extern int _andor_get_string(tao_error_t** errs, AT_H handle,
+                             andor_feature_t key, AT_WC* str, long len,
+                             const char* info);
+extern int _andor_get_string_max_length(tao_error_t** errs, AT_H handle,
+                                        andor_feature_t key, long* ptr,
+                                        const char* info);
 
 _TAO_END_DECLS
 
@@ -225,22 +287,114 @@ _TAO_END_DECLS
 #define ANDOR_GET_BOOLEAN0(errs, handle, key, ptr) \
     _andor_get_boolean(errs, handle, key, ptr, "AT_GetBool("#key")")
 
-#define ANDOR_GET_INTEGER0(errs, handle, key, ptr)                      \
+#define ANDOR_GET_INTEGER0(errs, handle, key, ptr) \
     _andor_get_integer(errs, handle, key, ptr, "AT_GetInt("#key")")
 
-#define ANDOR_GET_FLOAT0(errs, handle, key, ptr)                        \
+#define ANDOR_GET_FLOAT0(errs, handle, key, ptr) \
     _andor_get_float(errs, handle, key, ptr, "AT_GetFloat("#key")")
+
+#define ANDOR_GET_STRING_MAX_LENGTH0(errs, handle, key, ptr)            \
+    _andor_get_string_max_length(errs, handle, key, ptr,                \
+                                 "AT_GetStringMaxLength("#key")")
+
+#define ANDOR_GET_STRING0(errs, handle, key, ptr, len) \
+    _andor_get_string(errs, handle, key, ptr, len, "AT_GetString("#key")")
 
 
 /* The following macros work with a `andor_camera_t` structure. */
 
-#define ANDOR_GET_BOOLEAN(cam, key, ptr)                                \
-    _andor_get_boolean(&cam->errs, cam->handle, key, ptr, "AT_GetBool("#key")")
+#define ANDOR_IS_IMPLEMENTED(cam, key, ptr)                     \
+    _andor_is_implemented(&cam->errs, cam->handle, key, ptr,    \
+                          "AT_IsImplemented("#key")")
 
-#define ANDOR_GET_INTEGER(cam, key, ptr) \
-    _andor_get_integer(&cam->errs, cam->handle, key, ptr, "AT_GetInt("#key")")
+#define ANDOR_IS_READABLE(cam, key, ptr)                        \
+    _andor_is_readable(&cam->errs, cam->handle, key, ptr,       \
+                       "AT_IsReadable("#key")")
 
-#define ANDOR_GET_FLOAT(cam, key, ptr) \
-    _andor_get_float(&cam->errs, cam->handle, key, ptr, "AT_GetFloat("#key")")
+#define ANDOR_IS_WRITABLE(cam, key, ptr)                        \
+    _andor_is_writable(&cam->errs, cam->handle, key, ptr,       \
+                       "AT_IsWritable("#key")")
+
+#define ANDOR_IS_READONLY(cam, key, ptr)                        \
+    _andor_is_readonly(&cam->errs, cam->handle, key, ptr,       \
+                       "AT_IsReadOnly("#key")")
+
+#define ANDOR_SET_BOOLEAN(cam, key, val)                        \
+    _andor_set_boolean(&cam->errs, cam->handle, key, val,       \
+                       "AT_SetBool("#key")")
+
+#define ANDOR_GET_BOOLEAN(cam, key, ptr)                        \
+    _andor_get_boolean(&cam->errs, cam->handle, key, ptr,       \
+                       "AT_GetBool("#key")")
+
+#define ANDOR_SET_INTEGER(cam, key, val)                        \
+    _andor_set_integer(&cam->errs, cam->handle, key, val,       \
+                       "AT_SetInt("#key")")
+
+#define ANDOR_GET_INTEGER(cam, key, ptr)                        \
+    _andor_get_integer(&cam->errs, cam->handle, key, ptr,       \
+                       "AT_GetInt("#key")")
+
+#define ANDOR_GET_INTEGER_MIN(cam, key, ptr)                    \
+    _andor_get_integer_min(&cam->errs, cam->handle, key, ptr,   \
+                           "AT_GetIntMin("#key")")
+
+#define ANDOR_GET_INTEGER_MAX(cam, key, ptr)                    \
+    _andor_get_integer_max(&cam->errs, cam->handle, key, ptr,   \
+                           "AT_GetIntMax("#key")")
+
+#define ANDOR_SET_FLOAT(cam, key, val)                  \
+    _andor_set_float(&cam->errs, cam->handle, key, val, \
+                     "AT_SetFloat("#key")")
+
+#define ANDOR_GET_FLOAT(cam, key, ptr)                  \
+    _andor_get_float(&cam->errs, cam->handle, key, ptr, \
+                     "AT_GetFloat("#key")")
+
+#define ANDOR_GET_FLOAT_MIN(cam, key, ptr)                      \
+    _andor_get_float_min(&cam->errs, cam->handle, key, ptr,     \
+                         "AT_GetFloatMin("#key")")
+
+#define ANDOR_GET_FLOAT_MAX(cam, key, ptr)                      \
+    _andor_get_float_max(&cam->errs, cam->handle, key, ptr,     \
+                         "AT_GetFloatMax("#key")")
+
+#define ANDOR_SET_ENUM_INDEX(cam, key, val)                     \
+    _andor_set_enum_index(&cam->errs, cam->handle, key, val,    \
+                          "AT_SetEnumIndex("#key")")
+
+#define ANDOR_SET_ENUM_STRING(cam, key, val)                    \
+    _andor_set_enum_string(&cam->errs, cam->handle, key, val,   \
+                           "AT_SetEnumString("#key")")
+
+#define ANDOR_GET_ENUM_INDEX(cam, key, ptr)                     \
+    _andor_get_enum_index(&cam->errs, cam->handle, key, ptr,    \
+                          "AT_GetEnumIndex("#key")")
+
+#define ANDOR_GET_ENUM_COUNT(cam, key, ptr)                     \
+    _andor_get_enum_count(&cam->errs, cam->handle, key, ptr,    \
+                          "AT_GetEnumCount("#key")")
+
+#define ANDOR_IS_ENUM_INDEX_AVAILABLE(cam, key, idx, ptr)               \
+    _andor_is_enum_index_available(&cam->errs, cam->handle,             \
+                                   key, idx, ptr,                       \
+                                   "AT_IsEnumIndexAvailable("#key")")
+
+#define ANDOR_IS_ENUM_INDEX_IMPLEMENTED(cam, key, idx, ptr)             \
+    _andor_is_enum_index_implemented(&cam->errs, cam->handle,           \
+                                     key, idx, ptr,                     \
+                                     "AT_IsEnumIndexImplemented("#key")")
+
+#define ANDOR_SET_STRING(cam, key, ptr)                         \
+    _andor_set_string(&cam->errs, cam->handle, key, ptr, len,   \
+                      "AT_SetString("#key")")
+
+#define ANDOR_GET_STRING(cam, key, ptr, len)                    \
+    _andor_get_string(&cam->errs, cam->handle, key, ptr, len,   \
+                      "AT_GetString("#key")")
+
+#define ANDOR_GET_STRING_MAX_LENGTH(cam, key, ptr)                      \
+    _andor_get_string_max_length(&cam->errs, cam->handle, key, ptr,     \
+                                 "AT_GetStringMaxLength("#key")")
 
 #endif /* _ANDOR_FEATURES_H */
