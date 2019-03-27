@@ -2,7 +2,7 @@
  * andor-test1.c --
  *
  * Simple tests for Andor cameras library: initialize library and query number
- * of available devices.
+ * of available devices and software version.
  *
  *-----------------------------------------------------------------------------
  *
@@ -24,5 +24,6 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     fprintf(stdout, "%ld device(s) found\n", ndevices);
+    fprintf(stdout, "Andor SDK Version: %s\n", andor_get_software_version());
     return EXIT_SUCCESS;
 }

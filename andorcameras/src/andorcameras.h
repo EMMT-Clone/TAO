@@ -53,6 +53,16 @@ andor_initialize(tao_error_t** errs);
  */
 extern long andor_get_ndevices(tao_error_t** errs);
 
+/**
+ * Get the version of the Andor SDK.
+ *
+ * This function never fails, in case of errors, the returned version number is
+ * `"0.0.0"` and errors messages are printed.
+ *
+ * @return A string.
+ */
+const char* andor_get_software_version();
+
 extern const char* andor_get_error_reason(int code);
 
 extern const char* andor_get_error_name(int code);

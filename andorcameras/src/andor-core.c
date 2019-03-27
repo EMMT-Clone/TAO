@@ -11,6 +11,7 @@
  * Copyright (C) 2019, Éric Thiébaut.
  */
 
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -47,6 +48,8 @@ check1(tao_error_t** errs, const char* func, int code)
 
 /* FIXME: shall we protect this by a mutex? */
 static long ndevices = -2;
+#define SDK_VERSION_MAXLEN 32
+static char sdk_version[SDK_VERSION_MAXLEN+1];
 
 long
 andor_get_ndevices(tao_error_t** errs)
@@ -55,6 +58,37 @@ andor_get_ndevices(tao_error_t** errs)
         return -1L;
     }
     return ndevices;
+}
+
+const char*
+andor_get_software_version(tao_error_t** errs)
+{
+    if (sdk_version[0] == 0) {
+        AT_WC version[SDK_VERSION_MAXLEN+1];
+        tao_error_t* errs = TAO_NO_ERRORS;
+        int status;
+        if (ndevices < 0) {
+            if (andor_initialize(&errs) != 0) {
+            error:
+                tao_report_errors(&errs);
+                strcat(sdk_version, "0.0.0");
+                return sdk_version;
+            }
+        }
+        status = AT_GetString(AT_HANDLE_SYSTEM,
+                              andor_feature_names[SoftwareVersion],
+                              version, SDK_VERSION_MAXLEN);
+        if (status != AT_SUCCESS) {
+            andor_push_error(&errs, "AT_GetString(SoftwareVersion)", status);
+            goto error;
+        }
+        tao_discard_errors(&errs); /* not needed in principle */
+        for (int i = 0; i < SDK_VERSION_MAXLEN && version[i] != 0; ++i) {
+            sdk_version[i] = (char)version[i];
+        }
+        sdk_version[SDK_VERSION_MAXLEN] = 0;
+    }
+    return sdk_version;
 }
 
 #if 0
