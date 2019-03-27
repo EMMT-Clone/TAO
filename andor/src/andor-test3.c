@@ -15,11 +15,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <andor.h>
+#include <andor-features.h>
 
 int main(int argc, char* argv[])
 {
     tao_error_t* errs = TAO_NO_ERRORS;
     andor_camera_t* cam;
+    double temperature;
     long dev, ndevices;
     char* end;
 
@@ -47,6 +49,11 @@ int main(int argc, char* argv[])
     }
     fprintf(stdout, "Sensor size: %ld × %ld pixels\n",
             cam->sensorwidth, cam->sensorheight);
+    if (ANDOR_GET_FLOAT(cam, SensorTemperature, &temperature) != 0) {
+        tao_report_errors(&cam->errs);
+        return EXIT_FAILURE;
+    }
+    fprintf(stdout, "Sensor temperature: %.1f°C\n", temperature);
     andor_close_camera(cam);
     return EXIT_SUCCESS;
 }
