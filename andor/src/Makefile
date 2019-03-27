@@ -15,9 +15,9 @@ TAO_SRCDIR = ${srcdir}/../../libtao/src
 TAO_DEFS = -I${TAO_SRCDIR}
 TAO_LIBS = ${srcdir}/../../build/src/.libs/libtao.a -lpthread -lm
 
-LIBRARY = libandorcameras.a
+LIBRARY = libandor.a
 OBJECTS = andor-errors.o andor-core.o andor-features.o
-DEPS = ${srcdir}/andorcameras.h ${srcdir}/andor-features.h ${TAO_SRCDIR}/tao.h
+DEPS = ${srcdir}/andor.h ${srcdir}/andor-features.h ${TAO_SRCDIR}/tao.h
 
 all: ${LIBRARY}
 

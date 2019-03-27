@@ -14,7 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <andorcameras.h>
+#include <andor.h>
 
 int main(int argc, char* argv[])
 {

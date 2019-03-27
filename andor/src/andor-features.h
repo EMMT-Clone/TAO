@@ -14,7 +14,7 @@
 #ifndef _ANDOR_FEATURES_H
 #define _ANDOR_FEATURES_H 1
 
-#include "andorcameras.h"
+#include "andor.h"
 
 /*
  * All known features (i.e. found in Andor SDK Documentation) are summarized in

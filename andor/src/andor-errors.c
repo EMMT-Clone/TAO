@@ -14,7 +14,7 @@
 #ifndef _ANDOR_ERRORS_C
 #define _ANDOR_ERRORS_C 1
 
-#include "andorcameras.h"
+#include "andor.h"
 
 static void
 get_andor_error_details(int code, const char** reason, const char** info)

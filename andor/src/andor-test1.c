@@ -13,7 +13,7 @@
  */
 
 #include <stdio.h>
-#include <andorcameras.h>
+#include <andor.h>
 
 int main(int argc, char* argv[])
 {

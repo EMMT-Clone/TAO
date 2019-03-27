@@ -1,5 +1,5 @@
 /*
- * andorcameras.h --
+ * andor.h --
  *
  * Definitions for Andor cameras library.
  *
@@ -11,8 +11,8 @@
  * Copyright (C) 2019, Éric Thiébaut.
  */
 
-#ifndef _ANDORCAMERAS_H
-#define _ANDORCAMERAS_H 1
+#ifndef _ANDOR_H
+#define _ANDOR_H 1
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -112,4 +112,4 @@ extern void andor_close_camera(andor_camera_t* cam);
 
 _TAO_END_DECLS
 
-#endif /* _ANDORCAMERAS_H */
+#endif /* _ANDOR_H */

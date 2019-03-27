@@ -18,7 +18,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "andorcameras.h"
+#include "andor.h"
 #include "andor-features.h"
 
 static int
