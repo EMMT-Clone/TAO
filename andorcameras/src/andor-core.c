@@ -12,6 +12,10 @@
  */
 
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include "andorcameras.h"
 
 static int
@@ -67,12 +71,19 @@ andor_finalize_library(tao_error_t** errs)
 }
 #endif
 
+static const char* logfile = "/tmp/atdebug.log";
+static mode_t logmode = (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+
 static void finalize(void)
 {
+    /* Finalize the library (if it has been initialized) and try to change
+       access permissions for the logfile to avoid crash for others.  Any
+       errors are ignoored here. */
     if (ndevices >= 0) {
         ndevices = -1;
         (void)AT_InitialiseLibrary();
     }
+    (void)chmod(logfile, logmode);
 }
 
 int
@@ -82,6 +93,23 @@ andor_initialize(tao_error_t** errs)
     int status;
 
     if (ndevices == -2) {
+        /* Before initializing Andor Core library, we set r/w permissions for
+           all users to the log file "/tmp/atdebug.log" (otherwise
+           initialization will crash for others). */
+        int fd = open(logfile, O_RDWR|O_CREAT, logmode);
+        if (fd == -1) {
+            fprintf(stderr,
+                    "ERROR: Log file \"%s\" cannot be open/created for "
+                    "r/w access.\n       You may either remove this file or "
+                    "change its access permissions with:\n       "
+                    "$ sudo chmod a+rw %s\n", logfile, logfile);
+            tao_push_system_error(errs, "open");
+            return -1;
+        }
+        (void)close(fd);
+
+        /* Initialize Andor Core library and schedule to perform finalization
+           at exit. */
         status = CALL0(errs, AT_InitialiseLibrary,());
         if (status != AT_SUCCESS) {
             return -1;
