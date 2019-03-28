@@ -192,32 +192,33 @@ typedef enum tao_error_code {
     TAO_BAD_CHARACTER       =  -9, /**< Illegal character */
     TAO_BAD_DEPTH           = -10, /**< Invalid bits per pixel */
     TAO_BAD_DEVICE          = -11, /**< Invalid device */
-    TAO_BAD_ESCAPE          = -12, /**< Unknown escape sequence */
-    TAO_BAD_EXPOSURE        = -13, /**< Invalid exposure time */
-    TAO_BAD_GAIN            = -14, /**< Invalid detector gain */
-    TAO_BAD_MAGIC           = -15, /**< Invalid magic number */
-    TAO_BAD_NAME            = -16, /**< Bad parameter name */
-    TAO_BAD_RANK            = -17, /**< Invalid number of dimensions */
-    TAO_BAD_RATE            = -18, /**< Invalid acquistion frame rate */
-    TAO_BAD_ROI             = -19, /**< Invalid region of interest */
-    TAO_BAD_SERIAL          = -20, /**< Invalid serial number */
-    TAO_BAD_SIZE            = -21, /**< Invalid size */
-    TAO_BAD_SPEED           = -22, /**< Invalid connection speed */
-    TAO_BAD_TYPE            = -23, /**< Invalid type */
-    TAO_CANT_TRACK_ERROR    = -24, /**< Insufficient memory to track errors */
-    TAO_CORRUPTED           = -25, /**< Corrupted structure */
-    TAO_DESTROYED           = -26, /**< Resource has been destroyed */
-    TAO_MISSING_SEPARATOR   = -27, /**< Separator missing */
-    TAO_NOT_FOUND           = -28, /**< Item not found */
-    TAO_NOT_READY           = -29, /**< Device not ready */
-    TAO_NO_ACQUISITION      = -30, /**< Acquisition not started */
-    TAO_NO_FITS_SUPPORT     = -31, /**< Compiled with no FITS support */
-    TAO_OUT_OF_RANGE        = -32, /**< Out of range argument */
-    TAO_SYSTEM_ERROR        = -33, /**< Unknown system error */
-    TAO_UNCLOSED_STRING     = -34, /**< Unclosed string */
-    TAO_UNREADABLE          = -35, /**< Not readable */
-    TAO_UNSUPPORTED         = -40, /**< Unsupported feature */
-    TAO_UNWRITABLE          = -41, /**< Not writable */
+    TAO_BAD_ENCODING        = -12, /**< Bad encoding */
+    TAO_BAD_ESCAPE          = -13, /**< Unknown escape sequence */
+    TAO_BAD_EXPOSURE        = -14, /**< Invalid exposure time */
+    TAO_BAD_GAIN            = -15, /**< Invalid detector gain */
+    TAO_BAD_MAGIC           = -16, /**< Invalid magic number */
+    TAO_BAD_NAME            = -17, /**< Bad parameter name */
+    TAO_BAD_RANK            = -18, /**< Invalid number of dimensions */
+    TAO_BAD_RATE            = -19, /**< Invalid acquistion frame rate */
+    TAO_BAD_ROI             = -20, /**< Invalid region of interest */
+    TAO_BAD_SERIAL          = -21, /**< Invalid serial number */
+    TAO_BAD_SIZE            = -22, /**< Invalid size */
+    TAO_BAD_SPEED           = -23, /**< Invalid connection speed */
+    TAO_BAD_TYPE            = -24, /**< Invalid type */
+    TAO_CANT_TRACK_ERROR    = -25, /**< Insufficient memory to track errors */
+    TAO_CORRUPTED           = -26, /**< Corrupted structure */
+    TAO_DESTROYED           = -27, /**< Resource has been destroyed */
+    TAO_MISSING_SEPARATOR   = -28, /**< Separator missing */
+    TAO_NOT_FOUND           = -29, /**< Item not found */
+    TAO_NOT_READY           = -30, /**< Device not ready */
+    TAO_NO_ACQUISITION      = -31, /**< Acquisition not started */
+    TAO_NO_FITS_SUPPORT     = -32, /**< Compiled with no FITS support */
+    TAO_OUT_OF_RANGE        = -33, /**< Out of range argument */
+    TAO_SYSTEM_ERROR        = -34, /**< Unknown system error */
+    TAO_UNCLOSED_STRING     = -35, /**< Unclosed string */
+    TAO_UNREADABLE          = -40, /**< Not readable */
+    TAO_UNSUPPORTED         = -41, /**< Unsupported feature */
+    TAO_UNWRITABLE          = -42, /**< Not writable */
 } tao_error_code_t;
 
 
@@ -1511,8 +1512,7 @@ tao_free(void* ptr);
  * @return `0` on success, `-1` on error.  In case of error, 0 seconds and 0
  * nanoseconds are stored in @b dest.
  */
-extern int
-tao_get_monotonic_time(tao_error_t** errs, struct timespec* dest);
+extern int tao_get_monotonic_time(tao_error_t** errs, struct timespec* dest);
 
 /**
  * Get the current time.
@@ -1527,8 +1527,7 @@ tao_get_monotonic_time(tao_error_t** errs, struct timespec* dest);
  * @return `0` on success, `-1` on error.  In case of error, 0 seconds and 0
  * nanoseconds are stored in @b dest.
  */
-extern int
-tao_get_current_time(tao_error_t** errs, struct timespec* dest);
+extern int tao_get_current_time(tao_error_t** errs, struct timespec* dest);
 
 /**
  * Normalize time-stamp.
@@ -1540,8 +1539,7 @@ tao_get_current_time(tao_error_t** errs, struct timespec* dest);
  *
  * @return The address @a ts.
  */
-extern struct timespec*
-tao_normalize_time(struct timespec* ts);
+extern struct timespec* tao_normalize_time(struct timespec* ts);
 
 /**
  * Add times.
@@ -1559,8 +1557,9 @@ tao_normalize_time(struct timespec* ts);
  *
  * @return The address @a dest.
  */
-extern struct timespec*
-tao_add_times(struct timespec* dest, const struct timespec* a, const struct timespec* b);
+extern struct timespec* tao_add_times(struct timespec* dest,
+                                      const struct timespec* a,
+                                      const struct timespec* b);
 
 /**
  * Subtract times.
@@ -1578,9 +1577,9 @@ tao_add_times(struct timespec* dest, const struct timespec* a, const struct time
  *
  * @return The address @a dest.
  */
-extern struct timespec*
-tao_subtract_times(struct timespec* dest,
-                   const struct timespec* a, const struct timespec* b);
+extern struct timespec* tao_subtract_times(struct timespec* dest,
+                                           const struct timespec* a,
+                                           const struct timespec* b);
 
 /**
  * Convert time in seconds.
@@ -1589,8 +1588,7 @@ tao_subtract_times(struct timespec* dest,
  *
  * @return The number of seconds given by the time stored in @b t.
  */
-extern double
-tao_time_to_seconds(const struct timespec* t);
+extern double tao_time_to_seconds(const struct timespec* t);
 
 /**
  * Convert a number of seconds into a time structure.
@@ -1609,8 +1607,8 @@ tao_time_to_seconds(const struct timespec* t);
  * It is therefore always possible guess from the stored time whether @b secs
  * was representable as a time structure with nanosecond precision.
  */
-extern struct timespec*
-tao_seconds_to_time(struct timespec* dest, double secs);
+extern struct timespec* tao_seconds_to_time(struct timespec* dest,
+                                            double secs);
 
 /**
  * Print a time-stamp in a human readable form to a string.
@@ -1621,8 +1619,7 @@ tao_seconds_to_time(struct timespec* dest, double secs);
  *
  * @return The address @b str.
  */
-extern char*
-tao_sprintf_time(char* str, const struct timespec* ts);
+extern char* tao_sprintf_time(char* str, const struct timespec* ts);
 
 /**
  * Print a time-stamp in a human readable form to a string.
@@ -1641,8 +1638,8 @@ tao_sprintf_time(char* str, const struct timespec* ts);
  * (excluding the terminating null).  Thus, a return value of @a size or more
  * means that the output was truncated.
  */
-extern size_t
-tao_snprintf_time(char* str, size_t size, const struct timespec* ts);
+extern size_t tao_snprintf_time(char* str, size_t size,
+                                const struct timespec* ts);
 
 /**
  * Print a time-stamp in a human readable form to a file stream.
@@ -1650,8 +1647,7 @@ tao_snprintf_time(char* str, size_t size, const struct timespec* ts);
  * @param stream Destination stream.
  * @param ts     Time stamp.
  */
-extern void
-tao_fprintf_time(FILE* stream, const struct timespec* ts);
+extern void tao_fprintf_time(FILE* stream, const struct timespec* ts);
 
 /**
  * Compute absolute timeout.
@@ -1668,8 +1664,8 @@ tao_fprintf_time(FILE* stream, const struct timespec* ts);
  *
  * @return `0` on success, `-1` on failure.
  */
-extern int
-tao_get_absolute_timeout(tao_error_t** errs, struct timespec* tm, double secs);
+extern int tao_get_absolute_timeout(tao_error_t** errs,
+                                    struct timespec* tm, double secs);
 
 /**
  * Check whether the absolute time is finite.

@@ -299,6 +299,7 @@ FUNC(int code)
         CASE(TAO_BAD_GAIN, "Invalid detector gain");
         CASE(TAO_BAD_EXPOSURE, "Invalid exposure time");
         CASE(TAO_BAD_ESCAPE, "Unknown escape sequence");
+        CASE(TAO_BAD_ENCODING, "Bad encoding");
         CASE(TAO_BAD_DEVICE, "Invalid device");
         CASE(TAO_BAD_DEPTH, "Invalid bits per pixel");
         CASE(TAO_BAD_CHARACTER, "Illegal character");
