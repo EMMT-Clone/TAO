@@ -42,8 +42,7 @@ typedef struct andor_feature_value andor_feature_value_t;
  *
  * @return `0` on success, `-1` on error.
  */
-extern int
-andor_initialize(tao_error_t** errs);
+extern int andor_initialize(tao_error_t** errs);
 
 /**
  * Get the number of available devices.
@@ -74,6 +73,7 @@ extern const char* andor_get_error_name(int code);
 
 extern void _andor_push_error(tao_error_t** errs, const char* func, int code);
 extern void andor_push_error(andor_camera_t* cam, const char* func, int code);
+extern void andor_report_errors(andor_camera_t* cam);
 
 typedef enum andor_feature_type {
     ANDOR_FEATURE_NOT_IMPLEMENTED = 0,

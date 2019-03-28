@@ -39,6 +39,12 @@ andor_push_error(andor_camera_t* cam, const char* func, int code)
     tao_push_other_error(&cam->errs, func, code, get_andor_error_details);
 }
 
+void
+andor_report_errors(andor_camera_t* cam)
+{
+    tao_report_errors(&cam->errs);
+}
+
 #define GET_ERR_FUNC 1
 #include __FILE__
 
