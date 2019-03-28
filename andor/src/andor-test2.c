@@ -53,12 +53,12 @@ int main(int argc, char* argv[])
         for (long k = 0; feature_names[k] != NULL; ++k) {
             const char* typename = NULL;
             switch (feature_types[k]) {
-            case ANDOR_BOOLEAN:    typename = "Boolean";    break;
-            case ANDOR_INTEGER:    typename = "Integer";    break;
-            case ANDOR_FLOAT:      typename = "Float";      break;
-            case ANDOR_ENUMERATED: typename = "Enumerated"; break;
-            case ANDOR_STRING:     typename = "String";     break;
-            case ANDOR_COMMAND:    typename = "Command";    break;
+            case ANDOR_FEATURE_BOOLEAN:    typename = "Boolean";    break;
+            case ANDOR_FEATURE_INTEGER:    typename = "Integer";    break;
+            case ANDOR_FEATURE_FLOAT:      typename = "Float";      break;
+            case ANDOR_FEATURE_ENUMERATED: typename = "Enumerated"; break;
+            case ANDOR_FEATURE_STRING:     typename = "String";     break;
+            case ANDOR_FEATURE_COMMAND:    typename = "Command";    break;
             default: typename = NULL;
             }
             if (typename != NULL) {

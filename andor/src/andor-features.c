@@ -31,13 +31,13 @@ andor_get_feature_names()
 
 #define FEATURE_TYPE(x) FEATURE_TYPE_##x
 
-#define FEATURE_TYPE_X ANDOR_NOT_IMPLEMENTED
-#define FEATURE_TYPE_B ANDOR_BOOLEAN
-#define FEATURE_TYPE_I ANDOR_INTEGER
-#define FEATURE_TYPE_F ANDOR_FLOAT
-#define FEATURE_TYPE_E ANDOR_ENUMERATED
-#define FEATURE_TYPE_S ANDOR_STRING
-#define FEATURE_TYPE_C ANDOR_COMMAND
+#define FEATURE_TYPE_X ANDOR_FEATURE_NOT_IMPLEMENTED
+#define FEATURE_TYPE_B ANDOR_FEATURE_BOOLEAN
+#define FEATURE_TYPE_I ANDOR_FEATURE_INTEGER
+#define FEATURE_TYPE_F ANDOR_FEATURE_FLOAT
+#define FEATURE_TYPE_E ANDOR_FEATURE_ENUMERATED
+#define FEATURE_TYPE_S ANDOR_FEATURE_STRING
+#define FEATURE_TYPE_C ANDOR_FEATURE_COMMAND
 
 #undef _ANDOR_FEATURE
 #define _ANDOR_FEATURE(key, sys, sim, zyl) FEATURE_TYPE(sim),
@@ -62,6 +62,69 @@ andor_get_zyla_feature_types()
 {
     return andor_zyla_feature_types;
 }
+
+andor_feature_type_t
+andor_get_feature_type(andor_camera_t* cam, andor_feature_t key,
+                       unsigned int* mode)
+{
+    if (key >= 0 && key < ANDOR_NFEATURES) {
+        return _andor_get_feature_type(cam->handle, andor_feature_names[key],
+                                       mode);
+    }
+    if (mode != NULL) {
+        *mode = 0;
+    }
+    return ANDOR_FEATURE_NOT_IMPLEMENTED;
+}
+
+andor_feature_type_t
+_andor_get_feature_type(AT_H handle, const AT_WC* key,
+                        unsigned int* mode)
+{
+    AT_64 ival;
+    AT_BOOL bval;
+    double fval;
+    int idx, len, status;
+
+    /* If a feature is implemented, it is always at least readable.  Thus
+       either `AT_IsImplemented` or `AT_IsReadable` can be called to determine
+       whether a feature is implemented and readable. */
+    status = AT_IsReadable(handle, key, &bval);
+    if (status != AT_SUCCESS || bval == AT_FALSE) {
+        if (mode != NULL) {
+            *mode = 0;
+        }
+        return ANDOR_FEATURE_NOT_IMPLEMENTED;
+    }
+
+    /* Check r/w access mode if requested. */
+    if (mode != NULL) {
+        status = AT_IsWritable(handle, key, &bval);
+        if (status == AT_SUCCESS && bval != AT_FALSE) {
+            *mode = ANDOR_FEATURE_READABLE|ANDOR_FEATURE_WRITABLE;
+        } else {
+            *mode = ANDOR_FEATURE_READABLE;
+        }
+    }
+
+    if (AT_GetInt(handle, key, &ival) == AT_SUCCESS) {
+        return ANDOR_FEATURE_INTEGER;
+    }
+    if (AT_GetBool(handle, key, &bval) == AT_SUCCESS) {
+        return ANDOR_FEATURE_BOOLEAN;
+    }
+    if (AT_GetEnumIndex(handle, key, &idx) == AT_SUCCESS) {
+        return ANDOR_FEATURE_ENUMERATED;
+    }
+    if (AT_GetFloat(handle, key, &fval) == AT_SUCCESS) {
+        return ANDOR_FEATURE_FLOAT;
+    }
+    if (AT_GetStringMaxLength(handle, key, &len) == AT_SUCCESS) {
+        return ANDOR_FEATURE_STRING;
+    }
+    return ANDOR_FEATURE_COMMAND;
+}
+
 
 /* Fancy helpers for getters and setters.  A first level of macros (prefixed by
    an underscore) is used to check the key index and to convert it into a

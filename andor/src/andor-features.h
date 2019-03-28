@@ -217,6 +217,13 @@ enum andor_feature {_ANDOR_FEATURES};
 
 #define ANDOR_NFEATURES (1 + VerticallyCentreAOI)
 
+extern andor_feature_type_t andor_get_feature_type(andor_camera_t* cam,
+                                                   andor_feature_t key,
+                                                   unsigned int* mode);
+extern andor_feature_type_t _andor_get_feature_type(AT_H handle,
+                                                    const AT_WC* key,
+                                                    unsigned int* mode);
+
 /* Low-level getters and setters to correctly report errors. */
 
 extern int _andor_is_implemented(tao_error_t** errs, AT_H handle,

@@ -75,24 +75,20 @@ extern void _andor_push_error(tao_error_t** errs, const char* func, int code);
 extern void andor_push_error(andor_camera_t* cam, const char* func, int code);
 
 typedef enum andor_feature_type {
-    ANDOR_NOT_IMPLEMENTED,
-    ANDOR_BOOLEAN,
-    ANDOR_INTEGER,
-    ANDOR_FLOAT,
-    ANDOR_ENUMERATED,
-    ANDOR_STRING,
-    ANDOR_COMMAND
+    ANDOR_FEATURE_NOT_IMPLEMENTED = 0,
+    ANDOR_FEATURE_BOOLEAN,
+    ANDOR_FEATURE_INTEGER,
+    ANDOR_FEATURE_FLOAT,
+    ANDOR_FEATURE_ENUMERATED,
+    ANDOR_FEATURE_STRING,
+    ANDOR_FEATURE_COMMAND
 } andor_feature_type_t;
 
-struct andor_feature_value {
-    andor_feature_type_t type;
-    union {
-        bool boolean;
-        long integer;
-        double floatingpoint;
-        wchar_t* string;
-    } value;
-};
+/* R/W flags are shifted so that they can be combined with the feature
+   type in a small integer value. */
+#define ANDOR_FEATURE_READABLE    (1<<5)
+#define ANDOR_FEATURE_WRITABLE    (1<<6)
+#define ANDOR_FEATURE_TYPE_MASK   (ANDOR_FEATURE_READABLE - 1)
 
 extern const wchar_t* andor_feature_names[];
 extern const andor_feature_type_t andor_simcam_feature_types[];
@@ -101,6 +97,19 @@ extern const andor_feature_type_t andor_zyla_feature_types[];
 extern const wchar_t** andor_get_feature_names();
 extern const andor_feature_type_t* andor_get_simcam_feature_types();
 extern const andor_feature_type_t* andor_get_zyla_feature_types();
+
+typedef enum andor_camera_model {
+    ANDOR_MODEL_UNKNOWN,
+    ANDOR_MODEL_APOGEE,
+    ANDOR_MODEL_BALOR,
+    ANDOR_MODEL_ISTAR,
+    ANDOR_MODEL_MARANA,
+    ANDOR_MODEL_NEO,
+    ANDOR_MODEL_SIMCAM,
+    ANDOR_MODEL_SONA,
+    ANDOR_MODEL_SYSTEM,
+    ANDOR_MODEL_ZYLA
+} andor_camera_model_t;
 
 struct andor_camera_config {
     /* Region of interest. */

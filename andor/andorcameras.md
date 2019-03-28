@@ -195,6 +195,23 @@ double get_temperature(andor_camera_t* cam)
 }
 ```
 
+## Feature Type and Access Logic
+
+In practice, the following rules apply:
+
+1. If a feature is not implemented (`AT_IsImplemented`) all calls to
+   `AT_IsReadable`, `AT_IsWritable`, `AT_IsReadOnly`, `AT_GetBool`,
+   `AT_GetInt`, etc. yield `AT_ERR_NOTIMPLEMENTED`.
+
+2. If a feature is implemented, it is always at least readable.  Thus
+   either `AT_IsImplemented` or `AT_IsReadable` can be called to determine
+   whether a feature is implemented and readable.
+
+3. If a feature is of a given type, only one of `AT_GetInt`, `AT_GetBool`,
+   `AT_GetEnumIndex`, `AT_GetFloat` or `AT_GetStringMaxLength` may succeed; if
+   none succeed, the feature is a command.
+
+
 # Error management
 
 ## Status codes per type of operations
