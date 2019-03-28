@@ -78,33 +78,42 @@ int main(int argc, char* argv[])
     const wchar_t** feature_names = NULL;
     andor_camera_t* cam = NULL;
     tao_error_t* errs = TAO_NO_ERRORS;
-    AT_H handle;
-    long dev, ndevices;
-    char* end;
-    bool skip = true;
+    AT_H handle = AT_HANDLE_SYSTEM;
+    bool skip = true, optional = true;
+    long ndevices;
 
     ndevices = andor_get_ndevices(&errs);
     if (ndevices < 0) {
         tao_report_errors(&errs);
         return EXIT_FAILURE;
     }
-    if (argc == 1) {
-        handle = AT_HANDLE_SYSTEM;
-    } else if (argc == 2) {
-        dev = strtol(argv[1], &end, 0);
-        if (end == argv[1] || *end != '\0' || dev < 0 || dev >= ndevices) {
-            fprintf(stderr, "Invalid device number \"%s\"\n", argv[1]);
+    for (int i = 1; i < argc; ++i) {
+        if (optional && strcmp(argv[i], "-debug") == 0) {
+            skip = false;
+        } else if (optional && strcmp(argv[i], "--") == 0) {
+            optional = false;
+        } else if (cam == NULL) {
+            char* end;
+            long dev = strtol(argv[i], &end, 0);
+            if (end == argv[i] || *end != '\0') {
+                goto usage;
+            }
+            if (dev < 0 || dev >= ndevices) {
+                fprintf(stderr, "Invalid device number %ld\n", dev);
+                return EXIT_FAILURE;
+            }
+            cam = andor_open_camera(&errs, dev);
+            if (cam == NULL) {
+                tao_report_errors(&errs);
+                return EXIT_FAILURE;
+            }
+            handle = cam->handle;
+            optional = false;
+        } else {
+        usage:
+            fprintf(stderr, "Usage: %s [-debug] [--] [dev]\n", argv[0]);
             return EXIT_FAILURE;
         }
-        cam = andor_open_camera(&errs, dev);
-        if (cam == NULL) {
-            tao_report_errors(&errs);
-            return EXIT_FAILURE;
-        }
-        handle = cam->handle;
-    } else {
-        fprintf(stderr, "Usage: %s [dev]\n", argv[0]);
-        return EXIT_FAILURE;
     }
 
     feature_names = andor_get_feature_names();
