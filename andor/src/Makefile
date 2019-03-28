@@ -5,6 +5,9 @@ CPPFLAGS = -I${srcdir} ${TAO_DEFS} ${AT_DEFS}
 CFLAGS = -Wall -Werror -O2 -fPIC
 LDFLAGS = ${LIBRARY} ${AT_LIBS} ${TAO_LIBS}
 
+#SIMDFLAGS = `${srcdir}/../../libtao/tools/getsimdflags`
+SIMDFLAGS = ${shell ${srcdir}/../../libtao/tools/getsimdflags}
+
 AT_DIR = /apps/libexec/andor
 AT_INCDIR = ${AT_DIR}/include
 AT_LIBDIR = ${AT_DIR}/lib
@@ -24,7 +27,7 @@ all: ${LIBRARY}
 clean:
 	rm -f *~ core
 
-dist-clean: clean
+distclean: clean
 	rm -f ${LIBRARY} ${OBJECTS}
 
 tests: test1 test2 test3 test4
@@ -61,4 +64,7 @@ ${LIBRARY}: ${OBJECTS}
 %.o: ${srcdir}/%.c ${DEPS}
 	${CC} -c ${CPPFLAGS} ${CFLAGS} $< -o $@
 
-.PHOONY: all default clean dist-clean tests test1 test2 test3
+andor-convert.o: ${srcdir}/andor-convert.c ${DEPS}
+	${CC} -c ${CPPFLAGS} ${CFLAGS} ${SIMDFLAGS} $< -o $@
+
+.PHOONY: all default clean distclean tests test1 test2 test3
