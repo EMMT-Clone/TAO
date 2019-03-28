@@ -114,7 +114,12 @@ typedef enum {
     ANDOR_ENCODING_MONO22PARALLEL,
     ANDOR_ENCODING_MONO32,
     ANDOR_ENCODING_RGB8PACKED,
+    ANDOR_ENCODING_FLOAT,
+    ANDOR_ENCODING_DOUBLE,
 } andor_pixel_encoding_t;
+
+#define ANDOR_ENCODING_MIN ANDOR_ENCODING_MONO8
+#define ANDOR_ENCODING_MAX ANDOR_ENCODING_RGB8PACKED
 
 /**
  * The maximum number of pixel encodings.
@@ -160,6 +165,10 @@ extern andor_pixel_encoding_t andor_get_encoding(const wchar_t* name);
 extern long andor_get_pixel_encodings(andor_camera_t* cam,
                                       andor_pixel_encoding_t* encodings,
                                       long len);
+
+extern int andor_convert(void* dst, andor_pixel_encoding_t dst_enc,
+                         const void* src,  andor_pixel_encoding_t src_enc,
+                         long width, long height, long stride);
 
 typedef enum andor_camera_model {
     ANDOR_MODEL_UNKNOWN,
@@ -232,6 +241,18 @@ extern int andor_stop(andor_camera_t* cam);
  * @return `0` on success, `-1` on error.
  */
 extern int andor_update_configuration(andor_camera_t* cam, bool all);
+
+/**
+ * Retrieve camera settings.
+ */
+extern void andor_get_configuration(andor_camera_t* cam,
+                                    andor_camera_config_t* cfg);
+
+/**
+ * Set camera settings.
+ */
+extern int andor_set_configuration(andor_camera_t* cam,
+                                   const andor_camera_config_t* cfg);
 
 _TAO_END_DECLS
 

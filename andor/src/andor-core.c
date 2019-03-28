@@ -11,6 +11,7 @@
  * Copyright (C) 2019, Éric Thiébaut.
  */
 
+#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -634,6 +635,168 @@ andor_update_configuration(andor_camera_t* cam, bool all)
         cam->config.temperature = fval;
     } else {
         andor_push_error(cam, "AT_GetFloat(SensorTemperature)", status);
+        return -1;
+    }
+
+    return 0;
+}
+
+void
+andor_get_configuration(andor_camera_t* cam, andor_camera_config_t* cfg)
+{
+    memcpy(cfg, &cam->config, sizeof(andor_camera_config_t));
+}
+
+int
+andor_set_configuration(andor_camera_t* cam, const andor_camera_config_t* cfg)
+{
+    int status, pixelencoding_index;
+    bool change_roi, changes;
+
+    /* Check configuration before applying any changes. */
+    change_roi = (cfg->xoff != cam->config.xoff ||
+                  cfg->yoff != cam->config.yoff ||
+                  cfg->width != cam->config.width ||
+                  cfg->height != cam->config.height ||
+                  cfg->xbin != cam->config.xbin ||
+                  cfg->ybin != cam->config.ybin);
+    if (change_roi) {
+        changes = true;
+        if (cfg->xbin < 1 || cfg->ybin < 1) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_SIZE);
+            return -1;
+        }
+        if (cfg->xoff < 1 || cfg->width < 1 ||
+            cfg->xoff + cfg->width*cfg->xbin > cam->sensorwidth ||
+            cfg->yoff < 1 || cfg->height < 1 ||
+            cfg->yoff + cfg->height*cfg->ybin > cam->sensorheight) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
+            return -1;
+        }
+    }
+    if (cfg->exposuretime != cam->config.exposuretime) {
+        changes = true;
+        if (isnan(cfg->exposuretime) || isinf(cfg->exposuretime) ||
+            cfg->exposuretime < 0) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
+            return -1;
+        }
+    }
+    if (cfg->framerate != cam->config.framerate) {
+        changes = true;
+        if (isnan(cfg->framerate) || isinf(cfg->framerate) ||
+            cfg->framerate <= 0) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
+            return -1;
+        }
+    }
+    pixelencoding_index = -1;
+    if (cfg->pixelencoding != cam->config.pixelencoding) {
+        changes = true;
+        if (cfg->pixelencoding >= ANDOR_ENCODING_MIN &&
+            cfg->pixelencoding <= ANDOR_ENCODING_MAX) {
+            for (long k; k < cam->nencodings; ++k) {
+                if (cam->encodings[k] == cfg->pixelencoding) {
+                    pixelencoding_index = k;
+                    break;
+                }
+            }
+        }
+        if (pixelencoding_index == -1) {
+            tao_push_error(&cam->errs, __func__, TAO_BAD_ENCODING);
+            return -1;
+        }
+    }
+
+    /* Change pixel encoding if requested so. */
+    if (pixelencoding_index != -1) {
+        status = AT_SetEnumIndex(cam->handle, L"PixelEncoding",
+                                 pixelencoding_index);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetInt(PixelEncoding)", status);
+            return -1;
+        }
+        cam->config.pixelencoding = cam->config.pixelencoding;
+     }
+
+    if (change_roi) {
+        /* Change the ROI parameters in the order recommended in the Andor SDK
+           doc.  We are conservative here: since chaging one parameter may
+           impact another one, with apply all settings in order even though
+           they may be identical to the current configuration.  */
+        status = AT_SetInt(cam->handle, L"AOIHBin", cfg->xbin);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetInt(AOIHBin)", status);
+            return -1;
+        }
+        cam->config.xbin = cfg->xbin;
+        status = AT_SetInt(cam->handle, L"AOIVBin", cfg->ybin);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetInt(AOIVBin)", status);
+            return -1;
+        }
+        cam->config.ybin = cfg->ybin;
+        status = AT_SetInt(cam->handle, L"AOIWidth", cfg->width);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetInt(AOIWidth)", status);
+            return -1;
+        }
+        cam->config.width = cfg->width;
+        status = AT_SetInt(cam->handle, L"AOILeft", cfg->xoff + 1);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetInt(AOILeft)", status);
+            return -1;
+        }
+        cam->config.xoff = cfg->xoff;
+        status = AT_SetInt(cam->handle, L"AOIHeight", cfg->height);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetInt(AOIHeight)", status);
+            return -1;
+        }
+        cam->config.height = cfg->height;
+        status = AT_SetBool(cam->handle, L"VerticallyCentreAOI", AT_FALSE);
+        if (status != AT_SUCCESS && status != AT_ERR_NOTIMPLEMENTED) {
+            andor_push_error(cam, "AT_SetInt(VerticallyCentreAOI)", status);
+            return -1;
+        }
+        status = AT_SetInt(cam->handle, L"AOITop", cfg->yoff + 1);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetInt(AOITop)", status);
+            return -1;
+        }
+        cam->config.yoff = cfg->yoff;
+    }
+
+    /* Change frame rate and exposure time.  First reduce the frame rate if
+       requested, then change the exposure time if requested, finally augment
+       the frame rate if requested. */
+    for (int pass = 1; pass <= 2; ++pass) {
+        if (pass == 1
+            ? cfg->framerate < cam->config.framerate
+            : cfg->framerate > cam->config.framerate) {
+            status = AT_SetFloat(cam->handle, L"FrameRate", cfg->framerate);
+            if (status != AT_SUCCESS) {
+                andor_push_error(cam, "AT_SetFloat(FrameRate)", status);
+                return -1;
+            }
+            cam->config.framerate = cfg->framerate;
+        }
+        if (pass == 2) {
+            break;
+        }
+        if (cfg->exposuretime != cam->config.exposuretime) {
+            status = AT_SetFloat(cam->handle, L"ExposureTime",
+                                 cfg->exposuretime );
+            if (status != AT_SUCCESS) {
+                andor_push_error(cam, "AT_SetFloat(ExposureTime)", status);
+                return -1;
+            }
+            cam->config.exposuretime = cfg->exposuretime;
+        }
+    }
+
+    /* If anything has changed, update the configuration in case of. */
+    if (changes && andor_update_configuration(cam, true) != 0) {
         return -1;
     }
 
