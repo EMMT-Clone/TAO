@@ -162,9 +162,9 @@ extern andor_pixel_encoding_t andor_get_encoding(const wchar_t* name);
  *
  * @return The number of supported encodings, `-1` in case of errors.
  */
-extern long andor_get_pixel_encodings(andor_camera_t* cam,
-                                      andor_pixel_encoding_t* encodings,
-                                      long len);
+extern int andor_get_pixel_encodings(andor_camera_t* cam,
+                                     andor_pixel_encoding_t* encodings,
+                                     int len);
 
 extern int andor_convert_buffer(void* dst, andor_pixel_encoding_t dst_enc,
                                 const void* src, andor_pixel_encoding_t src_enc,
@@ -211,21 +211,21 @@ struct andor_camera
 
     /* Supported pixel encodings. */
     andor_pixel_encoding_t encodings[ANDOR_MAX_ENCODINGS];
-    long nencodings;
+    int nencodings;
 
     /* Camera configuration. */
     andor_camera_config_t config;
 
     /* Acquisition buffers. */
     void** bufs; /* Allocated acquisition buffers */
-    long nbufs;  /* Number of buffers */
     long bufsiz; /* Buffer size (in bytes) */
-    long stride; /* AOIStride (in bytes) */
+    long stride; /* Number of bytes between successive lines */
+    int nbufs;  /* Number of buffers */
 };
 
 extern andor_camera_t* andor_open_camera(tao_error_t** errs, long dev);
 extern void andor_close_camera(andor_camera_t* cam);
-extern int andor_start_acquisition(andor_camera_t* cam, long nbufs);
+extern int andor_start_acquisition(andor_camera_t* cam, int nbufs);
 extern int andor_stop_acquisition(andor_camera_t* cam);
 
 /**

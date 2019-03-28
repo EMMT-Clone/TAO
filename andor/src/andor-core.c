@@ -229,12 +229,12 @@ static void
 free_buffers(andor_camera_t* cam)
 {
     void** bufs = cam->bufs;
-    long nbufs = cam->nbufs;
+    int nbufs = cam->nbufs;
     cam->bufs = NULL;
     cam->nbufs = 0;
     cam->bufsiz = 0;
     if (bufs != NULL) {
-        for (long k = 0; k < nbufs; ++k) {
+        for (int k = 0; k < nbufs; ++k) {
             void* buf = bufs[k];
             if (buf != NULL) {
                 free(buf);
@@ -318,9 +318,9 @@ andor_get_encoding(const wchar_t* name)
     return ANDOR_ENCODING_UNKNOWN;
 }
 
-long
+int
 andor_get_pixel_encodings(andor_camera_t* cam,
-                          andor_pixel_encoding_t* encodings, long len)
+                          andor_pixel_encoding_t* encodings, int len)
 {
     const int wstrlen = 32;
     AT_WC wstr[wstrlen];
@@ -349,14 +349,14 @@ andor_get_pixel_encodings(andor_camera_t* cam,
         }
         encodings[idx] = andor_get_encoding(wstr);
     }
-    for (long idx = cnt; idx < len; ++idx) {
+    for (int idx = cnt; idx < len; ++idx) {
         encodings[idx] = -1;
     }
     return cnt;
 }
 
 int
-andor_start_acquisition(andor_camera_t* cam, long nbufs)
+andor_start_acquisition(andor_camera_t* cam, int nbufs)
 {
     long bufsiz;
     AT_64 ival;
@@ -417,7 +417,7 @@ andor_start_acquisition(andor_camera_t* cam, long nbufs)
     }
     if (cam->bufsiz != bufsiz) {
         /* Free all existing buffers. */
-        for (long k = 0; k < nbufs; ++k) {
+        for (int k = 0; k < nbufs; ++k) {
             void* buf = cam->bufs[k];
             cam->bufs[k] = NULL;
             if (buf != NULL) {
@@ -426,7 +426,7 @@ andor_start_acquisition(andor_camera_t* cam, long nbufs)
         }
         cam->bufsiz = bufsiz;
     }
-    for (long k = 0; k < nbufs; ++k) {
+    for (int k = 0; k < nbufs; ++k) {
         if (cam->bufs[k] == NULL) {
             cam->bufs[k] = tao_malloc(&cam->errs, bufsiz);
             if (cam->bufs[k] == NULL) {
@@ -436,7 +436,7 @@ andor_start_acquisition(andor_camera_t* cam, long nbufs)
     }
 
     /* Queue the acquisition buffers. */
-    for (long k = 0; k < nbufs; ++k) {
+    for (int k = 0; k < nbufs; ++k) {
         if (andor_queue_buffer(cam, cam->bufs[k], bufsiz) != 0) {
             return -1;
         }
@@ -735,7 +735,7 @@ andor_set_configuration(andor_camera_t* cam, const andor_camera_config_t* cfg)
         changes = true;
         if (cfg->pixelencoding >= ANDOR_ENCODING_MIN &&
             cfg->pixelencoding <= ANDOR_ENCODING_MAX) {
-            for (long k = 0; k < cam->nencodings; ++k) {
+            for (int k = 0; k < cam->nencodings; ++k) {
                 if (cam->encodings[k] == cfg->pixelencoding) {
                     pixelencoding_index = k;
                     break;
@@ -869,7 +869,7 @@ andor_print_camera_configuration(FILE* output, const andor_camera_t* cam)
             cam->sensorwidth, cam->sensorheight);
     andor_print_configuration(output, &cam->config);
     fprintf(output, "Supported pixel encodings: [");
-    for (long k = 0; k < cam->nencodings; ++k) {
+    for (int k = 0; k < cam->nencodings; ++k) {
         if (k > 0) {
             fputs(", ", output);
         }
