@@ -198,6 +198,16 @@ andor_open_camera(tao_error_t** errs, long dev)
         andor_push_error(cam, "AT_Open", status);
         goto error;
     }
+
+    /* Get list of supported pixel encodings.  (Must be done before updating
+       the configuration.) */
+    cam->nencodings = andor_get_pixel_encodings(cam, cam->encodings,
+                                                ANDOR_MAX_ENCODINGS);
+    if (cam->nencodings < 0) {
+        goto error;
+    }
+
+    /* Update other parameters from the hardware. */
     if (andor_update_configuration(cam, true) != 0) {
         goto error;
     }
@@ -247,13 +257,110 @@ andor_close_camera(andor_camera_t* cam)
     }
 }
 
+const wchar_t *
+andor_get_encoding_name(andor_pixel_encoding_t enc)
+{
+    switch (enc) {
+    case ANDOR_ENCODING_MONO8: return L"Mono8";
+    case ANDOR_ENCODING_MONO12: return L"Mono12";
+    case ANDOR_ENCODING_MONO12CODED: return L"Mono12Coded";
+    case ANDOR_ENCODING_MONO12CODEDPACKED: return L"Mono12CodedPacked";
+    case ANDOR_ENCODING_MONO12PACKED: return L"Mono12Packed";
+    case ANDOR_ENCODING_MONO16: return L"Mono16";
+    case ANDOR_ENCODING_MONO22PACKEDPARALLEL: return L"Mono22PackedParallel";
+    case ANDOR_ENCODING_MONO22PARALLEL: return L"Mono22Parallel";
+    case ANDOR_ENCODING_MONO32: return L"Mono32";
+    case ANDOR_ENCODING_RGB8PACKED: return L"RGB8Packed";
+    default: return L"Unknown";
+    }
+}
+
+andor_pixel_encoding_t
+andor_get_encoding(const wchar_t* name)
+{
+    if (wcsncasecmp(name, L"Mono", 4) == 0) {
+        switch (name[4]) {
+        case '1':
+            if (wcscasecmp(name, L"Mono12") == 0) {
+                return ANDOR_ENCODING_MONO12;
+            } else if (wcscasecmp(name, L"Mono12Coded") == 0) {
+                return ANDOR_ENCODING_MONO12CODED;
+            } else if (wcscasecmp(name, L"Mono12CodedPacked") == 0) {
+                return ANDOR_ENCODING_MONO12CODEDPACKED;
+            } else if (wcscasecmp(name, L"Mono12Packed") == 0) {
+                return ANDOR_ENCODING_MONO12PACKED;
+            } else if (wcscasecmp(name, L"Mono16") == 0) {
+                return ANDOR_ENCODING_MONO16;
+            }
+            break;
+        case '2':
+            if (wcscasecmp(name, L"Mono22PackedParallel") == 0) {
+                return ANDOR_ENCODING_MONO22PACKEDPARALLEL;
+            } else if (wcscasecmp(name, L"Mono22Parallel") == 0) {
+                return ANDOR_ENCODING_MONO22PARALLEL;
+            }
+            break;
+        case '3':
+            if (wcscasecmp(name, L"Mono32") == 0) {
+                return ANDOR_ENCODING_MONO32;
+            }
+            break;
+        case '8':
+            if (wcscasecmp(name, L"Mono8") == 0) {
+                return ANDOR_ENCODING_MONO8;
+            }
+            break;
+        }
+    } else if (wcscasecmp(name, L"RGB8Packed") == 0) {
+        return ANDOR_ENCODING_RGB8PACKED;
+    }
+    return ANDOR_ENCODING_UNKNOWN;
+}
+
+long
+andor_get_pixel_encodings(andor_camera_t* cam,
+                          andor_pixel_encoding_t* encodings, long len)
+{
+    const int wstrlen = 32;
+    AT_WC wstr[wstrlen];
+    int cnt, status;
+
+    /* Get the number of supported current pixel encoding. */
+    status = AT_GetEnumCount(cam->handle, L"PixelEncoding", &cnt);
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_GetEnumCount(PixelEncoding)", status);
+        return -1;
+    }
+    if (encodings == NULL) {
+        return cnt;
+    }
+    if (len < cnt) {
+        tao_push_error(&cam->errs, __func__, TAO_OUT_OF_RANGE);
+        return -1;
+    }
+    for (int idx = 0; idx < cnt; ++idx) {
+        status = AT_GetEnumStringByIndex(cam->handle, L"PixelEncoding",
+                                         idx, wstr, wstrlen);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_GetEnumStringByIndex(PixelEncoding)",
+                             status);
+            return -1;
+        }
+        encodings[idx] = andor_get_encoding(wstr);
+    }
+    for (long idx = cnt; idx < len; ++idx) {
+        encodings[idx] = -1;
+    }
+    return cnt;
+}
+
 int
 andor_start(andor_camera_t* cam, long nbufs)
 {
     long bufsiz;
     AT_64 ival;
     AT_BOOL bval;
-    int status;
+    int idx, status;
 
     /* FIXME: lock some mutex? */
 
@@ -270,13 +377,29 @@ andor_start(andor_camera_t* cam, long nbufs)
         return -1;
     }
 
-    /* Get size of acquisition buffers. */
+    /* Get the current pixel encoding. */
+    status = AT_GetEnumIndex(cam->handle, L"PixelEncoding", &idx);
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_GetInt(PixelEncoding)", status);
+        return -1;
+    }
+
+    /* Get size of acquisition buffers in bytes. */
     status = AT_GetInt(cam->handle, L"ImageSizeBytes", &ival);
     if (status != AT_SUCCESS) {
         andor_push_error(cam, "AT_GetInt(ImageSizeBytes)", status);
         return -1;
     }
     bufsiz = ival;
+
+    /* Get size of one row in the image in bytes. */
+    status = AT_GetInt(cam->handle, L"AOIStride", &ival);
+    if (status == AT_SUCCESS) {
+        cam->stride = ival;
+    } else {
+        andor_push_error(cam, "AT_GetInt(AOIStride)", status);
+        return -1;
+    }
 
     /* Allocate new acquisition buffers if needed. */
     if (nbufs < 2) {
@@ -395,7 +518,7 @@ andor_stop(andor_camera_t* cam)
 int
 andor_update_configuration(andor_camera_t* cam, bool all)
 {
-    int status;
+    int status, idx;
     AT_64 ival;
     double fval;
 
@@ -476,26 +599,6 @@ andor_update_configuration(andor_camera_t* cam, bool all)
             return -1;
         }
 
-#if 0
-        status = AT_GetInt(cam->handle, L"AOIStride", &ival);
-        if (status == AT_SUCCESS) {
-            cam->config.stride = ival;
-        } else {
-            andor_push_error(cam, "AT_GetInt(AOIStride)", status);
-            return -1;
-        }
-#endif
-
-#if 0
-        status = AT_GetInt(cam->handle, L"ImageSizeBytes", &ival);
-        if (status == AT_SUCCESS) {
-            cam->config.buffersize = ival;
-        } else {
-            andor_push_error(cam, "AT_GetInt(ImageSizeBytes)", status);
-            return -1;
-        }
-#endif
-
         /* According to the doc., Apogee has ne ExposureTime feature. */
         status = AT_GetFloat(cam->handle, L"ExposureTime", &fval);
         if (status == AT_SUCCESS) {
@@ -512,6 +615,18 @@ andor_update_configuration(andor_camera_t* cam, bool all)
             andor_push_error(cam, "AT_GetFloat(FrameRate)", status);
             return -1;
         }
+
+        /* Get current pixel encoding. */
+        status = AT_GetEnumIndex(cam->handle, L"PixelEncoding", &idx);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_GetInt(PixelEncoding)", status);
+            return -1;
+        }
+        if (idx < 0 || idx >= cam->nencodings) {
+            tao_push_error(&cam->errs, __func__, TAO_OUT_OF_RANGE);
+            return -1;
+        }
+        cam->config.pixelencoding = cam->encodings[idx];
     }
 
     status = AT_GetFloat(cam->handle, L"SensorTemperature", &fval);

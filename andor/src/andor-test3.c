@@ -56,6 +56,14 @@ int main(int argc, char* argv[])
             cam->config.xoff, cam->config.yoff);
     fprintf(stdout, "Exposure time: %g s\n", cam->config.exposuretime);
     fprintf(stdout, "Frame rate: %g Hz\n", cam->config.framerate);
+    fprintf(stdout, "Supported pixel encodings: [");
+    for (long k = 0; k < cam->nencodings; ++k) {
+        if (k > 0) {
+            fputs(", ", stdout);
+        }
+        fprintf(stdout, "%ls", andor_get_encoding_name(cam->encodings[k]));
+    }
+    fputs("]\n", stdout);
 
     andor_close_camera(cam);
     return EXIT_SUCCESS;

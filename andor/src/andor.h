@@ -14,6 +14,7 @@
 #ifndef _ANDOR_H
 #define _ANDOR_H 1
 
+#include <wchar.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <atcore.h>
@@ -98,6 +99,68 @@ extern const wchar_t** andor_get_feature_names();
 extern const andor_feature_type_t* andor_get_simcam_feature_types();
 extern const andor_feature_type_t* andor_get_zyla_feature_types();
 
+/**
+ * The various pixel encodings.
+ */
+typedef enum {
+    ANDOR_ENCODING_UNKNOWN,
+    ANDOR_ENCODING_MONO8,
+    ANDOR_ENCODING_MONO12,
+    ANDOR_ENCODING_MONO12CODED,
+    ANDOR_ENCODING_MONO12CODEDPACKED,
+    ANDOR_ENCODING_MONO12PACKED,
+    ANDOR_ENCODING_MONO16,
+    ANDOR_ENCODING_MONO22PACKEDPARALLEL,
+    ANDOR_ENCODING_MONO22PARALLEL,
+    ANDOR_ENCODING_MONO32,
+    ANDOR_ENCODING_RGB8PACKED,
+} andor_pixel_encoding_t;
+
+/**
+ * The maximum number of pixel encodings.
+ */
+#define ANDOR_MAX_ENCODINGS (ANDOR_ENCODING_RGB8PACKED + 0)
+
+/**
+ * Get the name of a given pixel encoding.
+ *
+ * @param encoding      The pixel encoding.
+ *
+ * @return The number of the encoding as a wide string (so that it can be
+ * directly feed in Andor SDK functions), `L"Unknown"` if unknown.
+ */
+extern const wchar_t *andor_get_encoding_name(andor_pixel_encoding_t enc);
+
+/**
+ * Get the identifier of a given pixel encoding name.
+ *
+ * @param name      The name of the pixel encoding.
+ *
+ * @return A pixel encoding identifier, `ANDOR_ENCODING_UNKNOWN` if unknown.
+ */
+extern andor_pixel_encoding_t andor_get_encoding(const wchar_t* name);
+
+/**
+ * Get all pixel encodings supported by a camera.
+ *
+ * This function retrieves all the pixel encodings supported by camera @a cam
+ * and store them (in the same order as the enumareted feature `PixelEncoding`)
+ * in array @a encodings.
+ *
+ * As a special case, if @a encodings is `NULL`, the function just returns the
+ * number of supported pixel encodings.  This can be used to figure out how
+ * many slots to allocate.
+ *
+ * @param cam           The camera.
+ * @param encodings     A vector of @a len elements.
+ * @param len           The length of @a encodings.
+ *
+ * @return The number of supported encodings, `-1` in case of errors.
+ */
+extern long andor_get_pixel_encodings(andor_camera_t* cam,
+                                      andor_pixel_encoding_t* encodings,
+                                      long len);
+
 typedef enum andor_camera_model {
     ANDOR_MODEL_UNKNOWN,
     ANDOR_MODEL_APOGEE,
@@ -120,6 +183,8 @@ struct andor_camera_config {
     long width;  /* AOIWidth (in macro-pixels) */
     long height; /* AOIHeight (in macro-pixels) */
 
+    andor_pixel_encoding_t pixelencoding;
+
     double exposuretime; /* Exposure time (in seconds) */
     double framerate;    /* Frame rate (in frames per second) */
     double temperature;  /* SensorTemperature */
@@ -134,6 +199,10 @@ struct andor_camera
                   2: acquisition is running */
     long sensorwidth;  /* Sensor width (in pixels) */
     long sensorheight; /* Sensor height (in pixels) */
+
+    /* Supported pixel encodings. */
+    andor_pixel_encoding_t encodings[ANDOR_MAX_ENCODINGS];
+    long nencodings;
 
     /* Camera configuration. */
     andor_camera_config_t config;
