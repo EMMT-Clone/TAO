@@ -16,7 +16,7 @@ TAO_DEFS = -I${TAO_SRCDIR}
 TAO_LIBS = ${srcdir}/../../build/src/.libs/libtao.a -lpthread -lm
 
 LIBRARY = libandor.a
-OBJECTS = andor-errors.o andor-core.o andor-features.o
+OBJECTS = andor-errors.o andor-core.o andor-features.o andor-convert.o
 DEPS = ${srcdir}/andor.h ${srcdir}/andor-features.h ${TAO_SRCDIR}/tao.h
 
 all: ${LIBRARY}
