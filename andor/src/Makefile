@@ -27,7 +27,7 @@ clean:
 dist-clean: clean
 	rm -f ${LIBRARY} ${OBJECTS}
 
-tests: test1 test2 test3
+tests: test1 test2 test3 test4
 
 test1: andor-test1
 	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test1
@@ -40,6 +40,9 @@ test2: andor-test2
 test3: andor-test3
 	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test3
 
+test4: andor-test4
+	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test4
+
 andor-test1: ${srcdir}/andor-test1.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
 
@@ -47,6 +50,9 @@ andor-test2: ${srcdir}/andor-test2.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
 
 andor-test3: ${srcdir}/andor-test3.c ${DEPS} ${LIBRARY}
+	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
+
+andor-test4: ${srcdir}/andor-test4.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
 
 ${LIBRARY}: ${OBJECTS}
