@@ -14,6 +14,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <time.h>
+#include <tao.h>
 #include <andor.h>
 #include <andor-features.h>
 
@@ -23,6 +26,7 @@ int main(int argc, char* argv[])
     andor_camera_t* cam;
     long dev, ndevices;
     char* end;
+    struct timespec t0, t1;
 
     ndevices = andor_get_ndevices(&errs);
     if (ndevices < 0) {
@@ -56,6 +60,8 @@ int main(int argc, char* argv[])
             cam->config.xoff, cam->config.yoff);
     fprintf(stdout, "Exposure time: %g s\n", cam->config.exposuretime);
     fprintf(stdout, "Frame rate: %g Hz\n", cam->config.framerate);
+    fprintf(stdout, "Pixel encoding: %ls\n",
+            andor_get_encoding_name(cam->config.pixelencoding));
     fprintf(stdout, "Supported pixel encodings: [");
     for (long k = 0; k < cam->nencodings; ++k) {
         if (k > 0) {
@@ -64,6 +70,13 @@ int main(int argc, char* argv[])
         fprintf(stdout, "%ls", andor_get_encoding_name(cam->encodings[k]));
     }
     fputs("]\n", stdout);
+
+    /* Measure time taken for updating all the configuration. */
+    tao_get_monotonic_time(NULL, &t0);
+    andor_update_configuration(cam, true);
+    tao_get_monotonic_time(NULL, &t1);
+    fprintf(stdout, "Time to update configuration: %.3f µs\n",
+            1E6*tao_time_to_seconds(tao_subtract_times(&t1, &t1, &t0)));
 
     andor_close_camera(cam);
     return EXIT_SUCCESS;
