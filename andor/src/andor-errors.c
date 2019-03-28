@@ -84,7 +84,7 @@ FUNC(int code)
         CASE(AT_ERR_CONNECTION, "Error connecting to or disconnecting from hardware");
         CASE(AT_ERR_NODATA, "No data");
         CASE(AT_ERR_INVALIDHANDLE, "Invalid device handle passed to function");
-        CASE(AT_ERR_TIMEDOUT, "Time out occured while waiting for data form output queue");
+        CASE(AT_ERR_TIMEDOUT, "Time out occured while waiting for data from output queue");
         CASE(AT_ERR_BUFFERFULL, "Input queue has reached its capacity");
         CASE(AT_ERR_INVALIDSIZE, "Queued buffer size does not match frame size");
         CASE(AT_ERR_INVALIDALIGNMENT, "Queued buffer is not aligned on an 8-byte boundary");
