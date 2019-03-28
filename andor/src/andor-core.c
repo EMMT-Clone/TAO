@@ -695,7 +695,7 @@ andor_set_configuration(andor_camera_t* cam, const andor_camera_config_t* cfg)
         changes = true;
         if (cfg->pixelencoding >= ANDOR_ENCODING_MIN &&
             cfg->pixelencoding <= ANDOR_ENCODING_MAX) {
-            for (long k; k < cam->nencodings; ++k) {
+            for (long k = 0; k < cam->nencodings; ++k) {
                 if (cam->encodings[k] == cfg->pixelencoding) {
                     pixelencoding_index = k;
                     break;
@@ -721,21 +721,25 @@ andor_set_configuration(andor_camera_t* cam, const andor_camera_config_t* cfg)
 
     if (change_roi) {
         /* Change the ROI parameters in the order recommended in the Andor SDK
-           doc.  We are conservative here: since chaging one parameter may
-           impact another one, with apply all settings in order even though
-           they may be identical to the current configuration.  */
-        status = AT_SetInt(cam->handle, L"AOIHBin", cfg->xbin);
-        if (status != AT_SUCCESS) {
-            andor_push_error(cam, "AT_SetInt(AOIHBin)", status);
-            return -1;
+           doc.  We are conservative here: since changing one parameter may
+           impact other ones, with apply all settings in order even though they
+           may be identical to the current configuration.  */
+        if (cfg->xbin != cam->config.xbin) {
+            status = AT_SetInt(cam->handle, L"AOIHBin", cfg->xbin);
+            if (status != AT_SUCCESS) {
+                andor_push_error(cam, "AT_SetInt(AOIHBin)", status);
+                return -1;
+            }
+            cam->config.xbin = cfg->xbin;
         }
-        cam->config.xbin = cfg->xbin;
-        status = AT_SetInt(cam->handle, L"AOIVBin", cfg->ybin);
-        if (status != AT_SUCCESS) {
-            andor_push_error(cam, "AT_SetInt(AOIVBin)", status);
-            return -1;
+        if (cfg->ybin != cam->config.ybin) {
+            status = AT_SetInt(cam->handle, L"AOIVBin", cfg->ybin);
+            if (status != AT_SUCCESS) {
+                andor_push_error(cam, "AT_SetInt(AOIVBin)", status);
+                return -1;
+            }
+            cam->config.ybin = cfg->ybin;
         }
-        cam->config.ybin = cfg->ybin;
         status = AT_SetInt(cam->handle, L"AOIWidth", cfg->width);
         if (status != AT_SUCCESS) {
             andor_push_error(cam, "AT_SetInt(AOIWidth)", status);
