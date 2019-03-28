@@ -248,6 +248,151 @@ andor_close_camera(andor_camera_t* cam)
 }
 
 int
+andor_start(andor_camera_t* cam, long nbufs)
+{
+    long bufsiz;
+    AT_64 ival;
+    AT_BOOL bval;
+    int status;
+
+    /* FIXME: lock some mutex? */
+
+    /* Check camera state. */
+    if (cam->state != 1) {
+        andor_push_error(cam, __func__, TAO_ACQUISITION_RUNNING);
+        return -1;
+    }
+
+    /* Make sure the camera does not use any old acquisition buffers. */
+    status = AT_Flush(cam->handle);
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_Flush", status);
+        return -1;
+    }
+
+    /* Get size of acquisition buffers. */
+    status = AT_GetInt(cam->handle, L"ImageSizeBytes", &ival);
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_GetInt(ImageSizeBytes)", status);
+        return -1;
+    }
+    bufsiz = ival;
+
+    /* Allocate new acquisition buffers if needed. */
+    if (nbufs < 2) {
+        nbufs = 2;
+    }
+    if (cam->nbufs != nbufs) {
+        /* Reallocate everything. */
+        free_buffers(cam);
+        cam->bufs = (void**)tao_calloc(&cam->errs, nbufs, sizeof(void*));
+        if (cam->bufs == NULL) {
+            return -1;
+        }
+        cam->nbufs = nbufs;
+    }
+    if (cam->bufsiz != bufsiz) {
+        /* Free all existing buffers. */
+        for (long k = 0; k < nbufs; ++k) {
+            void* buf = cam->bufs[k];
+            cam->bufs[k] = NULL;
+            if (buf != NULL) {
+                free(buf);
+            }
+        }
+        cam->bufsiz = bufsiz;
+    }
+    for (long k = 0; k < nbufs; ++k) {
+        if (cam->bufs[k] == NULL) {
+            cam->bufs[k] = tao_malloc(&cam->errs, bufsiz);
+            if (cam->bufs[k] == NULL) {
+                return -1;
+            }
+        }
+    }
+
+    /* Queue the acquisition buffers. */
+    for (long k = 0; k < nbufs; ++k) {
+        status = AT_QueueBuffer(cam->handle, (AT_U8*)cam->bufs[k], bufsiz);
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_QueueBuffer", status);
+            return -1;
+        }
+    }
+
+    /* Set the camera to continuously acquires frames. */
+    status = AT_IsImplemented(cam->handle, L"CycleMode", &bval);
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_IsImplemented(CycleMode)", status);
+        return -1;
+    }
+    if (bval == AT_TRUE) {
+        status = AT_SetEnumString(cam->handle, L"CycleMode", L"Continuous");
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetEnumString(CycleMode,Continuous)",
+                             status);
+            return -1;
+        }
+    }
+    status = AT_IsImplemented(cam->handle, L"TriggerMode", &bval);
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_IsImplemented(TriggerMode)", status);
+        return -1;
+    }
+    if (bval == AT_TRUE) {
+        status = AT_SetEnumString(cam->handle, L"TriggerMode", L"Internal");
+        if (status != AT_SUCCESS) {
+            andor_push_error(cam, "AT_SetEnumString(TriggerMode,Internal)",
+                             status);
+            return -1;
+        }
+    }
+
+    /* Start the acquisition. */
+    status = AT_Command(cam->handle, L"AcquisitionStart");
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_Command(AcquisitionStart)", status);
+        return -1;
+    }
+
+    /* Update state and return. */
+    cam->state = 2;
+    return 0;
+}
+
+int
+andor_stop(andor_camera_t* cam)
+{
+    int status;
+
+    /* FIXME: lock some mutex? */
+
+    /* Check camera state. FIXME: use CameraAcquiring feature */
+    if (cam->state != 2) {
+        fprintf(stderr, "WARNING: Acquisition is not running\n");
+        return 0;
+    }
+
+    /* Stop the acquisition. */
+    status = AT_Command(cam->handle, L"AcquisitionStop");
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_Command(AcquisitionStop)", status);
+        return -1;
+    }
+
+    /* Make sure the camera no longer use any acquisition buffers. */
+    status = AT_Flush(cam->handle);
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_Flush", status);
+        return -1;
+    }
+
+    /* Update state and return. */
+    cam->state = 1;
+    return 0;
+}
+
+int
 andor_update_configuration(andor_camera_t* cam, bool all)
 {
     int status;

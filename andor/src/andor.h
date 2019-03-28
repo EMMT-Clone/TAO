@@ -138,6 +138,8 @@ struct andor_camera
 
 extern andor_camera_t* andor_open_camera(tao_error_t** errs, long dev);
 extern void andor_close_camera(andor_camera_t* cam);
+extern int andor_start(andor_camera_t* cam, long nbufs);
+extern int andor_stop(andor_camera_t* cam);
 
 /**
  * Update camera settings
