@@ -79,7 +79,7 @@ andor_get_zyla_feature_types()
     do {                                                \
         int status = _Call3(func, handle, key, arg3);   \
         if (status != AT_SUCCESS) {                     \
-            andor_push_error(errs, info, status);       \
+            _andor_push_error(errs, info, status);      \
             return -1;                                  \
         }                                               \
     } while (false)
@@ -93,7 +93,7 @@ andor_get_zyla_feature_types()
     do {                                                        \
         int status = _Call4(func, handle, key, arg3, arg4);     \
         if (status != AT_SUCCESS) {                             \
-            andor_push_error(errs, info, status);               \
+            _andor_push_error(errs, info, status);              \
             return -1;                                          \
         }                                                       \
     } while (false)
@@ -107,7 +107,7 @@ andor_get_zyla_feature_types()
     do {                                                                \
         int status = _Call5(func, handle, key, arg3, arg4, arg5);       \
         if (status != AT_SUCCESS) {                                     \
-            andor_push_error(errs, info, status);                       \
+            _andor_push_error(errs, info, status);                      \
             return -1;                                                  \
         }                                                               \
     } while (false)

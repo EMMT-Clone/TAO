@@ -44,7 +44,7 @@
     _ANDOR_FEATURE(AOIHeight,                   X, I, I) \
     _ANDOR_FEATURE(AOILayout,                   X, X, E) \
     _ANDOR_FEATURE(AOILeft,                     X, I, I) \
-    _ANDOR_FEATURE(AOIStride,                   X, X, I) \
+    _ANDOR_FEATURE(AOIStride,                   X, I, I) \
     _ANDOR_FEATURE(AOITop,                      X, I, I) \
     _ANDOR_FEATURE(AOIVBin,                     X, I, I) \
     _ANDOR_FEATURE(AOIWidth,                    X, I, I) \

@@ -21,7 +21,6 @@ int main(int argc, char* argv[])
 {
     tao_error_t* errs = TAO_NO_ERRORS;
     andor_camera_t* cam;
-    double temperature;
     long dev, ndevices;
     char* end;
 
@@ -49,11 +48,15 @@ int main(int argc, char* argv[])
     }
     fprintf(stdout, "Sensor size: %ld × %ld pixels\n",
             cam->sensorwidth, cam->sensorheight);
-    if (ANDOR_GET_FLOAT(cam, SensorTemperature, &temperature) != 0) {
-        tao_report_errors(&cam->errs);
-        return EXIT_FAILURE;
-    }
-    fprintf(stdout, "Sensor temperature: %.1f°C\n", temperature);
+    fprintf(stdout, "Sensor temperature: %.1f°C\n", cam->config.temperature);
+    fprintf(stdout, "Pixel binning: %ld×%ld\n",
+            cam->config.xbin, cam->config.ybin);
+    fprintf(stdout, "Region of interest: %ld×%ld at (%ld,%ld)\n",
+            cam->config.width, cam->config.height,
+            cam->config.xoff, cam->config.yoff);
+    fprintf(stdout, "Exposure time: %g s\n", cam->config.exposuretime);
+    fprintf(stdout, "Frame rate: %g Hz\n", cam->config.framerate);
+
     andor_close_camera(cam);
     return EXIT_SUCCESS;
 }

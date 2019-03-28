@@ -28,9 +28,15 @@ get_andor_error_details(int code, const char** reason, const char** info)
 }
 
 void
-andor_push_error(tao_error_t** errs, const char* func, int code)
+_andor_push_error(tao_error_t** errs, const char* func, int code)
 {
     tao_push_other_error(errs, func, code, get_andor_error_details);
+}
+
+void
+andor_push_error(andor_camera_t* cam, const char* func, int code)
+{
+    tao_push_other_error(&cam->errs, func, code, get_andor_error_details);
 }
 
 #define GET_ERR_FUNC 1

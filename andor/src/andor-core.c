@@ -25,7 +25,7 @@ static int
 check0(tao_error_t** errs, const char* func, int code)
 {
     if (code != AT_SUCCESS) {
-        andor_push_error(errs, func, code);
+        _andor_push_error(errs, func, code);
     }
     return code;
 }
@@ -35,7 +35,7 @@ static int
 check1(tao_error_t** errs, const char* func, int code)
 {
     if (code != AT_SUCCESS) {
-        andor_push_error(errs, func, code);
+        _andor_push_error(errs, func, code);
         return -1;
     } else {
         return 0;
@@ -79,7 +79,7 @@ andor_get_software_version(tao_error_t** errs)
                               andor_feature_names[SoftwareVersion],
                               version, SDK_VERSION_MAXLEN);
         if (status != AT_SUCCESS) {
-            andor_push_error(&errs, "AT_GetString(SoftwareVersion)", status);
+            _andor_push_error(&errs, "AT_GetString(SoftwareVersion)", status);
             goto error;
         }
         tao_discard_errors(&errs); /* not needed in principle */
@@ -192,15 +192,16 @@ andor_open_camera(tao_error_t** errs, long dev)
     }
     cam->handle = AT_HANDLE_SYSTEM;
     cam->errs = TAO_NO_ERRORS;
+    cam->state = 0;
     status = AT_Open(dev, &cam->handle);
     if (status != AT_SUCCESS) {
-        andor_push_error(errs, "AT_Open", status);
+        andor_push_error(cam, "AT_Open", status);
         goto error;
     }
-    if (ANDOR_GET_INTEGER(cam, SensorWidth,  &cam->sensorwidth) != 0 ||
-        ANDOR_GET_INTEGER(cam, SensorHeight, &cam->sensorheight) != 0) {
+    if (andor_update_configuration(cam, true) != 0) {
         goto error;
     }
+    cam->state = 1;
     return cam;
 
     /* We branch here in case of errors. */
@@ -213,14 +214,168 @@ andor_open_camera(tao_error_t** errs, long dev)
     return NULL;
 }
 
+static void
+free_buffers(andor_camera_t* cam)
+{
+    void** bufs = cam->bufs;
+    long nbufs = cam->nbufs;
+    cam->bufs = NULL;
+    cam->nbufs = 0;
+    cam->bufsiz = 0;
+    if (bufs != NULL) {
+        for (long k = 0; k < nbufs; ++k) {
+            void* buf = bufs[k];
+            if (buf != NULL) {
+                free(buf);
+            }
+        }
+        free(bufs);
+    }
+}
+
 void
 andor_close_camera(andor_camera_t* cam)
 {
     if (cam != NULL) {
         tao_discard_errors(&cam->errs);
         if (cam->handle != AT_HANDLE_SYSTEM) {
+            (void)AT_Flush(cam->handle);
             (void)AT_Close(cam->handle);
         }
+        free_buffers(cam);
         free((void*)cam);
     }
+}
+
+int
+andor_update_configuration(andor_camera_t* cam, bool all)
+{
+    int status;
+    AT_64 ival;
+    double fval;
+
+    if (all) {
+        /* First get the sensor size. */
+        status = AT_GetInt(cam->handle, L"SensorWidth", &ival);
+        if (status == AT_SUCCESS) {
+            cam->sensorwidth = ival;
+        } else {
+            andor_push_error(cam, "AT_GetInt(Sensorwidth)", status);
+            return -1;
+        }
+        status = AT_GetInt(cam->handle, L"SensorHeight", &ival);
+        if (status == AT_SUCCESS) {
+            cam->sensorheight = ival;
+        } else {
+            andor_push_error(cam, "AT_GetInt(Sensorheight)", status);
+            return -1;
+        }
+
+        status = AT_GetInt(cam->handle, L"AOIHBin", &ival);
+        if (status == AT_SUCCESS) {
+            cam->config.xbin = ival;
+        } else if (status == AT_ERR_NOTIMPLEMENTED) {
+            cam->config.xbin = 1;
+        } else {
+            andor_push_error(cam, "AT_GetInt(AOIHBin)", status);
+            return -1;
+        }
+
+        status = AT_GetInt(cam->handle, L"AOIVBin", &ival);
+        if (status == AT_SUCCESS) {
+            cam->config.ybin = ival;
+        } else if (status == AT_ERR_NOTIMPLEMENTED) {
+            cam->config.ybin = 1;
+        } else {
+            andor_push_error(cam, "AT_GetInt(AOIVBin)", status);
+            return -1;
+        }
+
+        status = AT_GetInt(cam->handle, L"AOILeft", &ival);
+        if (status == AT_SUCCESS) {
+            cam->config.xoff = ival - 1;
+        } else if (status == AT_ERR_NOTIMPLEMENTED) {
+            cam->config.xbin = 0;
+        } else {
+            andor_push_error(cam, "AT_GetInt(AOILeft)", status);
+            return -1;
+        }
+
+        status = AT_GetInt(cam->handle, L"AOITop", &ival);
+        if (status == AT_SUCCESS) {
+            cam->config.yoff = ival - 1;
+        } else if (status == AT_ERR_NOTIMPLEMENTED) {
+            cam->config.ybin = 0;
+        } else {
+            andor_push_error(cam, "AT_GetInt(AOITop)", status);
+            return -1;
+        }
+
+        status = AT_GetInt(cam->handle, L"AOIWidth", &ival);
+        if (status == AT_SUCCESS) {
+            cam->config.width = ival;
+        } else if (status == AT_ERR_NOTIMPLEMENTED) {
+            cam->config.width = cam->sensorwidth;
+        } else {
+            andor_push_error(cam, "AT_GetInt(AOIWidth)", status);
+            return -1;
+        }
+
+        status = AT_GetInt(cam->handle, L"AOIHeight", &ival);
+        if (status == AT_SUCCESS) {
+            cam->config.height = ival;
+        } else if (status == AT_ERR_NOTIMPLEMENTED) {
+            cam->config.height = cam->sensorheight;
+        } else {
+            andor_push_error(cam, "AT_GetInt(AOIHeight)", status);
+            return -1;
+        }
+
+#if 0
+        status = AT_GetInt(cam->handle, L"AOIStride", &ival);
+        if (status == AT_SUCCESS) {
+            cam->config.stride = ival;
+        } else {
+            andor_push_error(cam, "AT_GetInt(AOIStride)", status);
+            return -1;
+        }
+#endif
+
+#if 0
+        status = AT_GetInt(cam->handle, L"ImageSizeBytes", &ival);
+        if (status == AT_SUCCESS) {
+            cam->config.buffersize = ival;
+        } else {
+            andor_push_error(cam, "AT_GetInt(ImageSizeBytes)", status);
+            return -1;
+        }
+#endif
+
+        /* According to the doc., Apogee has ne ExposureTime feature. */
+        status = AT_GetFloat(cam->handle, L"ExposureTime", &fval);
+        if (status == AT_SUCCESS) {
+            cam->config.exposuretime = fval;
+        } else {
+            andor_push_error(cam, "AT_GetFloat(ExposureTime)", status);
+            return -1;
+        }
+
+        status = AT_GetFloat(cam->handle, L"FrameRate", &fval);
+        if (status == AT_SUCCESS) {
+            cam->config.framerate = fval;
+        } else {
+            andor_push_error(cam, "AT_GetFloat(FrameRate)", status);
+            return -1;
+        }
+    }
+
+    status = AT_GetFloat(cam->handle, L"SensorTemperature", &fval);
+    if (status == AT_SUCCESS) {
+        cam->config.temperature = fval;
+    } else {
+        andor_push_error(cam, "AT_GetFloat(SensorTemperature)", status);
+        return -1;
+    }
+
+    return 0;
 }
