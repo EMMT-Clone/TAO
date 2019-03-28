@@ -166,9 +166,9 @@ extern long andor_get_pixel_encodings(andor_camera_t* cam,
                                       andor_pixel_encoding_t* encodings,
                                       long len);
 
-extern int andor_convert(void* dst, andor_pixel_encoding_t dst_enc,
-                         const void* src,  andor_pixel_encoding_t src_enc,
-                         long width, long height, long stride);
+extern int andor_convert_buffer(void* dst, andor_pixel_encoding_t dst_enc,
+                                const void* src, andor_pixel_encoding_t src_enc,
+                                long width, long height, long stride);
 
 typedef enum andor_camera_model {
     ANDOR_MODEL_UNKNOWN,
@@ -225,8 +225,35 @@ struct andor_camera
 
 extern andor_camera_t* andor_open_camera(tao_error_t** errs, long dev);
 extern void andor_close_camera(andor_camera_t* cam);
-extern int andor_start(andor_camera_t* cam, long nbufs);
-extern int andor_stop(andor_camera_t* cam);
+extern int andor_start_acquisition(andor_camera_t* cam, long nbufs);
+extern int andor_stop_acquisition(andor_camera_t* cam);
+
+/**
+ * Wait for a new acquisition buffer to be available.
+ *
+ * @param cam       The acquiring camera.
+ * @param bufptr    The address to store the buffer base address.
+ * @param sizptr    The address to store the buffer size (in bytes).
+ * @param timeout   The maximum number of seconds to wait.  If larger than
+ *                  about 4.3e6 seconds (50 days), the function waits forever.
+ *
+ * @return `1` if a new buffer is available, `0` is a timeout occured, `-1` in
+ * case of error.
+ */
+extern int andor_wait_buffer(andor_camera_t* cam, void** bufptr, long* sizptr,
+                             double timeout);
+
+/**
+ * (Re)queue an acquisition buffer.
+ *
+ * @param cam       The acquiring camera.
+ * @param buf       The base address of the acquisition buffer.
+ * @param siz       The size (in bytes) of the acquisition buffer.
+ *
+ * @return `0` on success, `-1` in case of error.
+ */
+extern int andor_queue_buffer(andor_camera_t* cam, void* buf, long siz);
+
 
 /**
  * Update camera settings

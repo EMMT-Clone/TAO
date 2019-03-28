@@ -1,3 +1,8 @@
+# Acquisition
+
+It is not clear whether the buffer can be re-queued after a timeout error in
+`AT_WaitBuffer`.  My understanding is that there is no valid buffer on return
+of the `AT_WaitBuffer` function in case of any errors (including timeouts).
 
 # Features
 

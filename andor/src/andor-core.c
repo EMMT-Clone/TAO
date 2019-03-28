@@ -356,7 +356,7 @@ andor_get_pixel_encodings(andor_camera_t* cam,
 }
 
 int
-andor_start(andor_camera_t* cam, long nbufs)
+andor_start_acquisition(andor_camera_t* cam, long nbufs)
 {
     long bufsiz;
     AT_64 ival;
@@ -437,9 +437,7 @@ andor_start(andor_camera_t* cam, long nbufs)
 
     /* Queue the acquisition buffers. */
     for (long k = 0; k < nbufs; ++k) {
-        status = AT_QueueBuffer(cam->handle, (AT_U8*)cam->bufs[k], bufsiz);
-        if (status != AT_SUCCESS) {
-            andor_push_error(cam, "AT_QueueBuffer", status);
+        if (andor_queue_buffer(cam, cam->bufs[k], bufsiz) != 0) {
             return -1;
         }
     }
@@ -485,7 +483,7 @@ andor_start(andor_camera_t* cam, long nbufs)
 }
 
 int
-andor_stop(andor_camera_t* cam)
+andor_stop_acquisition(andor_camera_t* cam)
 {
     int status;
 
@@ -513,6 +511,48 @@ andor_stop(andor_camera_t* cam)
 
     /* Update state and return. */
     cam->state = 1;
+    return 0;
+}
+
+int
+andor_wait_buffer(andor_camera_t* cam, void** bufptr, long* sizptr,
+                  double timeout)
+{
+    int siz, status;
+    unsigned int tm;
+    uint8_t* buf;
+
+    if (cam->state != 2) {
+        tao_push_error(&cam->errs, __func__, TAO_NO_ACQUISITION);
+        return -1;
+    }
+    if (isnan(timeout) || timeout < 0) {
+        tao_push_error(&cam->errs, __func__, TAO_OUT_OF_RANGE);
+        return -1;
+    }
+    timeout = round(1e3*timeout); /* convert in milliseconds */
+    tm = (timeout >= AT_INFINITE ? AT_INFINITE : (unsigned int)timeout);
+    status = AT_WaitBuffer(cam->handle, &buf, &siz, tm);
+    *bufptr = buf;
+    *sizptr = siz;
+    if (status == AT_SUCCESS) {
+        return 1;
+    } else if (status == AT_ERR_TIMEDOUT) {
+        return 0;
+    } else {
+        andor_push_error(cam, "AT_WaitBuffer", status);
+        return -1;
+    }
+}
+
+int
+andor_queue_buffer(andor_camera_t* cam, void* buf, long siz)
+{
+    int status = AT_QueueBuffer(cam->handle, (AT_U8*)buf, (int)siz);
+    if (status != AT_SUCCESS) {
+        andor_push_error(cam, "AT_QueueBuffer", status);
+        return -1;
+    }
     return 0;
 }
 

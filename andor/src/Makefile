@@ -18,6 +18,9 @@ TAO_SRCDIR = ${srcdir}/../../libtao/src
 TAO_DEFS = -I${TAO_SRCDIR}
 TAO_LIBS = ${srcdir}/../../build/src/.libs/libtao.a -lpthread -lm
 
+FITS_DEFS =
+FITS_LIBS = -lcfitsio
+
 LIBRARY = libandor.a
 OBJECTS = andor-errors.o andor-core.o andor-features.o andor-convert.o
 DEPS = ${srcdir}/andor.h ${srcdir}/andor-features.h ${TAO_SRCDIR}/tao.h
@@ -30,7 +33,7 @@ clean:
 distclean: clean
 	rm -f ${LIBRARY} ${OBJECTS}
 
-tests: test1 test2 test3 test4
+tests: test1 test2 test3 test4 test5
 
 test1: andor-test1
 	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test1
@@ -46,6 +49,9 @@ test3: andor-test3
 test4: andor-test4
 	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test4
 
+test5: andor-test5
+	LD_LIBRARY_PATH=${AT_LIBDIR} ./andor-test5
+
 andor-test1: ${srcdir}/andor-test1.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
 
@@ -57,6 +63,9 @@ andor-test3: ${srcdir}/andor-test3.c ${DEPS} ${LIBRARY}
 
 andor-test4: ${srcdir}/andor-test4.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${CFLAGS} $< -o $@ ${LDFLAGS}
+
+andor-test5: ${srcdir}/andor-test5.c ${DEPS} ${LIBRARY}
+	${CC} ${CPPFLAGS} ${FITS_DEFS} ${CFLAGS} $< -o $@ ${LDFLAGS} ${FITS_LIBS}
 
 ${LIBRARY}: ${OBJECTS}
 	ar -rf $@ $^
