@@ -50,26 +50,7 @@ int main(int argc, char* argv[])
         tao_report_errors(&errs);
         return EXIT_FAILURE;
     }
-    fprintf(stdout, "Sensor size: %ld × %ld pixels\n",
-            cam->sensorwidth, cam->sensorheight);
-    fprintf(stdout, "Sensor temperature: %.1f°C\n", cam->config.temperature);
-    fprintf(stdout, "Pixel binning: %ld×%ld\n",
-            cam->config.xbin, cam->config.ybin);
-    fprintf(stdout, "Region of interest: %ld×%ld at (%ld,%ld)\n",
-            cam->config.width, cam->config.height,
-            cam->config.xoff, cam->config.yoff);
-    fprintf(stdout, "Exposure time: %g s\n", cam->config.exposuretime);
-    fprintf(stdout, "Frame rate: %g Hz\n", cam->config.framerate);
-    fprintf(stdout, "Pixel encoding: %ls\n",
-            andor_get_encoding_name(cam->config.pixelencoding));
-    fprintf(stdout, "Supported pixel encodings: [");
-    for (long k = 0; k < cam->nencodings; ++k) {
-        if (k > 0) {
-            fputs(", ", stdout);
-        }
-        fprintf(stdout, "%ls", andor_get_encoding_name(cam->encodings[k]));
-    }
-    fputs("]\n", stdout);
+    andor_print_camera_configuration(stdout, cam);
 
     /* Measure time taken for updating all the configuration. */
     tao_get_monotonic_time(NULL, &t0);

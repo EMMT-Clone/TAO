@@ -254,6 +254,11 @@ extern void andor_get_configuration(andor_camera_t* cam,
 extern int andor_set_configuration(andor_camera_t* cam,
                                    const andor_camera_config_t* cfg);
 
+extern void andor_print_configuration(FILE* output,
+                                      const andor_camera_config_t* cfg);
+
+extern void andor_print_camera_configuration(FILE* output,
+                                             const andor_camera_t* cam);
 _TAO_END_DECLS
 
 #endif /* _ANDOR_H */

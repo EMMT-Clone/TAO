@@ -802,3 +802,34 @@ andor_set_configuration(andor_camera_t* cam, const andor_camera_config_t* cfg)
 
     return 0;
 }
+
+void
+andor_print_configuration(FILE* output, const andor_camera_config_t* cfg)
+{
+    fprintf(output, "Sensor temperature: %.1f°C\n", cfg->temperature);
+    fprintf(output, "Pixel binning: %ld×%ld\n",
+            cfg->xbin, cfg->ybin);
+    fprintf(output, "Region of interest: %ld×%ld at (%ld,%ld)\n",
+            cfg->width, cfg->height,
+            cfg->xoff, cfg->yoff);
+    fprintf(output, "Exposure time: %g s\n", cfg->exposuretime);
+    fprintf(output, "Frame rate: %g Hz\n", cfg->framerate);
+    fprintf(output, "Pixel encoding: %ls\n",
+            andor_get_encoding_name(cfg->pixelencoding));
+}
+
+void
+andor_print_camera_configuration(FILE* output, const andor_camera_t* cam)
+{
+    fprintf(output, "Sensor size: %ld × %ld pixels\n",
+            cam->sensorwidth, cam->sensorheight);
+    andor_print_configuration(output, &cam->config);
+    fprintf(output, "Supported pixel encodings: [");
+    for (long k = 0; k < cam->nencodings; ++k) {
+        if (k > 0) {
+            fputs(", ", output);
+        }
+        fprintf(output, "%ls", andor_get_encoding_name(cam->encodings[k]));
+    }
+    fputs("]\n", output);
+}
