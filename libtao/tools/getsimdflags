@@ -1,0 +1,57 @@
+#! /bin/sh
+#
+# getsimdflags -
+#
+# Simple script to query the available features of the CPU.
+#
+#------------------------------------------------------------------------------
+#
+# This file if part of the TAO library (https://github.com/emmt/TAO) licensed
+# under the MIT license.
+#
+# Copyright (C) 2019, Éric Thiébaut.
+#
+os=`uname`
+case "$os" in
+    Linux)
+	features=$(sed -n -e  '/^flags[ \t]*:/{s/^flags[ \t]*:[ \t]*//;p;q}' \
+		       </proc/cpuinfo)
+	;;
+    *)
+	echo >&2 "OS $os not yet supported"
+	exit 1
+	;;
+esac
+
+for item in $features; do
+    eval _have_$item=yes
+done
+
+flags=""
+if test "$_have_avx2" = "yes"; then
+    flags="-mavx2"
+elif test "$_have_avx" = "yes"; then
+    flags="-mavx"
+elif test "$_have_sse4_2" = "yes"; then
+    flags="-msse4.2"
+elif test "$_have_sse4_1" = "yes"; then
+    flags="-msse4.1"
+elif test "$_have_sse4_a" = "yes"; then # FIXME:
+    flags="-msse4a"
+elif test "$_have_sse4" = "yes"; then
+    flags="-msse4"
+elif test "$_have_ssse3" = "yes"; then
+    flags="-mssse3"
+elif test "$_have_sse2" = "yes"; then
+    flags="-msse2"
+elif test "$_have_sse" = "yes"; then
+    flags="-msse"
+elif test "$_have_mmx" = "yes"; then
+    flags="-mmx"
+fi
+if test "$flags" = ""; then
+    flags="-ffast-math"
+else
+    flags="-ffast-math $flags"
+fi
+echo "$flags"
