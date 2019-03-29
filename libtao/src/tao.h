@@ -1773,18 +1773,73 @@ extern int tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex,
                              bool wait);
 
 /**
- * Signal a condition variable.
+ * Signal a condition variable to at most one thread.
  *
  * This function restarts one of the threads that are waiting on the condition
- * variable @b cond.  Nothing happens, if no threads are waiting on @b cond.
+ * variable @b cond.  Nothing happens, if no threads are waiting on the
+ * condition variable.
  *
  * @param errs   Address of a variable to track errors.
  * @param cond   Pointer to the condition variable to signal.
  *
  * @return `0` if successful; `-1` in case of error.
  */
-extern int
-tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond);
+extern int tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond);
+
+/**
+ * Signal a condition variable to all waiting thread.
+ *
+ * This function behaves like tao_signal_condition() except that all threads
+ * waiting on the condition variable @a cond are restarted.  Nothing happens,
+ * if no threads are waiting on the condition variable.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cond   Pointer to the condition variable to signal.
+ *
+ * @return `0` if successful; `-1` in case of error.
+ */
+extern int tao_broadcast_condition(tao_error_t** errs, pthread_cond_t* cond);
+
+/**
+ * Wait for a condition to be signaled.
+ *
+ * This function atomically unlocks the mutex and waits for the condition
+ * variable to be signaled.  The thread execution is suspended and does not
+ * consume any CPU time until the condition variable is signaled. The mutex
+ * must be locked by the calling thread on entrance to this function.  Before
+ * returning to the calling thread, this function re-acquires the mutex.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cond   Address of the condition variable to wait on.
+ * @param mutex  Address of the mutex associated with the condition variable.
+ *
+ * @return `0` on success, `-1` in case of error.
+ *
+ * @see tao_wait_condition, tao_get_absolute_timeout.
+ */
+extern int tao_wait_condition(tao_error_t** errs, pthread_cond_t* cond,
+                              pthread_mutex_t* mutex);
+
+/**
+ * Attempt to wait for a condition to be signaled.
+ *
+ * This function behaves like tao_wait_condition() but blocks no longer than
+ * some given duration.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cond   Address of the condition variable to wait on.
+ * @param mutex  Address of the mutex associated with the condition variable.
+ * @param secs   Maximum time to wait (in seconds).  If this amount of time is
+ *               very large (more than one year), the effect is the same as
+ *               calling tao_wait_condition().
+ *
+ * @return `1` if the codition is signaled before the specified number of
+ * seconds; `0` if timeout occured before; `-1` in case of error.
+ *
+ * @see tao_wait_condition, tao_get_absolute_timeout.
+ */
+extern int tao_timed_wait_condition(tao_error_t** errs, pthread_cond_t* cond,
+                                    pthread_mutex_t* mutex, double secs);
 
 /** @} */
 
@@ -3012,7 +3067,7 @@ tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
  *               tao_wait_image().
  *
  * @return `1` if a new image is available before the specified number of
- * seconds; `0` if timed-out occured before a new image becomes available; `-1`
+ * seconds; `0` if timeout occured before a new image becomes available; `-1`
  * in case of error.
  *
  * @see tao_get_absolute_timeout.

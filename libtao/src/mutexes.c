@@ -157,3 +157,67 @@ tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond)
     }
     return 0;
 }
+
+int
+tao_broadcast_condition(tao_error_t** errs, pthread_cond_t* cond)
+{
+    int code = pthread_cond_broadcast(cond);
+    if_unlikely(code != 0) {
+        /* This should never happen on Linux (see Note a.). */
+        tao_push_error(errs, "pthread_cond_broadcast", code);
+        return -1;
+    }
+    return 0;
+}
+
+int
+tao_wait_condition(tao_error_t** errs, pthread_cond_t* cond,
+                   pthread_mutex_t* mutex)
+{
+    int code = pthread_cond_wait(cond, mutex);
+    if_unlikely(code != 0) {
+        /* This should never happen on Linux (see Note a.). */
+        tao_push_error(errs, "pthread_cond_wait", code);
+        return -1;
+    }
+    return 0;
+}
+
+int
+tao_timed_wait_condition(tao_error_t** errs, pthread_cond_t* cond,
+                         pthread_mutex_t* mutex, double secs)
+{
+    int code;
+
+    if_unlikely(isnan(secs) || secs < 0) {
+        tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
+        return -1;
+    }
+    if (secs > TAO_YEAR) {
+        /* For a very long timeout, we just call `pthread_cond_wait`. */
+    forever:
+        code = pthread_cond_wait(cond, mutex);
+        if_unlikely(code != 0) {
+            /* This should never happen on Linux (see Note a.). */
+            tao_push_error(errs, "pthread_cond_wait", code);
+            return -1;
+        }
+    } else {
+        struct timespec ts;
+        if (tao_get_absolute_timeout(errs, &ts, secs) != 0) {
+            return -1;
+        }
+        if (! tao_is_finite_absolute_time(&ts)) {
+            goto forever;
+        }
+        code = pthread_cond_timedwait(cond, mutex, &ts);
+        if (code != 0) {
+            if (code == ETIMEDOUT) {
+                return 0;
+            }
+            tao_push_error(errs, "pthread_cond_timedwait", code);
+            return -1;
+        }
+    }
+    return 1;
+}
