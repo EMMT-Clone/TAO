@@ -1773,6 +1773,33 @@ extern int tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex,
                              bool wait);
 
 /**
+ * Initialize a condition variable.
+ *
+ * This function initializes a non-static condition variable.  The caller is
+ * responsible of calling tao_destroy_condition() to free the resources that
+ * may be associated with the condition variable.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cond   Pointer to the condition variable to initialize.
+ *
+ * @return `0` if successful; `-1` in case of error.
+ */
+extern int tao_initialize_condition(tao_error_t** errs, pthread_cond_t* cond);
+
+/**
+ * Destroy a condition variable.
+ *
+ * This function destroys a condition variable that has been initialized by
+ * tao_initialize_condition().
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param cond   Pointer to the condition variable to destroy.
+ *
+ * @return `0` if successful; `-1` in case of error.
+ */
+extern int tao_destroy_condition(tao_error_t** errs, pthread_cond_t* cond);
+
+/**
  * Signal a condition variable to at most one thread.
  *
  * This function restarts one of the threads that are waiting on the condition

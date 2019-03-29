@@ -147,6 +147,29 @@ tao_destroy_mutex(tao_error_t** errs, pthread_mutex_t* mutex, bool wait)
 }
 
 int
+tao_initialize_condition(tao_error_t** errs, pthread_cond_t* cond)
+{
+    int code = pthread_cond_init(cond, NULL);
+    if_unlikely(code != 0) {
+        /* This should never occur, but... */
+        tao_push_error(errs, "pthread_cond_init", code);
+        return -1;
+    }
+    return 0;
+}
+
+int
+tao_destroy_condition(tao_error_t** errs, pthread_cond_t* cond)
+{
+    int code = pthread_cond_destroy(cond);
+    if_unlikely(code != 0) {
+        tao_push_error(errs, "pthread_cond_destroy", code);
+        return -1;
+    }
+    return 0;
+}
+
+int
 tao_signal_condition(tao_error_t** errs, pthread_cond_t* cond)
 {
     int code = pthread_cond_signal(cond);
