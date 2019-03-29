@@ -21,11 +21,14 @@ TAO_LIBS = ${srcdir}/../../build/src/.libs/libtao.a -lpthread -lm
 FITS_DEFS =
 FITS_LIBS = -lcfitsio
 
+XPA_DEFS =
+XPA_LIBS = -lxpa
+
 LIBRARY = libandor.a
 OBJECTS = andor-errors.o andor-core.o andor-features.o andor-convert.o
 DEPS = ${srcdir}/andor.h ${srcdir}/andor-features.h ${TAO_SRCDIR}/tao.h
 
-all: ${LIBRARY}
+all: ${LIBRARY} andor-server
 
 clean:
 	rm -f *~ core
@@ -66,6 +69,9 @@ andor-test4: ${srcdir}/andor-test4.c ${DEPS} ${LIBRARY}
 
 andor-test5: ${srcdir}/andor-test5.c ${DEPS} ${LIBRARY}
 	${CC} ${CPPFLAGS} ${FITS_DEFS} ${CFLAGS} $< -o $@ ${LDFLAGS} ${FITS_LIBS}
+
+andor-server: ${srcdir}/andor-server.c ${DEPS} ${LIBRARY}
+	${CC} ${CPPFLAGS} ${XPA_DEFS} ${CFLAGS} $< -o $@ ${LDFLAGS} ${XPA_LIBS}
 
 ${LIBRARY}: ${OBJECTS}
 	ar -rf $@ $^
