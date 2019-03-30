@@ -508,8 +508,7 @@ typedef struct tao_buffer {
  *
  * @param buf   Address of a static i/o buffer structure.
  */
-extern void
-tao_initialize_static_buffer(tao_buffer_t* buf);
+extern void tao_initialize_static_buffer(tao_buffer_t* buf);
 
 /**
  * Create a dynamic i/o buffer.
@@ -526,8 +525,7 @@ tao_initialize_static_buffer(tao_buffer_t* buf);
  *
  * @return The address of the new buffer; `NULL` in case of errors.
  */
-extern tao_buffer_t*
-tao_create_buffer(tao_error_t** errs, size_t size);
+extern tao_buffer_t* tao_create_buffer(tao_error_t** errs, size_t size);
 
 /**
  * Destroy dynamic resources of an i/o buffer.
@@ -542,8 +540,7 @@ tao_create_buffer(tao_error_t** errs, size_t size);
  *
  * @param buf    Address of the i/o buffer to destroy (can be `NULL`).
  */
-extern void
-tao_finalize_buffer(tao_buffer_t* buf);
+extern void tao_finalize_buffer(tao_buffer_t* buf);
 
 /**
  * Resize an i/o buffer.
@@ -564,8 +561,7 @@ tao_finalize_buffer(tao_buffer_t* buf);
  *
  * @return `0` on success, `-1` on error.
  */
-extern int
-tao_resize_buffer(tao_error_t** errs, tao_buffer_t* buf, size_t cnt);
+extern int tao_resize_buffer(tao_error_t** errs, tao_buffer_t* buf, size_t cnt);
 
 /**
  * Flush the contents of an i/o buffer.
@@ -579,8 +575,7 @@ tao_resize_buffer(tao_error_t** errs, tao_buffer_t* buf, size_t cnt);
  *
  * @param buf    Address of the i/o buffer.
  */
-extern void
-tao_flush_buffer(tao_buffer_t* buf);
+extern void tao_flush_buffer(tao_buffer_t* buf);
 
 /**
  * Clear the contents of an i/o buffer.
@@ -592,8 +587,7 @@ tao_flush_buffer(tao_buffer_t* buf);
  *
  * @param buf    Address of the i/o buffer.
  */
-extern void
-tao_clear_buffer(tao_buffer_t* buf);
+extern void tao_clear_buffer(tao_buffer_t* buf);
 
 /**
  * Get the size of the contents of an i/o buffer.
@@ -612,8 +606,7 @@ tao_clear_buffer(tao_buffer_t* buf);
  *
  * @see tao_get_buffer_contents, tao_adjust_buffer_contents_size.
  */
-extern size_t
-tao_get_buffer_contents_size(tao_buffer_t* buf);
+extern size_t tao_get_buffer_contents_size(tao_buffer_t* buf);
 
 /**
  * Query the contents an i/o buffer.
@@ -639,8 +632,7 @@ tao_get_buffer_contents_size(tao_buffer_t* buf);
  *
  * @see tao_get_buffer_contents_size, tao_adjust_buffer_contents_size.
  */
-extern size_t
-tao_get_buffer_contents(const tao_buffer_t* buf, void** data);
+extern size_t tao_get_buffer_contents(const tao_buffer_t* buf, void** data);
 
 /**
  * Get the size of the unused space in an i/o buffer.
@@ -662,8 +654,7 @@ tao_get_buffer_contents(const tao_buffer_t* buf, void** data);
  * @see tao_resize_buffer, tao_flush_buffer, tao_get_buffer_unused_part,
  * tao_get_total_unused_buffer_size, tao_adjust_buffer_contents_size.
  */
-extern size_t
-tao_get_buffer_unused_size(const tao_buffer_t* buf);
+extern size_t tao_get_buffer_unused_size(const tao_buffer_t* buf);
 
 /**
  * Get the total number of unused bytes in an i/o buffer.
@@ -681,8 +672,7 @@ tao_get_buffer_unused_size(const tao_buffer_t* buf);
  *
  * @see tao_flush_buffer, tao_get_unused_buffer_size.
  */
-extern size_t
-tao_get_total_unused_buffer_size(const tao_buffer_t* buf);
+extern size_t tao_get_total_unused_buffer_size(const tao_buffer_t* buf);
 
 /**
  * Query the unused data at the end of an i/o buffer.
@@ -707,8 +697,7 @@ tao_get_total_unused_buffer_size(const tao_buffer_t* buf);
  *
  * @return The number of unused bytes at the end of the internal data buffer.
  */
-extern size_t
-tao_get_buffer_unused_part(const tao_buffer_t* buf, void** data);
+extern size_t tao_get_buffer_unused_part(const tao_buffer_t* buf, void** data);
 
 /**
  * Adjust the size of the contents of an i/o buffer.
@@ -728,9 +717,8 @@ tao_get_buffer_unused_part(const tao_buffer_t* buf, void** data);
  *
  * @return `0` on success, `-1` on error.
  */
-extern int
-tao_adjust_buffer_contents_size(tao_error_t** errs, tao_buffer_t* buf,
-                                ssize_t adj);
+extern int tao_adjust_buffer_contents_size(tao_error_t** errs,
+                                           tao_buffer_t* buf, ssize_t adj);
 
 /**
  * Read bytes from a file descriptor to an i/o buffer.
@@ -751,10 +739,10 @@ tao_adjust_buffer_contents_size(tao_error_t** errs, tao_buffer_t* buf,
  * because, for efficiency reasons, the function attempts to fill the space
  * available in the buffer @b buf.
  *
- * @see tao_write_bytes.
+ * @see tao_write_from_buffer.
  */
-extern ssize_t
-tao_read_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt);
+extern ssize_t tao_read_to_buffer(tao_error_t** errs, int fd,
+                                  tao_buffer_t* buf, size_t cnt);
 
 /**
  * Write the contents of an i/o buffer to a file descriptor.
@@ -775,10 +763,10 @@ tao_read_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt);
  * block.  To disentangle, call tao_get_buffer_contents_size() to check whether
  * the contents was empty.
  *
- * @see tao_read_bytes, tao_get_buffer_contents_size.
+ * @see tao_read_to_buffer, tao_get_buffer_contents_size.
  */
-extern ssize_t
-tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
+extern ssize_t tao_write_from_buffer(tao_error_t** errs, int fd,
+                                     tao_buffer_t* buf);
 
 /**
  * Append a formatted message to an i/o buffer.

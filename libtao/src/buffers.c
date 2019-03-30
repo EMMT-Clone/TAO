@@ -259,7 +259,7 @@ tao_adjust_buffer_contents_size(tao_error_t** errs, tao_buffer_t* buf,
 }
 
 ssize_t
-tao_read_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt)
+tao_read_to_buffer(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt)
 {
     /* Quick return? */
     if (cnt < 1) {
@@ -267,7 +267,7 @@ tao_read_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt)
     }
 
     /* Make sure there are enough unused bytes in the buffer. */
-    if (tao_resize_buffer(errs, buf, cnt) < cnt) {
+    if (tao_resize_buffer(errs, buf, cnt) == -1) {
         return -1;
     }
 
@@ -312,7 +312,7 @@ tao_read_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt)
 }
 
 ssize_t
-tao_write_buffer(tao_error_t** errs, int fd, tao_buffer_t* buf)
+tao_write_from_buffer(tao_error_t** errs, int fd, tao_buffer_t* buf)
 {
     /* Check arguments. */
     CHECK_BUFFER_STRUCT(errs, buf, -1);
