@@ -384,7 +384,9 @@ tao_vprint_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
         siz = tao_get_buffer_unused_part(buf, (void**)&ptr);
         len = vsnprintf(ptr, siz, format, ap);
         if (len < siz) {
-            /* Unused part was large enough.  Adjust buffer size and return. */
+            /* Unused part was large enough.  Adjust buffer size and return.
+               The final null byte is not considered as part of the
+               contents. */
             status = tao_adjust_buffer_contents_size(errs, buf, len);
             break;
         } else {

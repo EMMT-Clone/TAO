@@ -775,6 +775,13 @@ extern ssize_t tao_write_from_buffer(tao_error_t** errs, int fd,
  * message specified by @b format and subsequent arguments in the same way as
  * the sprintf() function.
  *
+ * A final null byte is written in the buffer but is not considered as part of
+ * the contents.  So that, if only tao_print_to_buffer() and
+ * tao_vprint_to_buffer() are used to build the contents of the buffer (since
+ * creation, initialization or last call to tao_clear_buffer()), the size of
+ * the buffer is also the length of the string and, thanks to the final null
+ * byte, the buffer contents can be used as a regular string.
+ *
  * @param errs   Address of a variable to track errors.
  * @param buf    Dynamic buffer.
  * @param format Format string.
