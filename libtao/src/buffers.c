@@ -357,20 +357,27 @@ int
 tao_print_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
                     const char* format, ...)
 {
+    int status;
     va_list ap;
+
+    va_start(ap, format);
+    status = tao_vprint_to_buffer(errs, buf, format, ap);
+    va_end(ap);
+    return status;
+}
+
+int
+tao_vprint_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                     const char* format, va_list ap)
+{
     int status = 0;
     char* ptr;
     long siz, len;
 
-    /* Check arguments. */
     CHECK_BUFFER_STRUCT(errs, buf, -1);
-
-    /*
-     * Append formated message to the i/o buffer, resizing and adjusting
-     * the size of the buffer as needed.
-     */
-    va_start(ap, format);
     while (status == 0) {
+        /* Append formated message to the i/o buffer, resizing and adjusting
+           the size of the buffer as needed. */
         siz = tao_get_buffer_unused_part(buf, (void**)&ptr);
         len = vsnprintf(ptr, siz, format, ap);
         if (len < siz) {
@@ -382,6 +389,5 @@ tao_print_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
             status = tao_resize_buffer(errs, buf, len + 1);
         }
     }
-    va_end(ap);
     return status;
 }

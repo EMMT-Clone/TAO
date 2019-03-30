@@ -792,11 +792,26 @@ tao_write_bytes(tao_error_t** errs, int fd, tao_buffer_t* buf);
  * @param format Format string.
  * @param ...    Subsequent arguments.
  *
- * @see tao_get_buffer_contents().
+ * @see tao_get_buffer_contents(), tao_vprint_to_buffer().
  */
-extern int
-tao_print_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
-                    const char* format, ...);
+extern int tao_print_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                               const char* format, ...);
+
+/**
+ * Append a formatted message to an i/o buffer.
+ *
+ * This function is similar to tao_print_to_buffer() except that it is called
+ * with a `va_list` instead of a variable number of arguments.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param buf    Dynamic buffer.
+ * @param format Format string.
+ * @param ap     Arguments to print.
+ *
+ * @see tao_get_buffer_contents(), tao_print_to_buffer().
+ */
+extern int tao_vprint_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                                const char* format, va_list ap);
 
 /** @} */
 
