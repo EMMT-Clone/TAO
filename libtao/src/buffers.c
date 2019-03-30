@@ -22,6 +22,9 @@
 
 #include "tao-private.h"
 
+#define if_likely(expr)   if TAO_LIKELY(expr)
+#define if_unlikely(expr) if TAO_UNLIKELY(expr)
+
 #define VOLATILE_STRUCT  (1 << 0)
 #define VOLATILE_DATA    (1 << 1)
 
@@ -30,11 +33,11 @@
 
 #define CHECK_BUFFER_STRUCT(errs, buf, code)                    \
     do {                                                        \
-        if (buf == NULL) {                                      \
+        if_unlikely(buf == NULL) {                              \
             tao_push_error(errs, __func__, TAO_BAD_ADDRESS);    \
             return code;                                        \
         }                                                       \
-        if ((buf->data == NULL && buf->size != 0) ||            \
+        if_unlikely((buf->data == NULL && buf->size != 0) ||    \
             buf->offset > buf->size ||                          \
             buf->pending > buf->size ||                         \
             buf->offset + buf->pending > buf->size) {           \
