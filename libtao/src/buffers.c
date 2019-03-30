@@ -269,11 +269,6 @@ tao_read_to_buffer(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt)
         return 0;
     }
 
-    /* Make sure there are enough unused bytes in the buffer. */
-    if (tao_resize_buffer(errs, buf, cnt) == -1) {
-        return -1;
-    }
-
     /* If all contents has been consumed, reset the offset to avoid
        unnecessarily storing bytes in the middle of the buffer. */
     if (buf->pending < 1) {
@@ -296,14 +291,14 @@ tao_read_to_buffer(tao_error_t** errs, int fd, tao_buffer_t* buf, size_t cnt)
 
         /* Update number of available bytes. */
         avail = buf->size - (buf->offset + buf->pending);
-        if (avail < cnt) {
+        if (avail < cnt) { /* FIXME: not necessary */
             tao_push_error(errs, __func__, TAO_ASSERTION_FAILED);
             return -1;
         }
     }
 
     /* Attempt to read as many bytes as possible (that is, not just `cnt`
-       bytes). */
+       bytes).  FIXME: bad idea. */
     ssize_t nr = read(fd, buf->data + buf->offset, avail);
     if (nr == -1) {
         /* Some error occured. */
@@ -373,26 +368,29 @@ int
 tao_vprint_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
                      const char* format, va_list ap)
 {
-    int status = 0;
-    char* ptr;
-    long siz, len;
-
-    CHECK_BUFFER_STRUCT(errs, buf, -1);
-    while (status == 0) {
+    CHECK_BUFFER_STRUCT(errs, buf, -1); /* FIXME: optimize */
+    long end = buf->offset + buf->pending;
+    while (true) {
         /* Append formated message to the i/o buffer, resizing and adjusting
            the size of the buffer as needed. */
-        siz = tao_get_buffer_unused_part(buf, (void**)&ptr);
-        len = vsnprintf(ptr, siz, format, ap);
+        long siz = buf->size - end;
+        long len = vsnprintf(buf->data + end, siz, format, ap);
         if (len < siz) {
-            /* Unused part was large enough.  Adjust buffer size and return.
-               The final null byte is not considered as part of the
-               contents. */
-            status = tao_adjust_buffer_contents_size(errs, buf, len);
-            break;
-        } else {
-            /* Unused part was too small.  Enlarge it and re-try. */
-            status = tao_resize_buffer(errs, buf, len + 1);
+            if (len < 0) {
+                /* Some error occured. */
+                tao_push_system_error(errs, "vsnprintf");
+                return -1;
+            } else {
+                /* Unused part was large enough.  Adjust buffer size and
+                   return.  The final null byte is not considered as part of
+                   the contents. */
+                buf->pending += len;
+                return 0;
+            }
+        }
+        /* Unused part was too small.  Enlarge it before retrying. */
+        if (tao_resize_buffer(errs, buf, len + 1) == -1) {
+            return -1;
         }
     }
-    return status;
 }
