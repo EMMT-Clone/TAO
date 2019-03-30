@@ -776,8 +776,9 @@ extern ssize_t tao_write_from_buffer(tao_error_t** errs, int fd,
  * the sprintf() function.
  *
  * A final null byte is written in the buffer but is not considered as part of
- * the contents.  So that, if only tao_print_to_buffer() and
- * tao_vprint_to_buffer() are used to build the contents of the buffer (since
+ * the contents.  So that, if only tao_print_to_buffer(),
+ * tao_vprint_to_buffer(), tao_put_string_to_buffer() or
+ * tao_put_char_to_buffer() are used to build the contents of the buffer (since
  * creation, initialization or last call to tao_clear_buffer()), the size of
  * the buffer is also the length of the string and, thanks to the final null
  * byte, the buffer contents can be used as a regular string.
@@ -786,6 +787,8 @@ extern ssize_t tao_write_from_buffer(tao_error_t** errs, int fd,
  * @param buf    Dynamic buffer.
  * @param format Format string.
  * @param ...    Subsequent arguments.
+ *
+ * @return `0` on success, `-1` on error.
  *
  * @see tao_get_buffer_contents(), tao_vprint_to_buffer().
  */
@@ -803,11 +806,62 @@ extern int tao_print_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
  * @param format Format string.
  * @param ap     Arguments to print.
  *
+ * @return `0` on success, `-1` on error.
+ *
  * @see tao_get_buffer_contents(), tao_print_to_buffer().
  */
 extern int tao_vprint_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
                                 const char* format, va_list ap);
 
+/**
+ * Append bytes to an i/o buffer.
+ *
+ * This function appends some bytes to the contents of a dynamic i/o buffer.
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param buf    Dynamic buffer.
+ * @param ptr    The address of the first byte to append.
+ * @param siz    Number of bytes to append.
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int tao_append_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                                const void* ptr, long siz);
+
+/**
+ * Append a string to an i/o buffer.
+ *
+ * This function appends a string to the contents of a dynamic i/o buffer.
+ * A final null byte is written in the buffer but is not considered as part of
+ * the contents (see tao_print_to_buffer()).
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param buf    Dynamic buffer.
+ * @param str    The string to append.
+ * @param len    If nonnegative, number of characters to append; otherwise,
+ *               the string @a str is assumed null terminated and its length
+ *               if givan by calling tao_strlen().
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int tao_put_string_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                                    const char* str, long len);
+
+/**
+ * Append a single character to an i/o buffer.
+ *
+ * This function appends a single character to the contents of a dynamic i/o
+ * buffer.  A final null byte is written in the buffer but is not considered as
+ * part of the contents (see tao_print_to_buffer()).
+ *
+ * @param errs   Address of a variable to track errors.
+ * @param buf    Dynamic buffer.
+ * @param c      The character to append.
+ *
+ * @return `0` on success, `-1` on error.
+ */
+extern int tao_put_char_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                                  int c);
 /** @} */
 
 /*---------------------------------------------------------------------------*/

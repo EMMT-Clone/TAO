@@ -394,3 +394,49 @@ tao_vprint_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
         }
     }
 }
+
+int
+tao_append_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                     const void* ptr, long siz)
+{
+    if (siz > 0) {
+        if (tao_resize_buffer(errs, buf, siz) == -1) {
+            return -1;
+        }
+        memcpy(buf->data + buf->offset + buf->pending, ptr, siz);
+        buf->pending += siz;
+    }
+    return 0;
+}
+
+int
+tao_put_string_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
+                         const char* str, long len)
+{
+    if (len < 0) {
+        len = (str == NULL || str[0] == '\0' ? 0 : strlen(str));
+    }
+    if (tao_resize_buffer(errs, buf, len + 1) == -1) {
+        return -1;
+    }
+    long end = buf->offset + buf->pending;
+    if (len > 0) {
+        memcpy(buf->data + end, str, len);
+        buf->pending += len; /* not the terminating null */
+    }
+    buf->data[end+len] = '\0';
+    return 0;
+}
+
+int
+tao_put_char_to_buffer(tao_error_t** errs, tao_buffer_t* buf, int c)
+{
+    if (tao_resize_buffer(errs, buf, 2) == -1) {
+        return -1;
+    }
+    long end = buf->offset + buf->pending;
+    buf->data[end] = c;
+    buf->data[end+1] = '\0';
+    buf->pending += 1; /* not the terminating null */
+    return 0;
+}
