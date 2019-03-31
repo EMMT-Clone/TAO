@@ -339,10 +339,10 @@ allocate_virtual_buffers(phx_camera_t* cam, int nbufs)
         dev_roi->yoff < 0 || dev_roi->yoff > usr_roi->yoff ||
         usr_roi->width < 1 ||
         dev_roi->xoff + dev_roi->width < usr_roi->xoff + usr_roi->width ||
-        usr_roi->xoff + usr_roi->width > cam->fullwidth ||
+        usr_roi->xoff + usr_roi->width > cam->sensorwidth ||
         usr_roi->height < 1 ||
         dev_roi->xoff + dev_roi->height < usr_roi->xoff + usr_roi->height ||
-        usr_roi->yoff + usr_roi->height > cam->fullheight) {
+        usr_roi->yoff + usr_roi->height > cam->sensorheight) {
         phx_push_error(&cam->errs, __func__, TAO_BAD_ROI);
         return -1;
     }
@@ -827,8 +827,8 @@ check_coaxpress(phx_camera_t* cam)
         cam->cfg.roi.yoff    = 0;
         cam->cfg.roi.width   = width;
         cam->cfg.roi.height  = height;
-        cam->fullwidth       = width;
-        cam->fullheight      = height;
+        cam->sensorwidth     = width;
+        cam->sensorheight    = height;
         memcpy(&cam->dev_roi, &cam->cfg.roi, sizeof(tao_image_roi_t));
     }
     return 0;
@@ -1051,15 +1051,15 @@ phx_set_configuration(phx_camera_t* cam, const phx_config_t* cfg)
         tao_push_error(&cam->errs, __func__, TAO_BAD_BIAS);
     } else if (isnan(cfg->gain) || isinf(cfg->gain)) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_GAIN);
-    } else if (isnan(cfg->exposure) || isinf(cfg->exposure) ||
-        cfg->exposure < 0) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
-    } else if (isnan(cfg->rate) || isinf(cfg->rate) || cfg->rate <= 0) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_RATE);
+    } else if (isnan(cfg->exposuretime) || isinf(cfg->exposuretime) ||
+        cfg->exposuretime < 0) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURETIME);
+    } else if (isnan(cfg->framerate) || isinf(cfg->framerate) || cfg->framerate <= 0) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_FRAMERATE);
     } else if (cfg->roi.xoff < 0 || cfg->roi.yoff < 0 ||
         cfg->roi.width < 1 || cfg->roi.height < 1 ||
-        cfg->roi.xoff + cfg->roi.width > cam->fullwidth ||
-        cfg->roi.yoff + cfg->roi.height > cam->fullheight) {
+        cfg->roi.xoff + cfg->roi.width > cam->sensorwidth ||
+        cfg->roi.yoff + cfg->roi.height > cam->sensorheight) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
     } else {
         phx_lock(cam);
@@ -1345,7 +1345,7 @@ phx_print_camera_info(phx_camera_t* cam, FILE* stream)
             cam->cfg.connection.speed);
     fprintf(stream, "Bits per pixel: %d\n", (int)cam->cfg.depth);
     fprintf(stream, "Sensor size: %d × %d pixels\n",
-            (int)cam->fullwidth,  (int)cam->fullheight);
+            (int)cam->sensorwidth,  (int)cam->sensorheight);
     fprintf(stream, "Region of interest: %d × %d at (%d,%d)\n",
             (int)cam->cfg.roi.width,  (int)cam->cfg.roi.height,
             (int)cam->cfg.roi.xoff, (int)cam->cfg.roi.yoff);
@@ -1354,8 +1354,8 @@ phx_print_camera_info(phx_camera_t* cam, FILE* stream)
             (int)cam->dev_roi.xoff, (int)cam->dev_roi.yoff);
     fprintf(stream, "Detector bias: %5.1f\n", cam->cfg.bias);
     fprintf(stream, "Detector gain: %5.1f\n", cam->cfg.gain);
-    fprintf(stream, "Exposure time: %g s\n", cam->cfg.exposure);
-    fprintf(stream, "Frame rate: %.1f Hz\n", cam->cfg.rate);
+    fprintf(stream, "Exposure time: %g s\n", cam->cfg.exposuretime);
+    fprintf(stream, "Frame framerate: %.1f Hz\n", cam->cfg.framerate);
     if (cam->update_temperature != NULL) {
         if (cam->update_temperature(cam) == 0) {
             fprintf(stream, "Detector temperature: %.1f °C\n",

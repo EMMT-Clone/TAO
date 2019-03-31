@@ -292,12 +292,12 @@ FUNC(int code)
         CASE(TAO_BAD_SIZE, "Invalid size");
         CASE(TAO_BAD_SERIAL, "Invalid serial number");
         CASE(TAO_BAD_ROI, "Invalid region of interest");
-        CASE(TAO_BAD_RATE, "Invalid acquistion frame rate");
+        CASE(TAO_BAD_FRAMERATE, "Invalid acquistion frame rate");
         CASE(TAO_BAD_RANK, "Invalid number of dimensions");
         CASE(TAO_BAD_NAME, "Bad parameter name");
         CASE(TAO_BAD_MAGIC, "Invalid magic number");
         CASE(TAO_BAD_GAIN, "Invalid detector gain");
-        CASE(TAO_BAD_EXPOSURE, "Invalid exposure time");
+        CASE(TAO_BAD_EXPOSURETIME, "Invalid exposure time");
         CASE(TAO_BAD_ESCAPE, "Unknown escape sequence");
         CASE(TAO_BAD_ENCODING, "Bad encoding");
         CASE(TAO_BAD_DEVICE, "Invalid device");

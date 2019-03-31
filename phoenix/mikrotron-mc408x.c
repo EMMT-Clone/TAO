@@ -335,7 +335,7 @@ set_connection(phx_camera_t* cam, const phx_connection_t* con)
 }
 
 /*
- * Update and set detetctor bias (black level).
+ * Update and set detector bias (black level).
  */
 
 static int
@@ -409,7 +409,7 @@ update_exposure_time(phx_camera_t* cam)
     if (cxp_get(cam, EXPOSURE_TIME, &val) != 0) {
         return -1;
     }
-    cam->cfg.exposure = 1e-6*val;
+    cam->cfg.exposuretime = 1e-6*val;
     return 0;
 }
 
@@ -425,7 +425,7 @@ set_exposure_time(phx_camera_t* cam, double arg)
     if (cxp_set(cam, EXPOSURE_TIME, val) != 0) {
         return -1;
     }
-    cam->cfg.exposure = 1e-6*val;
+    cam->cfg.exposuretime = 1e-6*val;
     return 0;
 }
 
@@ -441,7 +441,7 @@ update_frame_rate(phx_camera_t* cam)
     if (cxp_get(cam, ACQUISITION_FRAME_RATE, &val) != 0) {
         return -1;
     }
-    cam->cfg.rate = (double)val;
+    cam->cfg.framerate = (double)val;
     return 0;
 }
 
@@ -457,7 +457,7 @@ set_frame_rate(phx_camera_t* cam, double arg)
     if (cxp_set(cam, ACQUISITION_FRAME_RATE, val) != 0) {
         return -1;
     }
-    cam->cfg.rate = (double)val;
+    cam->cfg.framerate = (double)val;
     return 0;
 }
 
@@ -492,8 +492,8 @@ set_region_of_interest(phx_camera_t* cam, const tao_image_roi_t* arg)
 {
     if (arg->xoff < 0 || arg->width < 1 ||
         arg->yoff < 0 || arg->height < 1 ||
-        arg->xoff + arg->width > cam->fullwidth ||
-        arg->yoff + arg->height > cam->fullheight) {
+        arg->xoff + arg->width > cam->sensorwidth ||
+        arg->yoff + arg->height > cam->sensorheight) {
         tao_push_error(&cam->errs, __func__, TAO_BAD_ROI);
         return -1;
     }
@@ -512,7 +512,7 @@ set_region_of_interest(phx_camera_t* cam, const tao_image_roi_t* arg)
         } else {                                \
             dev_roi->m = m;                     \
         }                                       \
-    } while (0)
+    } while (false)
     if (xoff < dev_roi->xoff) {
         CFG_SET(xoff, OFFSET_X);
     }
@@ -595,12 +595,12 @@ set_config(phx_camera_t* cam, const phx_config_t* usr)
         tao_push_error(&cam->errs, __func__, TAO_BAD_GAIN);
         return -1;
     }
-    if (isnan(usr->exposure)) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
+    if (isnan(usr->exposuretime)) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURETIME);
         return -1;
     }
-    if (isnan(usr->rate)) {
-        tao_push_error(&cam->errs, __func__, TAO_BAD_RATE);
+    if (isnan(usr->framerate)) {
+        tao_push_error(&cam->errs, __func__, TAO_BAD_FRAMERATE);
         return -1;
     }
     if (usr->connection.channels < 1 || usr->connection.channels > 4 ||
@@ -637,15 +637,15 @@ set_config(phx_camera_t* cam, const phx_config_t* usr)
     }
 
     /* Reduce frame rate if requested. */
-    if (usr->rate < dev->rate) {
-        if (set_frame_rate(cam, usr->rate) != 0) {
+    if (usr->framerate < dev->framerate) {
+        if (set_frame_rate(cam, usr->framerate) != 0) {
             return -1;
         }
     }
 
     /* Reduce exposure time if requested. */
-    if (usr->exposure < dev->exposure) {
-        if (set_exposure_time(cam, usr->exposure) != 0) {
+    if (usr->exposuretime < dev->exposuretime) {
+        if (set_exposure_time(cam, usr->exposuretime) != 0) {
             return -1;
         }
     }
@@ -656,15 +656,15 @@ set_config(phx_camera_t* cam, const phx_config_t* usr)
     }
 
     /* Augment exposure time if requested. */
-    if (usr->exposure > dev->exposure) {
-        if (set_exposure_time(cam, usr->exposure) != 0) {
+    if (usr->exposuretime > dev->exposuretime) {
+        if (set_exposure_time(cam, usr->exposuretime) != 0) {
             return -1;
         }
     }
 
     /* Augment frame rate if requested. */
-    if (usr->rate > dev->rate) {
-        if (set_frame_rate(cam, usr->rate) != 0) {
+    if (usr->framerate > dev->framerate) {
+        if (set_frame_rate(cam, usr->framerate) != 0) {
             return -1;
         }
     }
@@ -777,13 +777,13 @@ phx_initialize_mikrotron_mc408x(phx_camera_t* cam)
     /*
      * Get sensor size.
      */
-    uint32_t fullwidth, fullheight;
-    if (cxp_get(cam, SENSOR_WIDTH,   &fullwidth) != 0 ||
-        cxp_get(cam, SENSOR_HEIGHT, &fullheight) != 0) {
+    uint32_t sensorwidth, sensorheight;
+    if (cxp_get(cam, SENSOR_WIDTH,   &sensorwidth) != 0 ||
+        cxp_get(cam, SENSOR_HEIGHT, &sensorheight) != 0) {
         return -1;
     }
-    cam->fullwidth = fullwidth;
-    cam->fullheight = fullheight;
+    cam->sensorwidth = sensorwidth;
+    cam->sensorheight = sensorheight;
 
     /*
      * Update other device information.

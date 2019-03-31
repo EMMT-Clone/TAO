@@ -118,19 +118,19 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
         }
     }
     cam->shared = shared;
-    shared->last_frame.ident = -1;
-    shared->last_frame.counter = -1;
+    shared->lastframe.ident = -1;
+    shared->lastframe.counter = -1;
     shared->state = 0;
-    shared->pixel_type = TAO_FLOAT32;
+    shared->pixeltype = TAO_FLOAT32;
     shared->depth = 8;
-    shared->fullwidth = 384;
-    shared->fullheight = 288;
+    shared->sensorwidth = 384;
+    shared->sensorheight = 288;
     shared->xoff = 0;
     shared->yoff = 0;
     shared->width = 1;
     shared->height = 1;
-    shared->exposure = 0.001; /* 1 ms */
-    shared->rate = 25.0; /* 25 Hz */
+    shared->exposuretime = 0.001; /* 1 ms */
+    shared->framerate = 25.0; /* 25 Hz */
     shared->gain = 100.0;
     shared->bias = 500.0;
     shared->gamma = 1.0;
@@ -143,13 +143,13 @@ allocate_frame(tao_error_t** errs, tao_camera_t* cam)
     tao_shared_camera_t* shared = cam->shared;
     return (shared->weighted ?
             tao_create_3d_shared_array(errs,
-                                       shared->pixel_type,
+                                       shared->pixeltype,
                                        shared->width,
                                        shared->height,
                                        2,
                                        cam->perms) :
             tao_create_2d_shared_array(errs,
-                                       shared->pixel_type,
+                                       shared->pixeltype,
                                        shared->width,
                                        shared->height,
                                        cam->perms));
@@ -158,7 +158,7 @@ allocate_frame(tao_error_t** errs, tao_camera_t* cam)
 static int
 check_frame(const tao_shared_array_t* arr, const tao_shared_camera_t* cam)
 {
-    return (arr->eltype == cam->pixel_type &&
+    return (arr->eltype == cam->pixeltype &&
             (cam->weighted ? (arr->ndims == 3 && arr->dims[2] == 2) :
              (arr->ndims == 2)) && arr->dims[0] == cam->width &&
             arr->dims[1] == cam->height);
@@ -183,7 +183,7 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
 
     if (arr != NULL) {
         bool drop = false;
-        if (arr->base.ident == shared->last_frame.ident) {
+        if (arr->base.ident == shared->lastframe.ident) {
             /* We do not want to overwrite the previous last frame. */
             drop = true;
         } else if (! check_frame(arr, shared)) {
@@ -265,8 +265,8 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
         goto unlock;
     }
     arr->nwriters = 0;
-    arr->counter = ++shared->last_frame.counter;
-    shared->last_frame.ident = arr->base.ident;
+    arr->counter = ++shared->lastframe.counter;
+    shared->lastframe.ident = arr->base.ident;
  unlock:
     if_unlikely(tao_unlock_shared_array(errs, arr) != 0) {
         status = -1;
@@ -309,8 +309,8 @@ tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam)
         return NULL;
     }
 
-    return (cam->last_frame.ident < 0 ? NULL :
-            tao_attach_shared_array(errs, cam->last_frame.ident));
+    return (cam->lastframe.ident < 0 ? NULL :
+            tao_attach_shared_array(errs, cam->lastframe.ident));
 }
 
 int
@@ -326,31 +326,31 @@ tao_get_shared_camera_ident(const tao_shared_camera_t* cam)
         return (TAO_LIKELY(cam != NULL) ? cam->member : (def));         \
     }
 GETTER(int,    state, -1)
-GETTER(int,    pixel_type, -1)
+GETTER(int,    pixeltype, -1)
 GETTER(int,    depth, 0)
-GETTER(long,   fullwidth, 0)
-GETTER(long,   fullheight, 0)
+GETTER(long,   sensorwidth, 0)
+GETTER(long,   sensorheight, 0)
 GETTER(long,   xoff, 0)
 GETTER(long,   yoff, 0)
 GETTER(long,   width, 0)
 GETTER(long,   height, 0)
 GETTER(double, bias, 0.0)
 GETTER(double, gain, 0.0)
-GETTER(double, rate, 0.0)
-GETTER(double, exposure, 0.0)
+GETTER(double, framerate, 0.0)
+GETTER(double, exposuretime, 0.0)
 GETTER(double, gamma, 0.0)
 #undef GETTER
 
 uint64_t
 tao_get_last_image_counter(const tao_shared_camera_t* cam)
 {
-    return (TAO_LIKELY(cam != NULL) ? cam->last_frame.counter : -1);
+    return (TAO_LIKELY(cam != NULL) ? cam->lastframe.counter : -1);
 }
 
 int
 tao_get_last_image_ident(const tao_shared_camera_t* cam)
 {
-    return (TAO_LIKELY(cam != NULL) ? cam->last_frame.ident : -1);
+    return (TAO_LIKELY(cam != NULL) ? cam->lastframe.ident : -1);
 }
 
 tao_shared_camera_t*

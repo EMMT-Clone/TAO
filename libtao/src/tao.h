@@ -194,12 +194,12 @@ typedef enum tao_error_code {
     TAO_BAD_DEVICE          = -11, /**< Invalid device */
     TAO_BAD_ENCODING        = -12, /**< Bad encoding */
     TAO_BAD_ESCAPE          = -13, /**< Unknown escape sequence */
-    TAO_BAD_EXPOSURE        = -14, /**< Invalid exposure time */
+    TAO_BAD_EXPOSURETIME    = -14, /**< Invalid exposure time */
     TAO_BAD_GAIN            = -15, /**< Invalid detector gain */
     TAO_BAD_MAGIC           = -16, /**< Invalid magic number */
     TAO_BAD_NAME            = -17, /**< Bad parameter name */
     TAO_BAD_RANK            = -18, /**< Invalid number of dimensions */
-    TAO_BAD_RATE            = -19, /**< Invalid acquistion frame rate */
+    TAO_BAD_FRAMERATE       = -19, /**< Invalid acquistion frame rate */
     TAO_BAD_ROI             = -20, /**< Invalid region of interest */
     TAO_BAD_SERIAL          = -21, /**< Invalid serial number */
     TAO_BAD_SIZE            = -22, /**< Invalid size */
@@ -2960,7 +2960,7 @@ extern int tao_get_shared_camera_state(const tao_shared_camera_t* cam);
  * @return The pixel type for the captured images after pre-processing, `-1`
  *         if @a cam is `NULL`.
  */
-extern int tao_get_shared_camera_pixel_type(const tao_shared_camera_t* cam);
+extern int tao_get_shared_camera_pixeltype(const tao_shared_camera_t* cam);
 
 /**
  * Get the depth of the raw images.
@@ -2983,7 +2983,7 @@ extern int tao_get_shared_camera_depth(const tao_shared_camera_t* cam);
  * @return The number of pixels per line of the detector, `0` if @a cam is
  *         `NULL`.
  */
-extern long tao_get_shared_camera_fullwidth(const tao_shared_camera_t* cam);
+extern long tao_get_shared_camera_sensorwidth(const tao_shared_camera_t* cam);
 
 /**
  * Get the height of the detector.
@@ -2996,7 +2996,7 @@ extern long tao_get_shared_camera_fullwidth(const tao_shared_camera_t* cam);
  * @return The number of lines of pixels of the detector, `0` if @a cam is
  *         `NULL`.
  */
-extern long tao_get_shared_camera_fullheight(const tao_shared_camera_t* cam);
+extern long tao_get_shared_camera_sensorheight(const tao_shared_camera_t* cam);
 
 /**
  * Get the horizontal offset of captured images.
@@ -3071,7 +3071,7 @@ extern double tao_get_shared_camera_gain(const tao_shared_camera_t* cam);
  *
  * @return The number of frame per seconds, `0` if @a cam is `NULL`.
  */
-extern double tao_get_shared_camera_rate(const tao_shared_camera_t* cam);
+extern double tao_get_shared_camera_framerate(const tao_shared_camera_t* cam);
 
 /**
  * Get the duration of the exposure.
@@ -3081,7 +3081,7 @@ extern double tao_get_shared_camera_rate(const tao_shared_camera_t* cam);
  * @return The exposure time in seconds for the captured images, `0` if @a cam
  *         is `NULL`.
  */
-extern double tao_get_shared_camera_exposure(const tao_shared_camera_t* cam);
+extern double tao_get_shared_camera_exposuretime(const tao_shared_camera_t* cam);
 
 /**
  * Get the gamma correction factor.

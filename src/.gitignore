@@ -1,5 +1,10 @@
-virtualcamera
-test-fits
+alignment
+test-args
+test-encoder
 test-endian
+test-fits
+test-parser
+virtualcamera
+.deps/
 *~
 *.o

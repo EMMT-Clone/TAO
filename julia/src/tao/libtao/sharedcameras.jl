@@ -23,18 +23,18 @@ function attach(::Type{SharedCamera}, ident::Integer)
 end
 
 for (T, m) in ((Cint,    :state),
-               (Cint,    :pixel_type),
+               (Cint,    :pixeltype),
                (Cint,    :depth),
-               (Clong,   :fullwidth),
-               (Clong,   :fullheight),
+               (Clong,   :sensorwidth),
+               (Clong,   :sensorheight),
                (Clong,   :xoff),
                (Clong,   :yoff),
                (Clong,   :width),
                (Clong,   :height),
                (Cdouble, :bias),
                (Cdouble, :gain),
-               (Cdouble, :rate),
-               (Cdouble, :exposure),
+               (Cdouble, :framerate),
+               (Cdouble, :exposuretime),
                (Cdouble, :gamma))
     jf = Symbol("get_", m)
     cf = string("tao_get_shared_camera_", m)

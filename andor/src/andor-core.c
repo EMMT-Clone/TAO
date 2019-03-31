@@ -718,7 +718,7 @@ andor_set_configuration(andor_camera_t* cam, const andor_camera_config_t* cfg)
         changes = true;
         if (isnan(cfg->exposuretime) || isinf(cfg->exposuretime) ||
             cfg->exposuretime < 0) {
-            tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
+            tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURETIME);
             return -1;
         }
     }
@@ -726,7 +726,7 @@ andor_set_configuration(andor_camera_t* cam, const andor_camera_config_t* cfg)
         changes = true;
         if (isnan(cfg->framerate) || isinf(cfg->framerate) ||
             cfg->framerate <= 0) {
-            tao_push_error(&cam->errs, __func__, TAO_BAD_EXPOSURE);
+            tao_push_error(&cam->errs, __func__, TAO_BAD_FRAMERATE);
             return -1;
         }
     }

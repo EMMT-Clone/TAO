@@ -8,7 +8,7 @@
  * This file if part of TAO software (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2017-2018, Éric Thiébaut.
+ * Copyright (C) 2017-2019, Éric Thiébaut.
  * Copyright (C) 2016, Éric Thiébaut & Jonathan Léger.
  */
 

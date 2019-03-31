@@ -80,15 +80,14 @@ typedef struct phx_connection {
  * This structure stores all settable camera settings.
  */
 typedef struct phx_config {
-    double bias;           /**< Detector Bias */
-    double gain;           /**< Detector gain */
-    double exposure;       /**< Exposure time (in seconds) */
-    double rate;           /**< Frames per seconds */
-    phx_connection_t connection;
-                           /**< Connection for image transmission */
-    int depth;             /**< Bits per pixel */
-    tao_image_roi_t roi;   /**< ROI of acquired images and defined relatively
-                                to the sensor surface */
+    double                 bias; /**< Detector Bias */
+    double                 gain; /**< Detector gain */
+    double         exposuretime; /**< Exposure time (in seconds) */
+    double            framerate; /**< Frames per seconds */
+    phx_connection_t connection; /**< Connection for image transmission */
+    int                   depth; /**< Bits per pixel */
+    tao_image_roi_t         roi; /**< ROI of acquired images and defined
+                                      relatively to the sensor surface */
 } phx_config_t;
 
 /**
@@ -120,8 +119,8 @@ struct phx_camera {
     double temperature;     /**< Camera temperature (in degrees Celsius) */
     phx_config_t cfg;       /**< Current settings */
     tao_image_roi_t dev_roi;/**< ROI for the device */
-    uint32_t fullwidth;     /**< Width (in pixels) of the sensor */
-    uint32_t fullheight;    /**< Height (in pixels) of the sensor */
+    uint32_t sensorwidth;   /**< Width (in pixels) of the sensor */
+    uint32_t sensorheight;  /**< Height (in pixels) of the sensor */
     uint32_t pixel_format;  /**< Raw pixel format of the camera */
     phx_value_t cam_color;  /**< Pixel format in acquired images
                                  (PHX_CAM_SRC_...) */
@@ -275,7 +274,7 @@ phx_signal_condition(phx_camera_t* cam);
  * Configuration of camera settings.
  *
  * Configurable camera parameters are the region of interest (ROI), the
- * exposure duration and frame rate, the detetctor bias and gain, *etc*.  As
+ * exposure duration and frame rate, the detector bias and gain, *etc*.  As
  * setting camera parameters sequentially may result in an invalid
  * configuration, all parameters are set at the same time.  A complete camera
  * configuration is stored in a @ref phx_config_t structure.

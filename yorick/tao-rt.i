@@ -76,43 +76,43 @@ extern tao_attach_shared_object;
 
      The returned results have the following members:
 
-         obj.ident      identifier of shared object;
-         obj.type       type of shared object;
-         obj.size       size (in bytes) of shared object;
+         obj.ident        identifier of shared object;
+         obj.type         type of shared object;
+         obj.size         size (in bytes) of shared object;
 
-         arr.ident      identifier of shared array;
-         arr.type       type of shared array (that is TAO_SHARED_ARRAY);
-         arr.size       size (in bytes) of shared array;
-         arr.eltype     type of elements of shared array;
-         arr.ndims      number of dimensions of shared array;
-         arr.dims       dimensions (as with `dimsof`) of shared array;
-         arr.data       data (as a Yorick array) of shared array;
-         arr.nreaders   number of readers on this array;
-         arr.nwriters   number of writers on this array;
-         arr.counter    counter of shared array;
-         arr.timestamp  time-stamp of shared array (a pair of integers,
-                        `[s,ns]`, with the number of seconds and nanoseconds);
+         arr.ident        identifier of shared array;
+         arr.type         type of shared array (that is TAO_SHARED_ARRAY);
+         arr.size         size (in bytes) of shared array;
+         arr.eltype       type of elements of shared array;
+         arr.ndims        number of dimensions of shared array;
+         arr.dims         dimensions (as with `dimsof`) of shared array;
+         arr.data         data (as a Yorick array) of shared array;
+         arr.nreaders     number of readers on this array;
+         arr.nwriters     number of writers on this array;
+         arr.counter      counter of shared array;
+         arr.timestamp    time-stamp of shared array (a pair of integers,
+                          `[s,ns]`, with the number of seconds and nanoseconds);
 
-         cam.ident      identifier of shared array;
-         cam.type       type of shared array (that is TAO_SHARED_ARRAY);
-         cam.size       size (in bytes) of shared array;
-         cam.state      camera state (0 if device not yet open, 1 if device
-                        open but no acquisition is running, 2 if acquisition
-                        is running);
-         cam.bias       detector bias;
-         cam.gain       detector gain;
-         cam.gamma      gamma correction factor;
-         cam.fullwidth  detector horizontal size (in pixels);
-         cam.fullheight detector vertical size (in pixels);
-         cam.depth      bits per pixel in the raw captured images;
-         cam.eltype     type of elements of processed images;
-         cam.xoff       horizontal offset of ROI (in pixels);
-         cam.yoff       vertical offset of ROI (in pixels);
-         cam.width      number of macro-pixels per line in acquired images;
-         cam.height     number of lines of macro-pixels in acquired images;
-         cam.roi        region of interest: `[xoff,yoff,width,height]`;
-         cam.rate       number of frames per second;
-         cam.exposure   exposure duration (in seconds);
+         cam.ident        identifier of shared array;
+         cam.type         type of shared array (that is TAO_SHARED_ARRAY);
+         cam.size         size (in bytes) of shared array;
+         cam.state        camera state (0 if device not yet open, 1 if device
+                          open but no acquisition is running, 2 if acquisition
+                          is running);
+         cam.bias         detector bias;
+         cam.gain         detector gain;
+         cam.gamma        gamma correction factor;
+         cam.sensorwidth  detector horizontal size (in pixels);
+         cam.sensorheight detector vertical size (in pixels);
+         cam.depth        bits per pixel in the raw captured images;
+         cam.eltype       type of elements of processed images;
+         cam.xoff         horizontal offset of ROI (in pixels);
+         cam.yoff         vertical offset of ROI (in pixels);
+         cam.width        number of macro-pixels per line in acquired images;
+         cam.height       number of lines of macro-pixels in acquired images;
+         cam.roi          region of interest: `[xoff,yoff,width,height]`;
+         cam.framerate    number of frames per second;
+         cam.exposuretime exposure duration (in seconds);
 
      The possible values of `eltype` are:
 

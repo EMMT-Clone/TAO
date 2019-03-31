@@ -137,33 +137,36 @@ struct tao_shared_camera {
     sem_t sem[TAO_SHARED_CAMERA_SEMAPHORES];
                      /**< Semaphores used to signal clients that a new image
                           have just been acquired. */
-    int state;       /**< State of the camera: 0 if device not yet open, 1
-                          if device open but no acquisition is running, 2 if
-                          acquisition is running. */
-    int depth;       /**< Bits per pixel in the raw images. */
-    int pixel_type;  /**< Pixel type. */
-    int weighted;    /**< Pre-processed images have associated weights. */
-    long fullwidth;  /**< Maximum image width for the detector. */
-    long fullheight; /**< Maximum image height for the detector. */
-    long xoff;       /**< Horizontal offset of the acquired images with respect
-                          to the left border of the detector. */
-    long yoff;       /**< Vertical offset of the acquired images with respect
-                          to the bottom border of the detector. */
-    long width;      /**< Number of pixels per line of the acquired images. */
-    long height;     /**< Number of lines of pixels in the acquired images. */
-    double bias;     /**< Detector bias. */
-    double gain;     /**< Detector gain. */
-    double rate;     /**< Acquisition rate in frames per second. */
-    double exposure; /**< Exposure time in seconds. */
-    double gamma;    /**< Gamma correction. */
+    int           state; /**< State of the camera: 0 if device not yet open, 1
+                              if device open but no acquisition is running, 2
+                              if acquisition is running. */
+    int           depth; /**< Bits per pixel in the raw images. */
+    int       pixeltype; /**< Pixel type. */
+    int        weighted; /**< Pre-processed images have associated weights. */
+    long    sensorwidth; /**< Maximum image width for the detector. */
+    long   sensorheight; /**< Maximum image height for the detector. */
+    long           xoff; /**< Horizontal offset of the acquired images with
+                              respect to the left border of the detector. */
+    long           yoff; /**< Vertical offset of the acquired images with
+                              respect to the bottom border of the detector. */
+    long          width; /**< Number of pixels per line of the acquired
+                              images. */
+    long         height; /**< Number of lines of pixels in the acquired
+                              images. */
+    double         bias; /**< Detector bias. */
+    double         gain; /**< Detector gain. */
+    double    framerate; /**< Acquisition rate in frames per second. */
+    double exposuretime; /**< Exposure time in seconds. */
+    double        gamma; /**< Gamma correction. */
     struct {
-        int32_t ident;   /**< Identifier of the shared array backing the
+        int32_t   ident; /**< Identifier of the shared array backing the
                               storage of the last image, -1 means unused or
                               invalid. */
         int64_t counter; /**< Counter value of the last image.  It is a unique,
                               monotically increasing number, starting at 1 (0
                               means unused or invalid). */
-    } last_frame; /**< Information relative to the last acquired image. */
+    }         lastframe; /**< Information relative to the last acquired
+                              image. */
 };
 
 /**
@@ -176,11 +179,11 @@ struct tao_shared_camera {
  */
 struct tao_camera {
     tao_shared_camera_t* shared; /**< Attached shared camera data. */
-    unsigned perms;              /**< Access permissions for the shared data. */
-    int nframes;                 /**< Maximum number of memorized frames. */
-    int index;                   /**< Index of current frame. */
+    unsigned              perms; /**< Access permissions for the shared data. */
+    int                 nframes; /**< Maximum number of memorized frames. */
+    int                   index; /**< Index of current frame. */
     tao_shared_array_t** frames; /**< List of shared arrays. */
-    tao_shared_array_t* spare;   /**< A spare array. */
+    tao_shared_array_t*   spare; /**< A spare array. */
 };
 
 #endif /* _TAO_PRIVATE_H_ */

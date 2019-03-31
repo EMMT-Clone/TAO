@@ -363,30 +363,35 @@ extract_shared_object(void* addr, char* name)
        we only read immutable information.  Using string comparison is fast
        enough (worst case here takes 75 ns, best case takes 58 ns). */
     tao_shared_object_t* obj = *(tao_shared_object_t**)addr;
-    int c = name[0];
-    if (c == 'i' && strcmp(name, "ident") == 0) {
-        ypush_int(tao_get_shared_object_ident(obj));
-        return;
-    } else if (c == 't' && strcmp(name, "type") == 0) {
-        ypush_int(tao_get_shared_object_type(obj));
-        return;
-    } else if (c == 's' && strcmp(name, "size") == 0) {
-        ypush_long(tao_get_shared_object_size(obj));
-        return;
-    } else {
-        int type = tao_get_shared_object_type(obj);
-        if (type == TAO_SHARED_ARRAY) {
-            tao_shared_array_t* arr = (tao_shared_array_t*)obj;
-            if (c == 'c' && strcmp(name, "counter") == 0) {
+    int type = tao_get_shared_object_type(obj);
+    tao_shared_array_t* arr =
+        (tao_shared_array_t*)(type == TAO_SHARED_ARRAY ? obj : NULL);
+    tao_shared_camera_t* cam =
+        (tao_shared_camera_t*)(type == TAO_SHARED_CAMERA ? obj : NULL);
+    switch (name[0]) {
+    case 'b':
+        if (cam != NULL) {
+            if (strcmp(name, "bias") == 0) {
+                ypush_double(tao_get_shared_camera_bias(cam));
+                return;
+            }
+        }
+        break;
+    case 'c':
+        if (arr != NULL) {
+            if (strcmp(name, "counter") == 0) {
                 ypush_long(tao_get_shared_array_counter(arr));
                 return;
-            } else if (c == 'e' && strcmp(name, "eltype") == 0) {
-                ypush_long(tao_get_shared_array_eltype(arr));
-                return;
-            } else if (c == 'd' && strcmp(name, "data") == 0) {
+            }
+        }
+        break;
+    case 'd':
+        if (arr != NULL) {
+            if (strcmp(name, "data") == 0) {
                 push_array_data(arr);
                 return;
-            } else if (c == 'd' && strcmp(name, "dims") == 0) {
+            }
+            if (strcmp(name, "dims") == 0) {
                 long dimsofdims[2];
                 long* dims;
                 int d, ndims;
@@ -402,49 +407,86 @@ extract_shared_object(void* addr, char* name)
                     dims[d] = tao_get_shared_array_size(arr, d);
                 }
                 return;
-            } else if (c == 'n' && strcmp(name, "ndims") == 0) {
-                ypush_long(tao_get_shared_array_ndims(arr));
-                return;
-            } else if (c == 'n' && strcmp(name, "nreaders") == 0) {
-                ypush_long(tao_get_shared_array_nreaders(arr));
-                return;
-            } else if (c == 'n' && strcmp(name, "nwriters") == 0) {
-                ypush_long(tao_get_shared_array_nwriters(arr));
-                return;
-            } else if (c == 't' && strcmp(name, "timestamp") == 0) {
-                push_array_timestamp(arr);
-                return;
             }
-        } else if (type == TAO_SHARED_CAMERA) {
-            tao_shared_camera_t* cam = (tao_shared_camera_t*)obj;
-            if (c == 'b' && strcmp(name, "bias") == 0) {
-                ypush_double(tao_get_shared_camera_bias(cam));
-                return;
-            } else if (c == 'd' && strcmp(name, "depth") == 0) {
+        }
+        if (cam != NULL) {
+            if (strcmp(name, "depth") == 0) {
                 ypush_long(tao_get_shared_camera_depth(cam));
                 return;
-            } else if (c == 'e' && strcmp(name, "eltype") == 0) {
-                ypush_long(tao_get_shared_camera_pixel_type(cam));
+            }
+        }
+        break;
+    case 'e':
+        if (arr != NULL) {
+            if (strcmp(name, "eltype") == 0) {
+                ypush_long(tao_get_shared_array_eltype(arr));
                 return;
-            } else if (c == 'e' && strcmp(name, "exposure") == 0) {
-                ypush_double(tao_get_shared_camera_exposure(cam));
+            }
+        }
+        if (cam != NULL) {
+            if (strcmp(name, "eltype") == 0) {
+                ypush_long(tao_get_shared_camera_pixeltype(cam));
                 return;
-            } else if (c == 'f' && strcmp(name, "fullheight") == 0) {
-                ypush_long(tao_get_shared_camera_fullheight(cam));
+            }
+            if (strcmp(name, "exposuretime") == 0) {
+                ypush_double(tao_get_shared_camera_exposuretime(cam));
                 return;
-            } else if (c == 'f' && strcmp(name, "fullwidth") == 0) {
-                ypush_long(tao_get_shared_camera_fullwidth(cam));
+            }
+        }
+        break;
+    case 'f':
+        if (cam != NULL) {
+            if (strcmp(name, "framerate") == 0) {
+                ypush_double(tao_get_shared_camera_framerate(cam));
                 return;
-            } else if (c == 'g' && strcmp(name, "gain") == 0) {
+            }
+        }
+        break;
+    case 'g':
+        if (cam != NULL) {
+            if (strcmp(name, "gain") == 0) {
                 ypush_double(tao_get_shared_camera_gain(cam));
                 return;
-            } else if (c == 'g' && strcmp(name, "gamma") == 0) {
+            }
+            if (strcmp(name, "gamma") == 0) {
                 ypush_double(tao_get_shared_camera_gamma(cam));
                 return;
-            } else if (c == 'h' && strcmp(name, "height") == 0) {
+            }
+        }
+        break;
+    case 'h':
+        if (cam != NULL) {
+            if (strcmp(name, "height") == 0) {
                 ypush_long(tao_get_shared_camera_height(cam));
                 return;
-            } else if (c == 'r' && strcmp(name, "roi") == 0) {
+            }
+        }
+        break;
+    case 'i':
+        if (strcmp(name, "ident") == 0) {
+            ypush_int(tao_get_shared_object_ident(obj));
+            return;
+        }
+        break;
+    case 'n':
+        if (arr != NULL) {
+            if (strcmp(name, "ndims") == 0) {
+                ypush_long(tao_get_shared_array_ndims(arr));
+                return;
+            }
+            if (strcmp(name, "nreaders") == 0) {
+                ypush_long(tao_get_shared_array_nreaders(arr));
+                return;
+            }
+            if (strcmp(name, "nwriters") == 0) {
+                ypush_long(tao_get_shared_array_nwriters(arr));
+                return;
+            }
+        }
+        break;
+    case 'r':
+        if (cam != NULL) {
+            if (strcmp(name, "roi") == 0) {
                 long dims[2];
                 long* roi;
                 dims[0] = 1;
@@ -455,23 +497,65 @@ extract_shared_object(void* addr, char* name)
                 roi[2] = tao_get_shared_camera_width(cam);
                 roi[3] = tao_get_shared_camera_height(cam);
                 return;
-            } else if (c == 'r' && strcmp(name, "rate") == 0) {
-                ypush_double(tao_get_shared_camera_rate(cam));
-                return;
-            } else if (c == 's' && strcmp(name, "state") == 0) {
+            }
+        }
+        break;
+    case 's':
+        if (strcmp(name, "size") == 0) {
+            ypush_long(tao_get_shared_object_size(obj));
+            return;
+        }
+        if (cam != NULL) {
+            if (strcmp(name, "state") == 0) {
                 ypush_int(tao_get_shared_camera_state(cam));
                 return;
-            } else if (c == 'w' && strcmp(name, "width") == 0) {
+            }
+            if (strcmp(name, "sensorheight") == 0) {
+                ypush_long(tao_get_shared_camera_sensorheight(cam));
+                return;
+            }
+            if (strcmp(name, "sensorwidth") == 0) {
+                ypush_long(tao_get_shared_camera_sensorwidth(cam));
+                return;
+            }
+        }
+        break;
+    case 't':
+        if (strcmp(name, "type") == 0) {
+            ypush_int(tao_get_shared_object_type(obj));
+            return;
+        }
+        if (arr != NULL) {
+            if (strcmp(name, "timestamp") == 0) {
+                push_array_timestamp(arr);
+                return;
+            }
+        }
+        break;
+    case 'w':
+        if (cam != NULL) {
+            if (strcmp(name, "width") == 0) {
                 ypush_long(tao_get_shared_camera_width(cam));
                 return;
-            } else if (c == 'x' && strcmp(name, "xoff") == 0) {
+            }
+        }
+        break;
+    case 'x':
+        if (cam != NULL) {
+            if (strcmp(name, "xoff") == 0) {
                 ypush_long(tao_get_shared_camera_xoff(cam));
                 return;
-            } else if (c == 'y' && strcmp(name, "yoff") == 0) {
+            }
+        }
+        break;
+    case 'y':
+        if (cam != NULL) {
+            if (strcmp(name, "yoff") == 0) {
                 ypush_long(tao_get_shared_camera_yoff(cam));
                 return;
             }
         }
+        break;
     }
     y_error("bad member");
 }

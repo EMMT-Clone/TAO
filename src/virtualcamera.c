@@ -1,3 +1,17 @@
+/*
+ * virtualcamera.c -
+ *
+ * Program to simulate a camera in TAO infrastructure.
+ *
+ *-----------------------------------------------------------------------------
+ *
+ * This file if part of TAO software (https://github.com/emmt/TAO) licensed
+ * under the MIT license.
+ *
+ * Copyright (C) 2018, Éric Thiébaut.
+ */
+
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,17 +19,18 @@
 #include <tao.h>
 #include <tao-private.h>
 
+static const char* progname = "virtualcamera";
 
 /* XPA routines are not thread safe, the XPA server must be run in a given
  * single thread.  The following static data are only available for the
  * server routines. */
-static int debug = 1;
-static int quit = 0;
+static bool debug = true;
+static bool quit = false;
 static tao_buffer_t srvbuf; /* dynamic i/o buffer for sending messages to the
                              * client */
 
-#define FULLWIDTH  640
-#define FULLHEIGHT 480
+#define SENSORWIDTH  640
+#define SENSORHEIGHT 480
 
 #if 0 /* FIXME: unused */
 static const double max_rate = 2e3;
@@ -34,6 +49,56 @@ static int recv_callback(void* recv_data, void* call_data,
 
 /* Report TAO errors to XPA client. */
 static void report_error(tao_error_t** errs, XPA xpa);
+
+/*---------------------------------------------------------------------------*/
+/* LOAD FITS FILE */
+
+/* FIXME: mutex-protect these data so that image cube can be changed at
+   run-time. */
+static tao_array_t* images = NULL;
+static void* image_data = NULL;
+static int   image_eltype = 0;
+static long  image_width = 0;
+static long  image_height = 0;
+static long  image_stride = 0; /* stride (in bytes) between successive images */
+static long  image_number = 0;
+static long  image_counter = 0;
+
+static void
+free_images()
+{
+    if (images != NULL) {
+        image_data = NULL;
+        image_eltype = 0;
+        image_width = 0;
+        image_height = 0;
+        image_number = 0;
+        tao_unreference_array(images);
+        images = NULL;
+    }
+    reset_pre_processing();
+}
+
+static void
+load_images(const char* filename, char* extname)
+{
+    tao_error_t* errs = TAO_NO_ERRORS;
+    int ndims;
+
+    free_images();
+    images = tao_load_array_from_fits_file(&errs, filename, extname);
+    if (images == NULL || errs != TAO_NO_ERRORS) {
+        tao_report_errors(&errs);
+        exit(1);
+    }
+    ndims = tao_get_array_ndims(images);
+    image_data   = tao_get_array_data(images);
+    image_eltype = tao_get_array_eltype(images);
+    image_width  = (ndims < 1 ? 1 : tao_get_array_size(images, 1));
+    image_height = (ndims < 2 ? 1 : tao_get_array_size(images, 2));
+    image_stride = image_width*image_height*tao_get_element_size(image_eltype);
+    image_number = tao_get_array_length(images)/(image_width*image_height);
+}
 
 /*---------------------------------------------------------------------------*/
 /* GENERATE IMAGES */
@@ -76,7 +141,7 @@ generate_image(long depth, long width, long height, uint32_t bits)
                 line[x] = mask & ((x + xoff) & xmsk);   \
             }                                           \
         }                                               \
-    } while (0)
+    } while (false)
 
     if (depth <= 8) {
         GENERATE(uint8_t);
@@ -113,7 +178,7 @@ GENERATE(generate_u16, uint16_t);
 static void produce_image(unsigned bits)
 {
     tao_error_t* errs = TAO_NO_ERRORS;
-    tao_time_t t0, t1, dt;
+    struct timespec t0, t1, dt;
     char buf[32];
     tao_shared_array_t* arr = NULL;
 
@@ -129,10 +194,10 @@ static void produce_image(unsigned bits)
     if (tao_lock_shared_camera(&errs, cam->shared) == 0) {
         if (cam->shared->depth <= 8) {
             cam->shared->depth = 8;
-            cam->shared->pixel_type = TAO_UINT8;
+            cam->shared->pixeltype = TAO_UINT8;
         } else {
             cam->shared->depth = 16;
-            cam->shared->pixel_type = TAO_UINT16;
+            cam->shared->pixeltype = TAO_UINT16;
         }
         arr = tao_fetch_next_frame(&errs, cam);
         tao_unlock_shared_camera(&errs, cam->shared);
@@ -146,9 +211,9 @@ static void produce_image(unsigned bits)
     void* data = tao_get_shared_array_data(arr);
     long width = tao_get_shared_array_size(arr, 1);
     long height = tao_get_shared_array_size(arr, 2);
-    if (cam->shared->pixel_type == TAO_UINT8) {
+    if (cam->shared->pixeltype == TAO_UINT8) {
         generate_u8(data, width, height, bits);
-    } else if (cam->shared->pixel_type == TAO_UINT16) {
+    } else if (cam->shared->pixeltype == TAO_UINT16) {
         generate_u16(data, width, height, bits);
     }
     if (debug) {
@@ -221,7 +286,8 @@ static void report_error(tao_error_t** errs, XPA xpa)
     const char* reason;
     const char* info;
     tao_error_getter_t* proc;
-    int code, flag = 1;
+    int code;
+    bool flag = true;
     char* buf;
     char infobuf[20];
 
@@ -310,7 +376,7 @@ static void close_command() {}
             too_few_arguments(xpa, message, CMD, nprt, argv);   \
             goto error;                                         \
         }                                                       \
-    } while (0)
+    } while (false)
 #define CHECK_ARGC(nprt, nmin, nmax)                            \
     do {                                                        \
         if (argc < nmin) {                                      \
@@ -321,13 +387,13 @@ static void close_command() {}
             too_many_arguments(xpa, message, CMD, nprt, argv);  \
             goto error;                                         \
         }                                                       \
-    } while (0)
+    } while (false)
 
 #define INVALID_ARGUMENTS(n)                            \
     do {                                                \
         invalid_arguments(xpa, message, CMD, n, argv);  \
         goto error;                                     \
-    } while (0)
+    } while (false)
 
 /* Callback to answer an XPAGet request. */
 #define CMD "get"
@@ -366,15 +432,15 @@ static int send_callback(void* send_data, void* call_data,
     } else if (c == 'd' && strcmp(argv[0], "debug") == 0) {
         CHECK_ARGC(1, 1, 1);
         strcpy(message, (debug ? "on" : "off"));
-    } else if (c == 'e' && strcmp(argv[0], "exposure") == 0) {
+    } else if (c == 'e' && strcmp(argv[0], "exposuretime") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%.6f", cam->shared->exposure);
-    } else if (c == 'f' && strcmp(argv[0], "fullheight") == 0) {
+        sprintf(message, "%.6f", cam->shared->exposuretime);
+    } else if (c == 'f' && strcmp(argv[0], "sensorheight") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%ld", cam->shared->fullheight);
-    } else if (c == 'f' && strcmp(argv[0], "fullwidth") == 0) {
+        sprintf(message, "%ld", cam->shared->sensorheight);
+    } else if (c == 'f' && strcmp(argv[0], "sensorwidth") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%ld", cam->shared->fullwidth);
+        sprintf(message, "%ld", cam->shared->sensorwidth);
     } else if (c == 'g' && strcmp(argv[0], "gamma") == 0) {
         CHECK_ARGC(1, 1, 1);
         sprintf(message, "%.3f", cam->shared->gamma);
@@ -385,15 +451,15 @@ static int send_callback(void* send_data, void* call_data,
         CHECK_ARGC(1, 1, 1);
         sprintf(message, "%ld", cam->shared->height);
     } else if (c == 'p' && strcmp(argv[0], "ping") == 0) {
-        tao_time_t ts;
+        struct timespec ts;
         CHECK_ARGC(1, 1, 1);
         if (tao_get_monotonic_time(&errs, &ts) != 0) {
             goto error;
         }
         tao_sprintf_time(message, &ts);
-    } else if (c == 'r' && strcmp(argv[0], "rate") == 0) {
+    } else if (c == 'r' && strcmp(argv[0], "framerate") == 0) {
         CHECK_ARGC(1, 1, 1);
-        sprintf(message, "%.3f", cam->shared->rate);
+        sprintf(message, "%.3f", cam->shared->framerate);
     } else if (c == 'r' && strcmp(argv[0], "roi") == 0) {
         CHECK_ARGC(1, 1, 1);
         sprintf(message, "%ld %ld %ld %ld",
@@ -510,9 +576,9 @@ static int recv_callback(void* recv_data, void* call_data,
     } else if (c == 'd' && strcmp(argv[0], "debug") == 0) {
         CHECK_ARGC(1, 2, 2);
         if (strcmp(argv[1], "on") == 0) {
-            debug = 1;
+            debug = true;
         } else if (strcmp(argv[1], "off") == 0) {
-            debug = 0;
+            debug = false;
         } else {
             INVALID_ARGUMENTS(1);
         }
@@ -554,36 +620,36 @@ static int recv_callback(void* recv_data, void* call_data,
             close_command();
             cam->shared->state = 0;
         }
-        quit = 1;
+        quit = true;
     } else if (c == 'r' && strcmp(argv[0], "roi") == 0) {
         long xoff, yoff, width, height;
         CHECK_ARGC(1, 5, 5);
         if (tao_parse_long(argv[1], &xoff) != 0 || xoff < 0 ||
-            xoff >= FULLWIDTH) {
+            xoff >= SENSORWIDTH) {
             XPAError(xpa, "bad value for `xoff` in set `roi ...` command");
             goto error;
         }
         if (tao_parse_long(argv[2], &yoff) != 0 || yoff < 0 ||
-            yoff >= FULLHEIGHT) {
+            yoff >= SENSORHEIGHT) {
             XPAError(xpa, "bad value for `yoff` in set `roi ...` command");
             goto error;
         }
         if (tao_parse_long(argv[3], &width) != 0 || width < 1 ||
-            width > FULLWIDTH) {
+            width > SENSORWIDTH) {
             XPAError(xpa, "bad value for `width` in set `roi ...` command");
             goto error;
         }
         if (tao_parse_long(argv[4], &height) != 0 || height < 1 ||
-            height > FULLHEIGHT) {
+            height > SENSORHEIGHT) {
             XPAError(xpa, "bad value for `height` in set `roi ...` command");
             goto error;
         }
-        if (xoff + width > FULLWIDTH) {
+        if (xoff + width > SENSORWIDTH) {
             XPAError(xpa, "`xoff + width` too large in set `roi ...` "
                      "command");
             goto error;
         }
-        if (yoff + height > FULLHEIGHT) {
+        if (yoff + height > SENSORHEIGHT) {
             XPAError(xpa, "`yoff + height` too large in set `roi ...` "
                      "command");
             goto error;
@@ -652,6 +718,142 @@ static int recv_callback(void* recv_data, void* call_data,
 #undef CMD
 
 /*---------------------------------------------------------------------------*/
+/* IMAGE PRODUCER THREAD */
+
+#define GIGA 1000000000
+static void*
+run_acquisition(void* arg)
+{
+    tao_error_t* errs = TAO_NO_ERRORS;
+    int64_t nsec;
+    struct timespec dt, t1, t0;
+    tao_array_t* arr;
+    tao_camera_t* cam = (tao_camera_t*)arg;
+    tao_shared_camera_t* shared = cam->shared;
+    int status;
+
+    /* Get starting time. */
+    if (tao_get_monotonic_time(&errs, &t1) != 0) {
+        goto error;
+    }
+
+    while (! quit) {
+        /* Time interval (in nanoseconds) between frames. */
+        if (tao_lock_shared_camera(&errs, shared) != 0) {
+            goto error;
+        }
+        nsec = lround(1E9/shared->framerate);
+        if (tao_unlock_shared_camera(&errs, shared) != 0) {
+            goto error;
+        }
+
+        /* Increment image counter and time T1 of next frame. */
+        ++image_counter;
+        t1.nsec += nsec;
+        if (t1.nsec >= GIGA) {
+            t1.sec += t1.nsec/GIGA;
+            t1.nsec %= GIGA;
+        }
+
+        /* Get current time T0. */
+        if (tao_get_monotonic_time(&errs, &t0) != 0) {
+            goto error;
+        }
+
+        /* Compute interval of time to sleep. */
+        dt.sec = t1.sec - t0.sec;
+        dt.nsec = t1.nsec - t0.nsec;
+        if (dt.nsec < 0) {
+            dt.sec -= 1;
+            dt.nsec += GIGA;
+        }
+        if (dt.sec < 0) {
+            ++image_losts;
+            continue;
+        }
+
+        /* Sleep until next frame is ready. */
+        if (nanosleep(&dt, NULL) != 0) {
+            int code = errno;
+            if (code == EINTR) {
+                ++image_losts;
+                continue;
+            } else {
+                tao_push_error(&errs, "nanosleep", code);
+                goto error;
+            }
+        }
+
+        /* Fetch a shared array for storing the next image. (FIXME: This could
+           be done before sleeping and skipping lost images to reduce the
+           latency and maintain the consistency of the circular list of
+           frames.) */
+        if (tao_lock_shared_camera(&errs, shared) != 0) {
+            goto error;
+        }
+        shared->pixeltype = image_eltype;
+        shared->width = image_width;
+        shared->height = image_height;
+        shared->weighted = 0; /* FIXME: implement weighted images */
+        arr = tao_fetch_next_frame(&errs, cam);
+        if (tao_unlock_shared_camera(&errs, shared) != 0) {
+            goto error;
+        }
+        if (arr == NULL) {
+            goto error;
+        }
+        arr->counter = image_counter;
+        arr->ts_sec = t1.sec;
+        arr->ts_nsec = t1.nsec;
+
+        /* Copy new image in shared array. */
+        long dims[2], lens[2];
+        long offset = (image_counter%image_number)*image_stride;
+        dim[0] = image_width;
+        dim[1] = image_height;
+        lens[0] = image_width;
+        lens[1] = image_height;
+        if (tao_copy(&errs,
+                     (char*)arr + arr->offset, arr->eltype, arr->dims, NULL,
+                     (char*)image_data + offset, image_eltype, dims, NULL,
+                     lens, 2) != 0) {
+            goto error;
+        }
+
+        /* Re-lock the shared camera data and publish image. */
+        if (tao_lock_shared_camera(&errs, shared) != 0) {
+            goto error;
+        }
+        status = tao_publish_next_frame(&errs, cam, arr);
+        if (tao_unlock_shared_camera(&errs, shared) != 0) {
+            goto error;
+        }
+        if (status != 0) {
+            goto error;
+        }
+    }
+    tao_discard_errors(&errs);
+    return NULL;
+
+ error:
+    tao_report_errors(&errs);
+    return NULL;
+}
+
+/*---------------------------------------------------------------------------*/
+/* PRE-PROCESSING */
+
+static void
+reset_pre_processing()
+{
+}
+
+static void
+allocate_pre_processing()
+{
+}
+
+/*---------------------------------------------------------------------------*/
 
 int main(int argc, char* argv[])
 {
@@ -666,7 +868,7 @@ int main(int argc, char* argv[])
     int nframes = 10; /* maximum number of frames to memorize */
     int msec = 100; /* milliseconds */
 
-    /* Initialize resources. */
+    /* Initialize resources with default settings. */
     tao_initialize_static_buffer(&srvbuf);
     cam = tao_create_camera(&errs, nframes, 0660);
     if (cam == NULL) {
@@ -684,13 +886,87 @@ int main(int argc, char* argv[])
     cam->shared->yoff = 0;
     cam->shared->width = 384;
     cam->shared->height = 288;
-    cam->shared->fullwidth = FULLWIDTH;
-    cam->shared->fullheight = FULLHEIGHT;
-    cam->shared->exposure = 0.001;
-    cam->shared->rate = 500.0;
-    cam->shared->gain = 50.0;
+    cam->shared->sensorwidth = SENSORWIDTH;
+    cam->shared->sensorheight = SENSORHEIGHT;
+    cam->shared->exposuretime = 0.001;
+    cam->shared->framerate = 50.0;
+    cam->shared->gain = 100.0;
     cam->shared->bias = 500.0;
     cam->shared->gamma = 1.0;
+
+    /* Parse the command line options. */
+    for (int i = 1; i < argc; ++i) {
+        const char* opt;
+        const char* arg = argv[i];
+        if (arg[0] != '-') {
+            break;
+        }
+        if (arg[1] == '-') {
+            if (arg[2] == '\0') {
+                ++i;
+                break;
+            }
+            opt = arg + 2;
+        } else {
+            opt = arg + 1;
+        }
+        if (strcmp(opt, "help") == 0) {
+            if (pass != 2) {
+                continue;
+            }
+            fprintf(stderr, "Usage: %s [OPTIONS] [--] DATAFILE\n",
+                    progname);
+            fprintf(stderr,
+                    "Simulate a camera acquiring the images in "
+                    "DATAFILE (a FITS file).\n");
+            fprintf(stderr, "Options:\n");
+            fprintf(stderr, "  -serverclass CLASS           "
+                    "XPA server class [%s].\n", serverclass);
+            fprintf(stderr, "  -servername NAME             "
+                    "XPA server name [%s].\n", servername);
+            fprintf(stderr, "  -framerate FPS                    "
+                    "Frames per second [%g Hz].\n", cfg.framerate);
+            fprintf(stderr, "  -quiet                       "
+                    "Quiet (non-verbose) mode.\n");
+            fprintf(stderr, "  -help                        "
+                    "Print this help.\n");
+            exit(0);
+        } else if (strcmp(opt, "framerate") == 0) {
+            if (++i >= argc) {
+                missing_argument(opt);
+            }
+            if (pass != 2) {
+                continue;
+            }
+            if (sscanf(argv[i], " %lf %c", &cfg.framerate, &c) != 1 ||
+                cfg.framerate <= 0 || cfg.framerate > 100000) {
+                invalid_argument(opt);
+            }
+        } else if (strcmp(opt, "quiet") == 0) {
+            quiet = true;
+        } else {
+            fatal("unknown option `%s`, try `-help` for a short help",
+                  argv[i]);
+        }
+    }
+    if (i < argc) {
+        fatal("too many arguments");
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     srv = XPANew(serverclass, servername, "some help",
                  send_callback, send_data, send_mode,
                  recv_callback, recv_data, recv_mode);
