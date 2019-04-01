@@ -188,20 +188,20 @@ static void xpa_error(XPA xpa, const char* format, ...);
 #define unlock_mutex(priv) tao_unlock_mutex(NULL, &priv->mutex)
 #define trylock_mutex(priv) tao_trylock_mutex(NULL, &priv->mutex)
 #define signal_condition(priv) tao_signal_condition(NULL, &priv->cond)
-#define wait_condition(priv) tao_wait_condition(NULL, &priv->notify,	\
-						&priv->mutex)
-#define fatal_error(priv)				\
+#define wait_condition(priv) tao_wait_condition(NULL, &priv->notify,    \
+                                                &priv->mutex)
+#define fatal_error(priv)                               \
     do {                                                \
-        andor_report_errors(priv->cam);			\
-        if (priv->cam->state == 2) {			\
-            (void)andor_stop_acquisition(priv->cam);	\
+        andor_report_errors(priv->cam);                 \
+        if (priv->cam->state == 2) {                    \
+            (void)andor_stop_acquisition(priv->cam);    \
         }                                               \
         exit(EXIT_FAILURE);                             \
     } while (false)
-#define die_if(expr, priv)			\
+#define die_if(expr, priv)                      \
     do {                                        \
         if (expr) {                             \
-            fatal_error(priv);			\
+            fatal_error(priv);                  \
         }                                       \
     } while (false)
 #define start_acquisition(priv) \
@@ -210,6 +210,67 @@ static void xpa_error(XPA xpa, const char* format, ...);
     die_if(andor_queue_buffer(priv->cam, buf, siz) != 0, priv)
 #define stop_acquisition(priv) \
     die_if(andor_stop_acquisition(priv->cam) != 0, priv)
+
+static void process_frame(void* unused, struct timespec* ts,
+                          const void* buf, long siz)
+{
+    tao_shared_array_t* arr;
+    andor_encoding_t arrenc, bufenc;
+    long width, height, stride;
+
+    /* It is guaranteed that the configuration will not change while
+       processing the buffer, so we do not have to lock the private data
+       while processing. */
+    width = priv->cam->config.width;
+    height = priv->cam->config.height;
+    stride = priv->cam->stride;
+    bufenc = priv->cam->config.pixelencoding;
+    if (siz > height*stride) {
+        tao_push_error(NULL, __func__, TAO_ASSERTION_FAILED);
+    }
+
+    tao_lock_shared_camera(NULL, srvcam->shared);
+    arr = tao_fetch_next_frame(NULL, srvcam);
+    tao_unlock_shared_camera(NULL, srvcam->shared);
+
+    switch (TAO_GET_SHARED_ARRAY_ELTYPE(arr)) {
+    case TAO_UINT8:
+    case TAO_INT8:
+        arrenc = ANDOR_ENCODING_MONO8;
+        break;
+    case TAO_UINT16:
+    case TAO_INT16:
+        arrenc = ANDOR_ENCODING_MONO16;
+        break;
+    case TAO_INT32:
+    case TAO_UINT32:
+        arrenc = ANDOR_ENCODING_MONO32;
+        break;
+    case TAO_FLOAT32:
+        arrenc = ANDOR_ENCODING_FLOAT;
+        break;
+    case TAO_FLOAT64:
+        arrenc = ANDOR_ENCODING_DOUBLE;
+        break;
+    default:
+        arrenc = ANDOR_ENCODING_UNKNOWN;
+    }
+
+    if (arrenc != ANDOR_ENCODING_UNKNOWN &&
+        TAO_GET_SHARED_ARRAY_NDIMS(arr) >= 2 &&
+        TAO_GET_SHARED_ARRAY_DIM(arr, 1) == width &&
+        TAO_GET_SHARED_ARRAY_DIM(arr, 2) == height) {
+        andor_convert_buffer(TAO_GET_SHARED_ARRAY_DATA(arr), arrenc,
+                             buf, bufenc, width, height, stride);
+        if (ts != NULL) {
+            arr->ts_sec  = ts->tv_sec;
+            arr->ts_nsec = ts->tv_nsec;
+        }
+        tao_lock_shared_camera(NULL, srvcam->shared);
+        (void)tao_publish_next_frame(NULL, srvcam, arr);
+        tao_unlock_shared_camera(NULL, srvcam->shared);
+    }
+}
 
 static void broadcast_state(int state)
 {
@@ -285,11 +346,18 @@ static void* run_acquisition(void* arg)
                             /* A timeout occured. */
                             ++priv->timeouts;
                         } else {
-                            /* A new acquisition buffer is available.  Apply
-                               processing if any, then re-queue the buffer. */
+                            /* A new acquisition buffer is available.
+                               Apply processing if any, then re-queue the
+                               buffer.  It is guaranteed that the
+                               configuration will not change while
+                               processing the buffer. */
                             processor* proc = priv->proc;
                             void* data = priv->data;
                             if (proc != NULL) {
+                                /* It is guaranteed that the configuration
+                                   will not change while processing the
+                                   buffer, so we can unlock the private
+                                   data while processing. */
                                 unlock_mutex(priv);
                                 proc(data, &ts, buf, siz);
                                 lock_mutex(priv);
@@ -437,14 +505,14 @@ struct get_command {
     void (*get)(void);
 };
 
-#define GETTER(type, format, name, expr)			\
-    static void _get_##name()					\
-    {								\
-	type _val;						\
-	lock_mutex(priv);					\
-	_val = (expr);						\
-	unlock_mutex(priv);					\
-	(void)tao_print_to_buffer(NULL, &srvbuf, format, _val); \
+#define GETTER(type, format, name, expr)                        \
+    static void _get_##name()                                   \
+    {                                                           \
+        type _val;                                              \
+        lock_mutex(priv);                                       \
+        _val = (expr);                                          \
+        unlock_mutex(priv);                                     \
+        (void)tao_print_to_buffer(NULL, &srvbuf, format, _val); \
     }
 GETTER(long,   "%ld", sensorwidth,  priv->cam->sensorwidth)
 GETTER(long,   "%ld", sensorheight, priv->cam->sensorheight)
@@ -481,7 +549,7 @@ static void _get_roi()
     height = priv->cam->config.height;
     unlock_mutex(priv);
     (void)tao_print_to_buffer(NULL, &srvbuf, "%ld %ld %ld %ld",
-			      xoff, yoff, width, height);
+                              xoff, yoff, width, height);
 }
 
 static void _get_shmid()
@@ -548,12 +616,12 @@ static int send_callback(void* send_data, void* call_data,
         }
     }
     if (argc == 0) {
-	/* No command. */
+        /* No command. */
         goto success;
     }
     if (argc > 1) {
-	/* Too many arguments. */
-	xpa_error(xpa, "Usage: xpaget %s", argv[0]);
+        /* Too many arguments. */
+        xpa_error(xpa, "Usage: xpaget %s", argv[0]);
         goto failure;
     }
 
@@ -561,10 +629,10 @@ static int send_callback(void* send_data, void* call_data,
     tao_clear_buffer(&srvbuf);
     c = argv[0][0];
     for (int i = 0; getcmds[i].name != NULL; ++i) {
-	if (getcmds[i].name[0] == c && strcmp(argv[0], getcmds[i].name) == 0) {
-	    getcmds[i].get();
-	    goto success;
-	}
+        if (getcmds[i].name[0] == c && strcmp(argv[0], getcmds[i].name) == 0) {
+            getcmds[i].get();
+            goto success;
+        }
     }
     xpa_error(xpa, "Unknown parameter for xpaget command");
     goto failure;
@@ -607,9 +675,9 @@ struct set_command {
 static int xpaset_usage(XPA xpa, const char* argv0, const char* args)
 {
     if (args == NULL) {
-	xpa_error(xpa, "Usage: xpaset %s", argv0);
+        xpa_error(xpa, "Usage: xpaset %s", argv0);
     } else {
-	xpa_error(xpa, "Usage: xpaset %s %s", argv0, args);
+        xpa_error(xpa, "Usage: xpaset %s %s", argv0, args);
     }
     return -1;
 }
@@ -617,12 +685,12 @@ static int xpaset_usage(XPA xpa, const char* argv0, const char* args)
 static int _set_debug(XPA xpa, int argc, const char* argv[])
 {
     if (argc == 2 && strcmp(argv[1], "on") == 0) {
-	debug = true;
+        debug = true;
     } else if (argc == 2 && strcmp(argv[1], "off") == 0) {
-	debug = false;
+        debug = false;
     } else {
-	xpaset_usage(xpa, argv[0], "on|off");
-	return -1;
+        xpaset_usage(xpa, argv[0], "on|off");
+        return -1;
     }
     return 0;
 }
@@ -631,15 +699,15 @@ static int _set_start(XPA xpa, int argc, const char* argv[])
 {
     int nbufs;
     if (argc == 2) {
-	if (tao_parse_int(argv[1], &nbufs, 10) != 0 || nbufs < 1) {
-	    xpa_error(xpa, "Bad number of acquisition buffers");
-	    return -1;
-	}
+        if (tao_parse_int(argv[1], &nbufs, 10) != 0 || nbufs < 1) {
+            xpa_error(xpa, "Bad number of acquisition buffers");
+            return -1;
+        }
     } else if (argc == 1) {
-	nbufs = 4;
+        nbufs = 4;
     } else {
-	xpaset_usage(xpa, argv[0], NULL);
-	return -1;
+        xpaset_usage(xpa, argv[0], NULL);
+        return -1;
     }
     return send_command(xpa, COMMAND_START, nbufs);
 }
@@ -647,8 +715,8 @@ static int _set_start(XPA xpa, int argc, const char* argv[])
 static int _set_stop(XPA xpa, int argc, const char* argv[])
 {
     if (argc != 1) {
-	xpaset_usage(xpa, argv[0], NULL);
-	return -1;
+        xpaset_usage(xpa, argv[0], NULL);
+        return -1;
     }
     return send_command(xpa, COMMAND_STOP, 0);
 }
@@ -656,8 +724,8 @@ static int _set_stop(XPA xpa, int argc, const char* argv[])
 static int _set_abort(XPA xpa, int argc, const char* argv[])
 {
     if (argc != 1) {
-	xpaset_usage(xpa, argv[0], NULL);
-	return -1;
+        xpaset_usage(xpa, argv[0], NULL);
+        return -1;
     }
     return send_command(xpa, COMMAND_ABORT, 0);
 }
@@ -665,8 +733,8 @@ static int _set_abort(XPA xpa, int argc, const char* argv[])
 static int _set_quit(XPA xpa, int argc, const char* argv[])
 {
     if (argc != 1) {
-	xpaset_usage(xpa, argv[0], NULL);
-	return -1;
+        xpaset_usage(xpa, argv[0], NULL);
+        return -1;
     }
     quit = true;
     return send_command(xpa, COMMAND_EXIT, 0);
@@ -678,15 +746,15 @@ static int _set_quit(XPA xpa, int argc, const char* argv[])
 static state_t expected_state()
 {
     if (priv->command == COMMAND_EXIT) {
-	return STATE_DONE;
+        return STATE_DONE;
     }
     if (priv->state == STATE_STARTING || priv->state == STATE_ACQUIRING) {
-	if (priv->command == COMMAND_STOP) {
-	    return STATE_STOPPING;
-	}
-	if (priv->command == COMMAND_ABORT) {
-	    return STATE_ABORTING;
-	}
+        if (priv->command == COMMAND_STOP) {
+            return STATE_STOPPING;
+        }
+        if (priv->command == COMMAND_ABORT) {
+            return STATE_ABORTING;
+        }
     }
     return priv->state;
 }
@@ -704,168 +772,175 @@ static int _set_config(XPA xpa, int argc, const char* argv[])
     bool set_exposuretime = false, set_framerate = false;
 
     if ((argc & 1) != 1) {
-	xpaset_usage(xpa, argv[0], "key1 val1 [key2 val2 ...]");
-	return -1;
+        xpaset_usage(xpa, argv[0], "key1 val1 [key2 val2 ...]");
+        return -1;
     }
     memset(&rec, 0, sizeof(rec)); /* to avoid compiler warnings */
     for (int i = 1; i < argc - 1; i += 2) {
-	key = argv[i];
-	val = argv[i+1];
-	if (debug) {
-	    fprintf(stderr, "key=%s, val=%s\n", key, val);
-	}
-	int c = key[0];
-	if (c == 'e') {
-	    if (strcmp(key, "exposuretime") == 0) {
-		if (set_exposuretime) {
-		    goto duplicate;
-		}
-		if (tao_parse_double(val, &rec.exposuretime) != 0 ||
-		    rec.exposuretime < 0) {
-		    goto badvalue;
-		}
-		set_exposuretime = true;
-		continue;
-	    }
-	} else if (c == 'f') {
-	    if (strcmp(key, "framerate") == 0) {
-		if (set_framerate) {
-		    goto duplicate;
-		}
-		if (tao_parse_double(val, &rec.framerate) != 0 ||
-		    rec.framerate <= 0) {
-		    goto badvalue;
-		}
-		set_framerate = true;
-		continue;
-	    }
-	} else if (c == 'h') {
-	    if (strcmp(key, "height") == 0) {
-		if (set_height) {
-		    goto duplicate;
-		}
-		if (tao_parse_long(val, &rec.height, 10) != 0 ||
-		    rec.height < 1) {
-		    goto badvalue;
-		}
-		set_height = true;
-		continue;
-	    }
-	} else if (c == 'w') {
-	    if (strcmp(key, "width") == 0) {
-		if (set_width) {
-		    goto duplicate;
-		}
-		if (tao_parse_long(val, &rec.width, 10) != 0 ||
-		    rec.width < 1) {
-		    goto badvalue;
-		}
-		set_width = true;
-		continue;
-	    }
-	} else if (c == 'x') {
-	    if (strcmp(key, "xbin") == 0) {
-		if (set_xbin) {
-		    goto duplicate;
-		}
-		if (tao_parse_long(val, &rec.xbin, 10) != 0 || rec.xbin < 1) {
-		    goto badvalue;
-		}
-		set_xbin = true;
-		continue;
-	    }
-	    if (strcmp(key, "xoff") == 0) {
-		if (set_xoff) {
-		    goto duplicate;
-		}
-		if (tao_parse_long(val, &rec.xoff, 10) != 0 || rec.xoff < 0) {
-		    goto badvalue;
-		}
-		set_xoff = true;
-		continue;
-	    }
-	} else if (c == 'y') {
-	    if (strcmp(key, "ybin") == 0) {
-		if (set_ybin) {
-		    goto duplicate;
-		}
-		if (tao_parse_long(val, &rec.ybin, 10) != 0 || rec.ybin < 0) {
-		    goto badvalue;
-		}
-		set_ybin = true;
-		continue;
-	    }
-	    if (strcmp(key, "yoff") == 0) {
-		if (set_yoff) {
-		    goto duplicate;
-		}
-		if (tao_parse_long(val, &rec.yoff, 10) != 0 || rec.yoff < 0) {
-		    goto badvalue;
-		}
-		set_yoff = true;
-		continue;
-	    }
-	}
-	xpa_error(xpa, "Unknown key `%s`", key);
-	return -1;
+        key = argv[i];
+        val = argv[i+1];
+        if (debug) {
+            fprintf(stderr, "key=%s, val=%s\n", key, val);
+        }
+        int c = key[0];
+        if (c == 'e') {
+            if (strcmp(key, "exposuretime") == 0) {
+                if (set_exposuretime) {
+                    goto duplicate;
+                }
+                if (tao_parse_double(val, &rec.exposuretime) != 0 ||
+                    rec.exposuretime < 0) {
+                    goto badvalue;
+                }
+                set_exposuretime = true;
+                continue;
+            }
+        } else if (c == 'f') {
+            if (strcmp(key, "framerate") == 0) {
+                if (set_framerate) {
+                    goto duplicate;
+                }
+                if (tao_parse_double(val, &rec.framerate) != 0 ||
+                    rec.framerate <= 0) {
+                    goto badvalue;
+                }
+                set_framerate = true;
+                continue;
+            }
+        } else if (c == 'h') {
+            if (strcmp(key, "height") == 0) {
+                if (set_height) {
+                    goto duplicate;
+                }
+                if (tao_parse_long(val, &rec.height, 10) != 0 ||
+                    rec.height < 1) {
+                    goto badvalue;
+                }
+                set_height = true;
+                continue;
+            }
+        } else if (c == 'w') {
+            if (strcmp(key, "width") == 0) {
+                if (set_width) {
+                    goto duplicate;
+                }
+                if (tao_parse_long(val, &rec.width, 10) != 0 ||
+                    rec.width < 1) {
+                    goto badvalue;
+                }
+                set_width = true;
+                continue;
+            }
+        } else if (c == 'x') {
+            if (strcmp(key, "xbin") == 0) {
+                if (set_xbin) {
+                    goto duplicate;
+                }
+                if (tao_parse_long(val, &rec.xbin, 10) != 0 || rec.xbin < 1) {
+                    goto badvalue;
+                }
+                set_xbin = true;
+                continue;
+            }
+            if (strcmp(key, "xoff") == 0) {
+                if (set_xoff) {
+                    goto duplicate;
+                }
+                if (tao_parse_long(val, &rec.xoff, 10) != 0 || rec.xoff < 0) {
+                    goto badvalue;
+                }
+                set_xoff = true;
+                continue;
+            }
+        } else if (c == 'y') {
+            if (strcmp(key, "ybin") == 0) {
+                if (set_ybin) {
+                    goto duplicate;
+                }
+                if (tao_parse_long(val, &rec.ybin, 10) != 0 || rec.ybin < 0) {
+                    goto badvalue;
+                }
+                set_ybin = true;
+                continue;
+            }
+            if (strcmp(key, "yoff") == 0) {
+                if (set_yoff) {
+                    goto duplicate;
+                }
+                if (tao_parse_long(val, &rec.yoff, 10) != 0 || rec.yoff < 0) {
+                    goto badvalue;
+                }
+                set_yoff = true;
+                continue;
+            }
+        }
+        xpa_error(xpa, "Unknown key `%s`", key);
+        return -1;
 
     duplicate:
-	xpa_error(xpa, "Duplicate key `%s`", key);
-	return -1;
+        xpa_error(xpa, "Duplicate key `%s`", key);
+        return -1;
 
     badvalue:
-	xpa_error(xpa, "Invalid value for key `%s`", key);
-	return -1;
+        xpa_error(xpa, "Invalid value for key `%s`", key);
+        return -1;
     }
 
     lock_mutex(priv);
     while (true) {
-	state = expected_state();
-	if (debug) {
-	    fprintf(stderr, "state: %s\n", state_name(state));
-	}
-	if (state == STATE_SLEEPING) {
-	    /* Get current configuration (for now we are very conservative
-	       and make sure the configuration is up-to-date) and apply the
-	       changes. */
-	    status = andor_update_configuration(priv->cam, true);
-	    if (status == 0) {
-		andor_get_configuration(priv->cam, &cfg);
+        state = expected_state();
+        if (debug) {
+            fprintf(stderr, "state: %s\n", state_name(state));
+        }
+        if (state == STATE_SLEEPING) {
+            /* Get current configuration (FIXME: for now we are very
+               conservative and make sure the configuration is up-to-date)
+               and apply the changes. */
+            status = andor_update_configuration(priv->cam, true);
+            if (status == 0) {
+                andor_get_configuration(priv->cam, &cfg);
 #define SETOPT(opt) if (set_##opt) cfg.opt = rec.opt
-		SETOPT(xbin);
-		SETOPT(ybin);
-		SETOPT(xoff);
-		SETOPT(yoff);
-		SETOPT(width);
-		SETOPT(height);
-		SETOPT(exposuretime);
-		SETOPT(framerate);
+                SETOPT(xbin);
+                SETOPT(ybin);
+                SETOPT(xoff);
+                SETOPT(yoff);
+                SETOPT(width);
+                SETOPT(height);
+                SETOPT(exposuretime);
+                SETOPT(framerate);
 #undef SETOPT
-		status = andor_set_configuration(priv->cam, &cfg);
-	    }
-	    break;
-	} else if (state == STATE_STOPPING || state == STATE_ABORTING) {
-	    /* Acquisition is about to stop.  Manage to wait a bit (one
-	       millisecond) before checking again. */
-	    unlock_mutex(priv);
-	    (void)tao_sleep(0.001);
-	    lock_mutex(priv);
-	} else {
-	    status = -1;
-	    break;
-	}
+                status = andor_set_configuration(priv->cam, &cfg);
+            }
+            if (status == 0) {
+                /* Reflect the actual configuration into the shared camera
+                   data. */
+                tao_lock_shared_camera(NULL, srvcam->shared);
+                andor_reflect_configuration(srvcam->shared, priv->cam);
+                tao_unlock_shared_camera(NULL, srvcam->shared);
+            }
+            break;
+        } else if (state == STATE_STOPPING || state == STATE_ABORTING) {
+            /* Acquisition is about to stop.  Manage to wait a bit (one
+               millisecond) before checking again. */
+            unlock_mutex(priv);
+            (void)tao_sleep(0.001);
+            lock_mutex(priv);
+        } else {
+            status = -1;
+            break;
+        }
     }
     unlock_mutex(priv);
 
     if (status != 0) {
-	/* Deal with errors. */
-	if (state == STATE_STARTING || state == STATE_ACQUIRING) {
-	    xpa_error(xpa, "Cannot change settings during acquisition");
-	} else if (state == STATE_DONE) {
-	    xpa_error(xpa, "Camera has been closed");
-	} else {
-	    report_errors(xpa, &priv->cam->errs);
-	}
+        /* Deal with errors. */
+        if (state == STATE_STARTING || state == STATE_ACQUIRING) {
+            xpa_error(xpa, "Cannot change settings during acquisition");
+        } else if (state == STATE_DONE) {
+            xpa_error(xpa, "Camera has been closed");
+        } else {
+            report_errors(xpa, &priv->cam->errs);
+        }
     }
     return status;
 }
@@ -897,12 +972,12 @@ static int recv_callback(void* recv_data, void* call_data,
     }
     argc = tao_split_command(&errs, &argv, command, -1);
     if (argc == 0) {
-	/* No command. */
-	status = 0;
+        /* No command. */
+        status = 0;
         goto done;
     } else if (argc < 0) {
         report_errors(xpa, &errs);
-	status = -1;
+        status = -1;
         goto done;
     }
     if (debug) {
@@ -914,23 +989,23 @@ static int recv_callback(void* recv_data, void* call_data,
     /* Commands take no data, check this. */
     if (len > 0) {
         XPAError(xpa, "Expecting no data");
-	status = -1;
+        status = -1;
         goto done;
     }
 
     /* Execute the command. */
     c = argv[0][0];
     for (int i = 0; true; ++i) {
-	const char* name = setcmds[i].name;
-	if (name == NULL) {
-	    xpa_error(xpa, "Unknown parameter for xpaset command");
-	    status = -1;
-	    break;
-	}
-	if (name[0] == c && strcmp(argv[0], name) == 0) {
-	    status = setcmds[i].set(xpa, argc, argv);
-	    break;
-	}
+        const char* name = setcmds[i].name;
+        if (name == NULL) {
+            xpa_error(xpa, "Unknown parameter for xpaset command");
+            status = -1;
+            break;
+        }
+        if (name[0] == c && strcmp(argv[0], name) == 0) {
+            status = setcmds[i].set(xpa, argc, argv);
+            break;
+        }
     }
 
     /* Free resources. */
@@ -950,7 +1025,7 @@ int main(int argc, char* argv[])
 {
     XPA srv;
     char* serverclass = "TAO";
-    char* servername = "andorcamera1";
+    char* servername = "andorcam1"; /* FIXME: use device number */
     char* send_mode = "acl=true,freebuf=false";
     char* recv_mode = "";
     void* send_data = NULL;
@@ -1009,6 +1084,7 @@ int main(int argc, char* argv[])
     /* Open the camera device.  Since we use NULL for error reporting, any
        errors will be fatal, hence there is no needs to check the result. */
     cam = andor_open_camera(NULL, dev);
+    andor_reflect_configuration(srvcam->shared, cam);
 
     /* Apply initial configuration.  Make sure to synchronize the actual
        configuration after any changes in case some parameters are not exactly
@@ -1039,6 +1115,7 @@ int main(int argc, char* argv[])
         andor_report_errors(cam);
         return EXIT_FAILURE;
     }
+    priv->proc = process_frame;
 
     /* Start the image processing thread. */
     status = pthread_create(&priv->worker, NULL,
