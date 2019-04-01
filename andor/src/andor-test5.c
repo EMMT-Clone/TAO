@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
     //cfg.height = 480;
     cfg.framerate = 40.0;
     cfg.exposuretime = 0.005;
-    cfg.pixelencoding = ANDOR_ENCODING_MONO12PACKED;
+    //cfg.pixelencoding = ANDOR_ENCODING_MONO12PACKED;
     if (andor_set_configuration(cam, &cfg) != 0) {
         andor_report_errors(cam);
         return EXIT_FAILURE;
