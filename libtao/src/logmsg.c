@@ -27,7 +27,7 @@
 static pthread_mutex_t message_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Current level of verbosity (protected by above mutex). */
-static tao_message_type_t message_level = TAO_DEBUG;
+static tao_message_type_t message_level = TAO_MESG_DEBUG;
 
 /* Current message output file (protected by above mutex). */
 static FILE* message_output = NULL;
@@ -36,15 +36,15 @@ static const char*
 message_prefix(tao_message_type_t type)
 {
     switch (type) {
-    case TAO_DEBUG:
+    case TAO_MESG_DEBUG:
         return "{DEBUG} ";
-    case TAO_INFO:
+    case TAO_MESG_INFO:
         return "{INFO} ";
-    case TAO_WARN:
+    case TAO_MESG_WARN:
         return "{WARN} ";
-    case TAO_ERROR:
+    case TAO_MESG_ERROR:
         return "{ERROR} ";
-    case TAO_ASSERT:
+    case TAO_MESG_ASSERT:
         return "{ASSERT} ";
     default:
         return "{?????} ";
@@ -54,11 +54,11 @@ message_prefix(tao_message_type_t type)
 void
 tao_set_message_level(tao_message_type_t level)
 {
-    if (level < TAO_DEBUG) {
-        level = TAO_DEBUG;
+    if (level < TAO_MESG_DEBUG) {
+        level = TAO_MESG_DEBUG;
     }
-    if (level > TAO_QUIET) {
-        level = TAO_QUIET;
+    if (level > TAO_MESG_QUIET) {
+        level = TAO_MESG_QUIET;
     }
     if (pthread_mutex_lock(&message_mutex) == 0) {
         message_level = level;
@@ -69,7 +69,7 @@ tao_set_message_level(tao_message_type_t level)
 tao_message_type_t
 tao_get_message_level()
 {
-    tao_message_type_t level = TAO_DEBUG;
+    tao_message_type_t level = TAO_MESG_DEBUG;
     if (pthread_mutex_lock(&message_mutex) == 0) {
         level = message_level;
         (void)pthread_mutex_unlock(&message_mutex);

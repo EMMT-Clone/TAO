@@ -57,12 +57,12 @@ _TAO_BEGIN_DECLS
 
 typedef enum tao_message_type {
     /* Values must be in ascending order. */
-    TAO_DEBUG  = 0,  /**< Debug message */
-    TAO_INFO   = 1,  /**< Information message */
-    TAO_WARN   = 2,  /**< Warning message */
-    TAO_ERROR  = 3,  /**< Runtime error */
-    TAO_ASSERT = 4,  /**< Assertion error or bug */
-    TAO_QUIET  = 5   /**< Suppress all messages */
+    TAO_MESG_DEBUG  = 0,  /**< Debug message */
+    TAO_MESG_INFO   = 1,  /**< Information message */
+    TAO_MESG_WARN   = 2,  /**< Warning message */
+    TAO_MESG_ERROR  = 3,  /**< Runtime error */
+    TAO_MESG_ASSERT = 4,  /**< Assertion error or bug */
+    TAO_MESG_QUIET  = 5   /**< Suppress all messages */
 } tao_message_type_t;
 
 /**
@@ -99,8 +99,8 @@ extern tao_message_type_t tao_get_message_level();
  * This function is thread-safe.
  *
  * @param level   The minimum level of messages printed by tao_inform().  For
- *                instance, `TAO_QUIET` to suppress printing of messages or
- *                `TAO_DEBUG` to print everything.
+ *                instance, `TAO_MESG_QUIET` to suppress printing of messages or
+ *                `TAO_MESG_DEBUG` to print everything.
  */
 extern void tao_set_message_level(tao_message_type_t level);
 
