@@ -137,6 +137,12 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
     return cam;
 }
 
+tao_shared_camera_t*
+tao_get_shared_camera(tao_camera_t* cam)
+{
+    return cam->shared;
+}
+
 static tao_shared_array_t*
 allocate_frame(tao_error_t** errs, tao_camera_t* cam)
 {
