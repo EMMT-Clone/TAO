@@ -165,8 +165,10 @@ static int
 check_frame(const tao_shared_array_t* arr, const tao_shared_camera_t* cam)
 {
     return (arr->eltype == cam->pixeltype &&
-            (cam->weighted ? (arr->ndims == 3 && arr->dims[2] == 2) :
-             (arr->ndims == 2)) && arr->dims[0] == cam->width &&
+            (cam->weighted ?
+             (arr->ndims == 3 && arr->dims[2] == 2) :
+             (arr->ndims == 2)) &&
+            arr->dims[0] == cam->width &&
             arr->dims[1] == cam->height);
 }
 
@@ -223,7 +225,7 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam)
             /* Attempt to use the pre-allocated array. */
             arr = cam->spare;
             cam->spare = NULL;
-            if (check_frame(arr, shared)) {
+            if (! check_frame(arr, shared)) {
                 if (tao_detach_shared_array(errs, arr) != 0) {
                     return NULL;
                 }
@@ -255,7 +257,7 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
         return -1;
     }
     tao_shared_camera_t* shared = cam->shared;
-    if_unlikely(check_frame(arr, shared)) {
+    if_unlikely(! check_frame(arr, shared)) {
         tao_push_error(errs, __func__, TAO_BAD_ARGUMENT);
         return -1;
     }
