@@ -12,7 +12,6 @@
  * Copyright (C) 2019, Éric Thiébaut.
  */
 
-#include <stdio.h>
 #include <andor.h>
 
 int main(int argc, char* argv[])

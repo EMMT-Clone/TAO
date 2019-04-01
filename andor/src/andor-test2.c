@@ -11,7 +11,6 @@
  * Copyright (C) 2019, Éric Thiébaut.
  */
 
-#include <stdio.h>
 #include <string.h>
 #include <andor.h>
 #include <andor-features.h>

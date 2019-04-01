@@ -11,10 +11,7 @@
  * Copyright (C) 2019, Éric Thiébaut.
  */
 
-#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include <time.h>
 #include <tao.h>
 #include <andor.h>

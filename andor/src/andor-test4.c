@@ -13,9 +13,7 @@
  */
 
 #include <wchar.h>
-#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <andor.h>
 #include <andor-features.h>
 

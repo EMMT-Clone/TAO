@@ -12,10 +12,7 @@
  * Copyright (C) 2019, Éric Thiébaut.
  */
 
-#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include <time.h>
 #include <tao.h>
 #include <tao-fits.h>
@@ -72,6 +69,7 @@ int main(int argc, char* argv[])
     fprintf(stdout, "Time to update configuration: %.3f µs\n",
             1E6*elapsed_time(&t1, &t0));
 
+    /* Get current configuration and change some parameters. */
     andor_get_configuration(cam, &cfg);
     //cfg.xbin = 1;
     //cfg.ybin = 1;
