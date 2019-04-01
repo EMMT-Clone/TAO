@@ -887,6 +887,8 @@ andor_reflect_configuration(tao_shared_camera_t* soft,
     /* FIXME: deal with pixel encoding in acquisition buffers */
     soft->sensorwidth  = hard->sensorwidth;
     soft->sensorheight = hard->sensorheight;
+    soft->xbin         = hard->config.xbin;
+    soft->ybin         = hard->config.ybin;
     soft->xoff         = hard->config.xoff;
     soft->yoff         = hard->config.yoff;
     soft->width        = hard->config.width;

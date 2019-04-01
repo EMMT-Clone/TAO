@@ -148,21 +148,24 @@ struct tao_shared_camera {
     int           depth; /**< Bits per pixel in the raw images. */
     int       pixeltype; /**< Pixel type. */
     int        weighted; /**< Pre-processed images have associated weights. */
-    long    sensorwidth; /**< Maximum image width for the detector. */
-    long   sensorheight; /**< Maximum image height for the detector. */
+    long    sensorwidth; /**< Number of physical pixels per row of the
+                              detector. */
+    long   sensorheight; /**< Number of physical pixels per column of the
+                              detector. */
+    long           xbin; /**< Horizontal binning (in physical pixels). */
+    long           ybin; /**< Vertical binning (in physical pixels). */
     long           xoff; /**< Horizontal offset of the acquired images with
-                              respect to the left border of the detector. */
+                              respect to the left border of the detector (in
+                              physical pixels). */
     long           yoff; /**< Vertical offset of the acquired images with
-                              respect to the bottom border of the detector. */
+                              respect to the bottom border of the detector (in
+                              physical pixels). */
     long          width; /**< Number of pixels per line of the acquired
-                              images. */
+                              images (in macro-pixels). */
     long         height; /**< Number of lines of pixels in the acquired
-                              images. */
-    double         bias; /**< Detector bias. */
-    double         gain; /**< Detector gain. */
+                              images (in macro-pixels). */
     double    framerate; /**< Acquisition rate in frames per second. */
     double exposuretime; /**< Exposure time in seconds. */
-    double        gamma; /**< Gamma correction. */
     struct {
         int32_t   ident; /**< Identifier of the shared array backing the
                               storage of the last image, -1 means unused or

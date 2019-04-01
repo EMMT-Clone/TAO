@@ -125,15 +125,14 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
     shared->depth = 8;
     shared->sensorwidth = 384;
     shared->sensorheight = 288;
+    shared->xbin = 1;
+    shared->ybin = 1;
     shared->xoff = 0;
     shared->yoff = 0;
     shared->width = 1;
     shared->height = 1;
     shared->exposuretime = 0.001; /* 1 ms */
     shared->framerate = 25.0; /* 25 Hz */
-    shared->gain = 100.0;
-    shared->bias = 500.0;
-    shared->gamma = 1.0;
     return cam;
 }
 
@@ -338,15 +337,14 @@ GETTER(int,    pixeltype, -1)
 GETTER(int,    depth, 0)
 GETTER(long,   sensorwidth, 0)
 GETTER(long,   sensorheight, 0)
+GETTER(long,   xbin, 0)
+GETTER(long,   ybin, 0)
 GETTER(long,   xoff, 0)
 GETTER(long,   yoff, 0)
 GETTER(long,   width, 0)
 GETTER(long,   height, 0)
-GETTER(double, bias, 0.0)
-GETTER(double, gain, 0.0)
 GETTER(double, framerate, 0.0)
 GETTER(double, exposuretime, 0.0)
-GETTER(double, gamma, 0.0)
 #undef GETTER
 
 uint64_t

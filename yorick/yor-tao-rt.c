@@ -368,14 +368,6 @@ extract_shared_object(void* addr, char* name)
     tao_shared_camera_t* cam =
         (tao_shared_camera_t*)(type == TAO_SHARED_CAMERA ? obj : NULL);
     switch (name[0]) {
-    case 'b':
-        if (cam != NULL) {
-            if (strcmp(name, "bias") == 0) {
-                ypush_double(tao_get_shared_camera_bias(cam));
-                return;
-            }
-        }
-        break;
     case 'c':
         if (arr != NULL) {
             if (strcmp(name, "counter") == 0) {
@@ -437,18 +429,6 @@ extract_shared_object(void* addr, char* name)
         if (cam != NULL) {
             if (strcmp(name, "framerate") == 0) {
                 ypush_double(tao_get_shared_camera_framerate(cam));
-                return;
-            }
-        }
-        break;
-    case 'g':
-        if (cam != NULL) {
-            if (strcmp(name, "gain") == 0) {
-                ypush_double(tao_get_shared_camera_gain(cam));
-                return;
-            }
-            if (strcmp(name, "gamma") == 0) {
-                ypush_double(tao_get_shared_camera_gamma(cam));
                 return;
             }
         }
@@ -541,6 +521,12 @@ extract_shared_object(void* addr, char* name)
         break;
     case 'x':
         if (cam != NULL) {
+            if (strcmp(name, "xbin") == 0) {
+                ypush_long(tao_get_shared_camera_xbin(cam));
+                return;
+            }
+        }
+        if (cam != NULL) {
             if (strcmp(name, "xoff") == 0) {
                 ypush_long(tao_get_shared_camera_xoff(cam));
                 return;
@@ -548,6 +534,12 @@ extract_shared_object(void* addr, char* name)
         }
         break;
     case 'y':
+        if (cam != NULL) {
+            if (strcmp(name, "ybin") == 0) {
+                ypush_long(tao_get_shared_camera_ybin(cam));
+                return;
+            }
+        }
         if (cam != NULL) {
             if (strcmp(name, "yoff") == 0) {
                 ypush_long(tao_get_shared_camera_yoff(cam));

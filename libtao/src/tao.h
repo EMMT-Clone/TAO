@@ -2990,6 +2990,26 @@ extern long tao_get_shared_camera_sensorwidth(const tao_shared_camera_t* cam);
 extern long tao_get_shared_camera_sensorheight(const tao_shared_camera_t* cam);
 
 /**
+ * Get the horizontal binning factor.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The horizontal binning factor in physical pixels, `0` if
+ *         @a cam is `NULL`.
+ */
+extern long tao_get_shared_camera_xbin(const tao_shared_camera_t* cam);
+
+/**
+ * Get the vertical binning factor.
+ *
+ * @param cam   Address of shared camera in address space of caller.
+ *
+ * @return The vertical binning factor in physical pixels, `0` if
+ *         @a cam is `NULL`.
+ */
+extern long tao_get_shared_camera_ybin(const tao_shared_camera_t* cam);
+
+/**
  * Get the horizontal offset of captured images.
  *
  * @param cam   Address of shared camera in address space of caller.
@@ -3038,24 +3058,6 @@ extern long tao_get_shared_camera_width(const tao_shared_camera_t* cam);
 extern long tao_get_shared_camera_height(const tao_shared_camera_t* cam);
 
 /**
- * Get the detector bias.
- *
- * @param cam   Address of shared camera in address space of caller.
- *
- * @return The detector bias, `0` if @a cam is `NULL`.
- */
-extern double tao_get_shared_camera_bias(const tao_shared_camera_t* cam);
-
-/**
- * Get the detector gain.
- *
- * @param cam   Address of shared camera in address space of caller.
- *
- * @return The detector gain, `0` if @a cam is `NULL`.
- */
-extern double tao_get_shared_camera_gain(const tao_shared_camera_t* cam);
-
-/**
  * Get the frame rate.
  *
  * @param cam   Address of shared camera in address space of caller.
@@ -3073,15 +3075,6 @@ extern double tao_get_shared_camera_framerate(const tao_shared_camera_t* cam);
  *         is `NULL`.
  */
 extern double tao_get_shared_camera_exposuretime(const tao_shared_camera_t* cam);
-
-/**
- * Get the gamma correction factor.
- *
- * @param cam   Address of shared camera in address space of caller.
- *
- * @return The gamma correction factor, `0` if @a cam is `NULL`.
- */
-extern double tao_get_shared_camera_gamma(const tao_shared_camera_t* cam);
 
 /**
  * Wait for next acquired image.

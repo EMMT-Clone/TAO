@@ -99,13 +99,12 @@ extern tao_attach_shared_object;
          cam.state        camera state (0 if device not yet open, 1 if device
                           open but no acquisition is running, 2 if acquisition
                           is running);
-         cam.bias         detector bias;
-         cam.gain         detector gain;
-         cam.gamma        gamma correction factor;
          cam.sensorwidth  detector horizontal size (in pixels);
          cam.sensorheight detector vertical size (in pixels);
          cam.depth        bits per pixel in the raw captured images;
          cam.eltype       type of elements of processed images;
+         cam.xbin         horizontal binning (in pixels);
+         cam.ybin         vertical binning (in pixels);
          cam.xoff         horizontal offset of ROI (in pixels);
          cam.yoff         vertical offset of ROI (in pixels);
          cam.width        number of macro-pixels per line in acquired images;
