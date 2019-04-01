@@ -9,7 +9,7 @@
  * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 if (is_func(plug_in)) plug_in, "tao_rt";
@@ -221,6 +221,218 @@ extern tao_unlock;
 
    SEE ALSO: tao_attach_shared_object.
  */
+
+func tao_get_shmid(apt) { return _tao_get(long, apt, "shmid"); }
+/* DOCUMENT shmid = tao_get_shmid(apt);
+
+      Yields the shared memory identifier of data shared by TAO server whose
+      XPA access point is APT.  Example:
+
+          apt = "andorcam1";
+          sem = 1;
+          timeout = 5.0;
+          cam = tao_attach_shared_camera(tao_get_shmid(apt));
+          tao_config, apt, framerate=40, exposuretime=0.01;
+          tao_start, apt;
+          arr = tao_wait_image(cam, sem, timeout);
+          if (! is_void(arr)) {
+              fma;
+              pli, arr.data
+          }
+          tao_stop;
+
+   SEE ALSO: tao_attach_shared_object.
+ */
+
+func tao_get_xbin(apt) { return _tao_get(long, apt, "xbin"); }
+func tao_get_ybin(apt) { return _tao_get(long, apt, "ybin"); }
+/* DOCUMENT tao_get_xbin(apt)
+         or tao_get_ybin(apt)
+
+     Yield the horizontal and vertical binning (in physical pixels) of the
+     images acquired by the camera server at XPA access point APT.
+
+   SEE ALSO: tao_config.
+ */
+
+func tao_get_xoff(apt) { return _tao_get(long, apt, "xoff"); }
+func tao_get_yoff(apt) { return _tao_get(long, apt, "yoff"); }
+/* DOCUMENT tao_get_xoff(apt)
+         or tao_get_yoff(apt)
+
+     Yield the offsets (in physical pixels) of the region of interest relative
+     to the sensor edges for the camera server at XPA access point APT.
+
+   SEE ALSO: tao_config.
+ */
+
+func tao_get_width(apt) { return _tao_get(long, apt, "width"); }
+func tao_get_height(apt) { return _tao_get(long, apt, "height"); }
+/* DOCUMENT tao_get_width(apt)
+         or tao_get_height(apt)
+
+     Yield the horizontal and vertical dimensions (in macro-pixels) of the
+     images acquired by the camera server at XPA access point APT.
+
+   SEE ALSO: tao_config.
+ */
+
+func tao_get_sensorwidth(apt) { return _tao_get(long, apt, "sensorwidth"); }
+func tao_get_sensorheight(apt) { return _tao_get(long, apt, "sensorheight"); }
+/* DOCUMENT tao_get_sensorwidth(apt)
+         or tao_get_sensorheight(apt)
+
+     Yield the horizontal and vertical dimensions (in physical pixels) of the
+     detector managed by the camera server at XPA access point APT.
+
+   SEE ALSO: tao_config.
+ */
+func tao_get_exposuretime(apt) { return _tao_get(double, apt, "exposuretime"); }
+func tao_get_framerate(apt) { return _tao_get(double, apt, "framerate"); }
+/* DOCUMENT tao_get_exposuretime(apt)
+         or tao_get_framerate(apt)
+
+     Yield the exposure time (in seconds) and frame rate (in frame per
+     seconds) settings for the acquisition by the camera server at XPA access
+     point APT.
+
+   SEE ALSO: tao_config.
+ */
+func tao_get_state(apt) { return _tao_get(string, apt, "state"); }
+/* DOCUMENT tao_get_state(apt)
+
+     Yield the current state of the acquisition by the camera server at XPA
+     access point APT.
+
+   SEE ALSO: tao_config.
+ */
+
+func tao_stop(apt) { xpa_set, apt, "stop"; }
+func tao_abort(apt) { xpa_set, apt, "abort"; }
+func tao_quit(apt) { xpa_set, apt, "quit"; }
+func tao_start(apt, nbufs)
+/* DOCUMENT tao_start, apt;
+         or tao_start, apt, nbufs;
+         or tao_stop, apt;
+         or tao_abort, apt;
+         or tao_quit, apt;
+
+      Send an acquisition command to the XPA server identiifed by APT.
+      Optional argument NBUFS is the number of acquisition buffers to use.
+
+   SEE ALSO: tao_config, tao_get_state.
+ */
+{
+    cmd = (is_void(nbufs) ? "start" : swrite(format="start %d", nbufs));
+    xpa_set, apt, cmd;
+}
+
+func _tao_get(type, apt, key)
+{
+    ans = xpa_get(apt, key);
+    replies = ans();
+    if (replies != 1) {
+        error, write(format="expecting one answer (got %d)", replies);
+    }
+    str = ans(1,4);
+    return (type == string ? tao_chomp(str) : tao_parse(type, str));
+}
+errs2caller, tao_parse;
+
+func tao_chomp(str)
+/* DOCUMENT tao_chomp(str);
+
+     Yields string STR without tariling newline if any.
+
+   SEE ALSO: strtrim, strpart.
+ */
+{
+    return (strpart(str, 0:0) == "\n" ? strpart(str, 1:-1) : str);
+}
+
+local _tao_esc;
+func tao_config(args)
+/* DOCUMENT tao_config, apt, key1=val1, key2=val2, ...;
+
+     Send an XPA set "config" command to the XPA server APT with settings
+     given by the KEYn=VALn pairs.
+
+   SEE ALSO: tao_get_shmid, tao_start, tao_get_xbin, tao_get_ybin,
+             tao_get_xoff, tao_get_yoff, tao_get_width, tao_get_height,
+             tao_get_sensorwidth, tao_get_sensorheight, tao_get_state.
+ */
+{
+    nargs = args(*); // number of positional arguments
+    if (nargs != 1) {
+        error, "syntax: tao_config, apt, key1=val1, key2=val2, ...;";
+    }
+    apt = args(1);
+    keys = args(-);
+    nkeys = numberof(keys);
+    if (nkeys < 1) return;
+    cmd = "config";
+    for (k = 1; k <= nkeys; ++k) {
+        key = keys(k);
+        val = args(key);
+        type = structof(val);
+        if (! is_scalar(val)) {
+            error, swrite(format="non-scalar value for key \"%s\"", key);
+        }
+        if (type == long || type == int || type == short || type == char) {
+            fmt = "%s %s %d";
+        } else if (type == double || type == float) {
+            fmt = "%s %s %g";
+        } else if (type == string) {
+            if (! strglob("*'*", val)) {
+                /* no single quote */
+                fmt = "%s %s '%s'";
+            } else {
+                /* string has at least one single quote, length > 0 in this
+                   case */
+                bytes = strchar(val)(1:-1);
+                i = where(_tao_esc(bytes));
+                if (is_array(i)) {
+                    buf = array(char, 2, numberof(bytes));
+                    buf(1,i) = '\\';
+                    buf(2,) = bytes;
+                    val = strchar(buf(where(buf)));
+                }
+                fmt = "%s %s \"%s\"";
+            }
+        } else {
+            error, swrite(format="invalid value type for key \"%s\"", key);
+        }
+        cmd = swrite(format=fmt, cmd, key, val);
+    }
+    xpa_set, apt, cmd;
+}
+wrap_args, tao_config;
+
+_tao_esc = array(0n, 255);
+_tao_esc('\t') = 1n;
+_tao_esc('\n') = 1n;
+_tao_esc('\r') = 1n;
+_tao_esc('\\') = 1n;
+_tao_esc('"') = 1n;
+
+func tao_parse(type, str)
+/* DOCUMENT val = tao_parse(type, str);
+
+      Yields a value of given type from string STR.  An error is thrown
+      if STR cannot be converted to a value of the given type.
+
+   SEE ALSO: sread.
+ */
+{
+    value = type();
+    dummy = string();
+    if (sread(str, value, dummy)) {
+        return value;
+    }
+    error, swrite(format="string \"%s\" is not a valid \"%s\" value", str,
+                  nameof(type));
+}
+errs2caller, tao_parse;
 
 extern _tao_init;
 /* DOCUMENT _tao_init;

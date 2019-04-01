@@ -1,3 +1,16 @@
+/*
+ * tao-rt-tests.i --
+ *
+ * Tests and examples using Yorick interface to TAO real-time software.
+ *
+ *-----------------------------------------------------------------------------
+ *
+ * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
+ * under the MIT license.
+ *
+ * Copyright (C) 2018-2019, Éric Thiébaut.
+ */
+
 require, "tao-rt.i";
 
 func tao_measure_latency(cam, number=, timeout=, semaphore=)
