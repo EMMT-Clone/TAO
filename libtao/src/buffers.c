@@ -356,25 +356,28 @@ tao_print_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
                     const char* format, ...)
 {
     int status;
-    va_list ap;
+    va_list args;
 
-    va_start(ap, format);
-    status = tao_vprint_to_buffer(errs, buf, format, ap);
-    va_end(ap);
+    va_start(args, format);
+    status = tao_vprint_to_buffer(errs, buf, format, args);
+    va_end(args);
     return status;
 }
 
 int
 tao_vprint_to_buffer(tao_error_t** errs, tao_buffer_t* buf,
-                     const char* format, va_list ap)
+                     const char* format, va_list args)
 {
     CHECK_BUFFER_STRUCT(errs, buf, -1); /* FIXME: optimize */
     long end = buf->offset + buf->pending;
     while (true) {
         /* Append formated message to the i/o buffer, resizing and adjusting
            the size of the buffer as needed. */
-        long siz = buf->size - end;
-        long len = vsnprintf(buf->data + end, siz, format, ap);
+        va_list temp;
+        long len, siz = buf->size - end;
+        va_copy(temp, args);
+        len = vsnprintf(buf->data + end, siz, format, temp);
+        va_end(temp);
         if (len < siz) {
             if (len < 0) {
                 /* Some error occured. */
