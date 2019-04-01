@@ -20,6 +20,10 @@
 
 ## Things to do
 
+* `tao_element_type_t` -> `tao_eltype_t`.
+* Fix types of fields in structures in `tao-private.h`.
+* `size_t` -> `long` in most cases.
+* Clarify the distinction between shared camera, camera, hardware camera, etc.
 * Instead of immediately attempt to reflect the configuration of the camera
   after any parameter change, it may be better to defer that until starting the
   acquisition.  Optionally a function, say `tao_apply_camera_configuration`,
@@ -32,16 +36,17 @@
   `attach(::Type{TAO.SharedArray{T,N}},id)` to have a more specific returned
   value.
 
-* Manage to have '-Wall -Werror -O2' the default compilation flags.
-
 * Use 64-bit signed integers for storing the time (since the Epoch) in
   microseconds.  This is what is done in Apache Portable Runtime library (APR).
   This is OK for times in the range ±292,271 yr which is largely sufficient for
   now (and the future!).  The resolution of 1 µs is about what is provided by
   current real-time Linux kernel and is sufficient for adaptive optics systems.
 
-* Include `stdbool.h` and use the macros provided by this header: `bool` for
-  the type of a boolean and `true` or `false` values.
+* Use a more flexible error reporting system so that a more detailed error
+  message can be given (for instance, for a function changing a parameter, the
+  function name and the parameter name).  To that end, we may use a dynamic
+  buffer to build up the error message.  For efficiency reasons, we do not want
+  to do that when error is registered but only for reporting errors.
 
 
 ## Phoenix part
