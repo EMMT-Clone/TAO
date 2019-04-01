@@ -8,7 +8,7 @@
  * This file if part of the TAO library (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #ifndef _TAO_ERRORS_C
@@ -17,7 +17,6 @@
 #include "common.h"
 
 #include <errno.h>
-#include <stdio.h>
 #include <string.h>
 #include <locale.h>
 
@@ -753,7 +752,7 @@ FUNC(int code)
             (void)setlocale(LC_ALL, "C");
             init = true;
         }
-	return strerror(code);
+        return strerror(code);
 #    else
         return "Unknown system error";
 #    endif
