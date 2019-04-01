@@ -23,7 +23,6 @@
 # include <fitsio2.h>
 #endif
 
-#include <stdbool.h>
 #include <tao.h>
 
 _TAO_BEGIN_DECLS

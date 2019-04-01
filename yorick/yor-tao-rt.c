@@ -11,20 +11,15 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
 #include <float.h>
+#include <tao.h>
 
 #include <pstdlib.h>
 #include <play.h>
 #include <yapi.h>
-
-#include <tao.h>
 
 /* Define some macros to get rid of some GNU extensions when not compiling
    with GCC. */
