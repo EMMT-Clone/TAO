@@ -15,8 +15,6 @@
 #define _ANDOR_H 1
 
 #include <wchar.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include <atcore.h>
 #include <tao.h>
 
@@ -116,7 +114,7 @@ typedef enum {
     ANDOR_ENCODING_RGB8PACKED,
     ANDOR_ENCODING_FLOAT,
     ANDOR_ENCODING_DOUBLE,
-} andor_pixel_encoding_t;
+} andor_encoding_t;
 
 #define ANDOR_ENCODING_MIN ANDOR_ENCODING_MONO8
 #define ANDOR_ENCODING_MAX ANDOR_ENCODING_RGB8PACKED
@@ -134,7 +132,7 @@ typedef enum {
  * @return The number of the encoding as a wide string (so that it can be
  * directly feed in Andor SDK functions), `L"Unknown"` if unknown.
  */
-extern const wchar_t *andor_get_encoding_name(andor_pixel_encoding_t enc);
+extern const wchar_t *andor_get_encoding_name(andor_encoding_t enc);
 
 /**
  * Get the identifier of a given pixel encoding name.
@@ -143,7 +141,7 @@ extern const wchar_t *andor_get_encoding_name(andor_pixel_encoding_t enc);
  *
  * @return A pixel encoding identifier, `ANDOR_ENCODING_UNKNOWN` if unknown.
  */
-extern andor_pixel_encoding_t andor_get_encoding(const wchar_t* name);
+extern andor_encoding_t andor_get_encoding(const wchar_t* name);
 
 /**
  * Get all pixel encodings supported by a camera.
@@ -163,11 +161,11 @@ extern andor_pixel_encoding_t andor_get_encoding(const wchar_t* name);
  * @return The number of supported encodings, `-1` in case of errors.
  */
 extern int andor_get_pixel_encodings(andor_camera_t* cam,
-                                     andor_pixel_encoding_t* encodings,
+                                     andor_encoding_t* encodings,
                                      int len);
 
-extern int andor_convert_buffer(void* dst, andor_pixel_encoding_t dst_enc,
-                                const void* src, andor_pixel_encoding_t src_enc,
+extern int andor_convert_buffer(void* dst, andor_encoding_t dst_enc,
+                                const void* src, andor_encoding_t src_enc,
                                 long width, long height, long stride);
 
 typedef enum andor_camera_model {
@@ -184,19 +182,16 @@ typedef enum andor_camera_model {
 } andor_camera_model_t;
 
 struct andor_camera_config {
-    /* Region of interest. */
-    long xbin;   /* AOIHBin (in pixels) */
-    long ybin;   /* AOIVBin (in pixels) */
-    long xoff;   /* AOILeft - 1 (in pixels) */
-    long yoff;   /* AOITop -1 (in pixels) */
-    long width;  /* AOIWidth (in macro-pixels) */
-    long height; /* AOIHeight (in macro-pixels) */
-
-    andor_pixel_encoding_t pixelencoding;
-
-    double exposuretime; /* Exposure time (in seconds) */
-    double framerate;    /* Frame rate (in frames per second) */
-    double temperature;  /* SensorTemperature */
+    long                      xbin; /* AOIHBin (in pixels) */
+    long                      ybin; /* AOIVBin (in pixels) */
+    long                      xoff; /* AOILeft - 1 (in pixels) */
+    long                      yoff; /* AOITop -1 (in pixels) */
+    long                     width; /* AOIWidth (in macro-pixels) */
+    long                    height; /* AOIHeight (in macro-pixels) */
+    andor_encoding_t pixelencoding; /* Pixel encoding in acquisition buffers */
+    double            exposuretime; /* Exposure time (in seconds) */
+    double               framerate; /* Frame rate (in frames per second) */
+    double             temperature; /* SensorTemperature */
 };
 
 struct andor_camera
@@ -210,7 +205,7 @@ struct andor_camera
     long sensorheight; /* Sensor height (in pixels) */
 
     /* Supported pixel encodings. */
-    andor_pixel_encoding_t encodings[ANDOR_MAX_ENCODINGS];
+    andor_encoding_t encodings[ANDOR_MAX_ENCODINGS];
     int nencodings;
 
     /* Camera configuration. */
@@ -286,6 +281,18 @@ extern void andor_print_configuration(FILE* output,
 
 extern void andor_print_camera_configuration(FILE* output,
                                              const andor_camera_t* cam);
+
+/**
+ * Copy hardware camera settings to shared camera data.
+ *
+ * This function copies the current hardware settings of the camera
+ * to update the shared camera information.
+ *
+ * It is assumed that the caller has locked the two structures.
+ */
+extern void andor_reflect_configuration(tao_shared_camera_t* soft,
+                                        const andor_camera_t* hard);
+
 _TAO_END_DECLS
 
 #endif /* _ANDOR_H */

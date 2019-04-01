@@ -19,6 +19,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <tao.h>
+#include <tao-private.h>
 #include "andor.h"
 #include "andor-features.h"
 
@@ -259,7 +261,7 @@ andor_close_camera(andor_camera_t* cam)
 }
 
 const wchar_t *
-andor_get_encoding_name(andor_pixel_encoding_t enc)
+andor_get_encoding_name(andor_encoding_t enc)
 {
     switch (enc) {
     case ANDOR_ENCODING_MONO8: return L"Mono8";
@@ -276,7 +278,7 @@ andor_get_encoding_name(andor_pixel_encoding_t enc)
     }
 }
 
-andor_pixel_encoding_t
+andor_encoding_t
 andor_get_encoding(const wchar_t* name)
 {
     if (wcsncasecmp(name, L"Mono", 4) == 0) {
@@ -320,7 +322,7 @@ andor_get_encoding(const wchar_t* name)
 
 int
 andor_get_pixel_encodings(andor_camera_t* cam,
-                          andor_pixel_encoding_t* encodings, int len)
+                          andor_encoding_t* encodings, int len)
 {
     const int wstrlen = 32;
     AT_WC wstr[wstrlen];
@@ -876,4 +878,19 @@ andor_print_camera_configuration(FILE* output, const andor_camera_t* cam)
         fprintf(output, "%ls", andor_get_encoding_name(cam->encodings[k]));
     }
     fputs("]\n", output);
+}
+
+void
+andor_reflect_configuration(tao_shared_camera_t* soft,
+                            const andor_camera_t* hard)
+{
+    /* FIXME: deal with pixel encoding in acquisition buffers */
+    soft->sensorwidth  = hard->sensorwidth;
+    soft->sensorheight = hard->sensorheight;
+    soft->xoff         = hard->config.xoff;
+    soft->yoff         = hard->config.yoff;
+    soft->width        = hard->config.width;
+    soft->height       = hard->config.height;
+    soft->framerate    = hard->config.framerate;
+    soft->exposuretime = hard->config.exposuretime;
 }

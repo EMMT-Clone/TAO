@@ -90,8 +90,8 @@
 #undef TMP_TYPE
 
 int
-andor_convert_buffer(void* dst, andor_pixel_encoding_t dst_enc,
-                     const void* src,  andor_pixel_encoding_t src_enc,
+andor_convert_buffer(void* dst, andor_encoding_t dst_enc,
+                     const void* src,  andor_encoding_t src_enc,
                      long width, long height, long stride)
 {
     void (*convert)(uint8_t*, const uint8_t*, long, long, long);
