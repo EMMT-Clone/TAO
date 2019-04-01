@@ -83,7 +83,7 @@ chosen by the creator.
 
 tao_shared_object_t*
 tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
-                         size_t size, mode_t perms)
+                         size_t size, unsigned int perms)
 {
     int failures = 0;
 
