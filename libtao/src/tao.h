@@ -1405,10 +1405,12 @@ tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
  *
  * @param str    Input word to parse.
  * @param ptr    Address to write parsed value.
+ * @param base   Base to use for conversion, `0` to apply C-style conventions.
  *
- * @return `0` on success, `-1` on error.
+ * @return `0` on success, `-1` on error.  In case of error, the value stored
+ *         at `*ptr` is left unchanged.
  */
-extern int tao_parse_int(const char* str, int* ptr);
+extern int tao_parse_int(const char* str, int* ptr, int base);
 
 /**
  * Read a `long` value in a word.
@@ -1419,10 +1421,12 @@ extern int tao_parse_int(const char* str, int* ptr);
  *
  * @param str    Input word to parse.
  * @param ptr    Address to write parsed value.
+ * @param base   Base to use for conversion, `0` to apply C-style conventions.
  *
- * @return `0` on success, `-1` on error.
+ * @return `0` on success, `-1` on error.  In case of error, the value stored
+ *         at `*ptr` is left unchanged.
  */
-extern int tao_parse_long(const char* str, long* ptr);
+extern int tao_parse_long(const char* str, long* ptr, int base);
 
 /**
  * Read a `double` value in a word.
@@ -1434,7 +1438,8 @@ extern int tao_parse_long(const char* str, long* ptr);
  * @param str    Input word to parse.
  * @param ptr    Address to write parsed value.
  *
- * @return `0` on success, `-1` on error.
+ * @return `0` on success, `-1` on error.  In case of error, the value stored
+ *         at `*ptr` is left unchanged.
  */
 extern int tao_parse_double(const char* str, double* ptr);
 

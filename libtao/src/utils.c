@@ -73,6 +73,61 @@ tao_strlen(const char* str)
     return (TAO_UNLIKELY(str == NULL) ? 0 : strlen(str));
 }
 
+
+int
+tao_parse_int(const char* str, int* ptr, int base)
+{
+    long val;
+    if (ptr == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
+    if (tao_parse_long(str, &val, base) != 0) {
+        return -1;
+    }
+    if (val < INT_MIN || val > INT_MAX) {
+        errno = ERANGE;
+        return -1;
+    }
+    *ptr = (int)val;
+    return 0;
+}
+
+int
+tao_parse_long(const char* str, long* ptr, int base)
+{
+    char* end;
+    long val;
+    if (str == NULL || ptr == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
+    errno = 0; /* to detect overflows */
+    val = strtol(str, &end, base);
+    if (end == str || *end != '\0' || errno != 0) {
+        return -1;
+    }
+    *ptr = val; /* only change value in case of success */
+    return 0;
+}
+
+int
+tao_parse_double(const char* str, double* ptr)
+{
+    char* end;
+    double val;
+    if (str == NULL || ptr == NULL) {
+        errno = EFAULT;
+        return -1;
+    }
+    val = strtod(str, &end);
+    if (end == str || *end != '\0') {
+        return -1;
+    }
+    *ptr = val; /* only change value in case of success */
+    return 0;
+}
+
 /*---------------------------------------------------------------------------*/
 /* TIME */
 

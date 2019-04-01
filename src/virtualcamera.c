@@ -624,22 +624,22 @@ static int recv_callback(void* recv_data, void* call_data,
     } else if (c == 'r' && strcmp(argv[0], "roi") == 0) {
         long xoff, yoff, width, height;
         CHECK_ARGC(1, 5, 5);
-        if (tao_parse_long(argv[1], &xoff) != 0 || xoff < 0 ||
+        if (tao_parse_long(argv[1], &xoff, 10) != 0 || xoff < 0 ||
             xoff >= SENSORWIDTH) {
             XPAError(xpa, "bad value for `xoff` in set `roi ...` command");
             goto error;
         }
-        if (tao_parse_long(argv[2], &yoff) != 0 || yoff < 0 ||
+        if (tao_parse_long(argv[2], &yoff, 10) != 0 || yoff < 0 ||
             yoff >= SENSORHEIGHT) {
             XPAError(xpa, "bad value for `yoff` in set `roi ...` command");
             goto error;
         }
-        if (tao_parse_long(argv[3], &width) != 0 || width < 1 ||
+        if (tao_parse_long(argv[3], &width, 10) != 0 || width < 1 ||
             width > SENSORWIDTH) {
             XPAError(xpa, "bad value for `width` in set `roi ...` command");
             goto error;
         }
-        if (tao_parse_long(argv[4], &height) != 0 || height < 1 ||
+        if (tao_parse_long(argv[4], &height, 10) != 0 || height < 1 ||
             height > SENSORHEIGHT) {
             XPAError(xpa, "bad value for `height` in set `roi ...` command");
             goto error;
@@ -666,7 +666,7 @@ static int recv_callback(void* recv_data, void* call_data,
         int nbufs;
         CHECK_ARGC(1, 1, 2);
         if (argc == 2) {
-            if (tao_parse_int(argv[1], &nbufs) != 0 || nbufs <= 0) {
+            if (tao_parse_int(argv[1], &nbufs, 10) != 0 || nbufs <= 0) {
                 XPAError(xpa, "invalid number of buffers");
                 goto error;
             }
