@@ -102,9 +102,13 @@ tao_parse_long(const char* str, long* ptr, int base)
         errno = EFAULT;
         return -1;
     }
-    errno = 0; /* to detect overflows */
+    errno = 0; /* to detect errors, e.g. overflows */
     val = strtol(str, &end, base);
-    if (end == str || *end != '\0' || errno != 0) {
+    if (errno != 0) {
+        return -1;
+    }
+    if (end == str || *end != '\0') {
+        errno = EINVAL;
         return -1;
     }
     *ptr = val; /* only change value in case of success */
@@ -120,8 +124,13 @@ tao_parse_double(const char* str, double* ptr)
         errno = EFAULT;
         return -1;
     }
+    errno = 0; /* to detect errors */
     val = strtod(str, &end);
+    if (errno != 0) {
+        return -1;
+    }
     if (end == str || *end != '\0') {
+        errno = EINVAL;
         return -1;
     }
     *ptr = val; /* only change value in case of success */
