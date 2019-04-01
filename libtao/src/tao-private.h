@@ -77,17 +77,16 @@
  * public API to manipulate a multi-dimensional array.
  */
 struct tao_array {
-    int nrefs;                  /**< Number of references on the object */
-    int ndims;                  /**< Number of dimensions */
-    void* data;                 /**< Address of first array element */
-    long nelem;                 /**< Number of elements */
-    long dims[TAO_MAX_NDIMS];   /**< Length of each dimension (dimensions
+    int                  nrefs; /**< Number of references on the object */
+    int                  ndims; /**< Number of dimensions */
+    void*                 data; /**< Address of first array element */
+    long                 nelem; /**< Number of elements */
+    long   dims[TAO_MAX_NDIMS]; /**< Length of each dimension (dimensions
                                      beyong `ndims` are assumed to be `1`) */
-    tao_element_type_t  eltype; /**< Type of the elements of the shared
-                                     array */
-    void (*free)(void*);        /**< If non-NULL, function to call to release
+    tao_element_type_t  eltype; /**< Element type */
+    void        (*free)(void*); /**< If non-NULL, function to call to release
                                      data */
-    void* ctx;                  /**< Context used as argument to free */
+    void*                  ctx; /**< Context used as argument to free */
 };
 
 /**
@@ -98,23 +97,29 @@ struct tao_array {
  * public API to manipulate a shared array.
  */
 struct tao_shared_array {
-    tao_shared_object_t base;     /**< Shared object backing storage of the
-                                       shared array */
-    size_t offset;                /**< Offset of data part in bytes and
-                                       relative to the base address of the
-                                       object */
-    long nelem;                   /**< Number of elements */
-    int ndims;                    /**< Number of dimensions */
-    long dims[TAO_MAX_NDIMS];     /**< Length of each dimension (dimensions
-                                       beyong `ndims` are assumed to be `1`) */
-    tao_element_type_t  eltype;   /**< Type of the elements of the shared
-                                       array */
-    int32_t nwriters;             /**< Number of writers */
-    int32_t nreaders;             /**< Number of readers */
-    int64_t counter;              /**< Counter (used for acquired images) */
-    int64_t ts_sec;               /**< Time stamp (seconds part) */
-    int64_t ts_nsec;              /**< Time stamp (nanoseconds part) */
+    tao_shared_object_t  base; /**< Shared object backing storage of the
+                                    shared array */
+    size_t             offset; /**< Offset of data part in bytes and relative
+                                    to the base address of the object */
+    long                nelem; /**< Number of elements */
+    int                 ndims; /**< Number of dimensions */
+    long  dims[TAO_MAX_NDIMS]; /**< Length of each dimension (dimensions
+                                    beyong `ndims` are assumed to be `1`) */
+    tao_element_type_t eltype; /**< Type of the elements of the shared array */
+    int32_t          nwriters; /**< Number of writers */
+    int32_t          nreaders; /**< Number of readers */
+    int64_t           counter; /**< Counter (used for acquired images) */
+    int64_t            ts_sec; /**< Time stamp (seconds part) */
+    int64_t           ts_nsec; /**< Time stamp (nanoseconds part) */
 };
+
+#define TAO_GET_SHARED_ARRAY_IDENT(arr)   ((arr)->base.ident)
+#define TAO_GET_SHARED_ARRAY_ELTYPE(arr)  ((arr)->eltype)
+#define TAO_GET_SHARED_ARRAY_NDIMS(arr)   ((arr)->ndims)
+#define TAO_GET_SHARED_ARRAY_NELEM(arr)   ((arr)->nelem)
+#define TAO_GET_SHARED_ARRAY_DIM(arr, d)  ((arr)->dims[(d)-1])
+#define TAO_GET_SHARED_ARRAY_DATA(arr) \
+    (void*)(((uint8_t*)arr) + (arr)->offset)
 
 /**
  * Shared camera data.
