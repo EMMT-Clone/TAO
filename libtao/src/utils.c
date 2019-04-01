@@ -14,6 +14,7 @@
 #include "common.h"
 
 #include <math.h>
+#include <errno.h>
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -165,7 +166,8 @@ tao_add_times(struct timespec* dest,
 }
 
 struct timespec*
-tao_subtract_times(struct timespec* dest, const struct timespec* a, const struct timespec* b)
+tao_subtract_times(struct timespec* dest,
+                   const struct timespec* a, const struct timespec* b)
 {
     time_t s  = a->tv_sec  - b->tv_sec;
     time_t ns = a->tv_nsec - b->tv_nsec;
@@ -303,4 +305,23 @@ double
 tao_get_maximum_absolute_time()
 {
     return (double)TIME_T_MAX;
+}
+
+int
+tao_sleep(double secs)
+{
+    if_unlikely(isnan(secs) || secs < 0 || secs > TIME_T_MAX) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (secs > 0) {
+        struct timespec ts;
+        time_t s = (time_t)secs;
+        time_t ns = (time_t)((secs - (double)s)*1E9 + 0.5);
+        NORMALIZE_TIME(s, ns);
+        ts.tv_sec  = s;
+        ts.tv_nsec = ns;
+        return nanosleep(&ts, NULL);
+    }
+    return 0;
 }

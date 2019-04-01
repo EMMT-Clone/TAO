@@ -1465,8 +1465,7 @@ extern int tao_parse_double(const char* str, double* ptr);
  *
  * @see tao_free, tao_calloc.
  */
-extern void*
-tao_malloc(tao_error_t** errs, size_t size);
+extern void* tao_malloc(tao_error_t** errs, size_t size);
 
 /**
  * Allocate dynamic memory.
@@ -1483,8 +1482,7 @@ tao_malloc(tao_error_t** errs, size_t size);
  *
  * @see tao_free, tao_malloc.
  */
-extern void*
-tao_calloc(tao_error_t** errs, size_t nelem, size_t elsize);
+extern void* tao_calloc(tao_error_t** errs, size_t nelem, size_t elsize);
 
 /**
  * Free dynamic memory.
@@ -1495,8 +1493,7 @@ tao_calloc(tao_error_t** errs, size_t nelem, size_t elsize);
  *
  * @see tao_malloc, tao_calloc.
  */
-extern void
-tao_free(void* ptr);
+extern void tao_free(void* ptr);
 
 /** @} */
 
@@ -1560,6 +1557,24 @@ tao_free(void* ptr);
 #define TAO_YEAR (365.25*TAO_DAY)
 
 /**
+ * Sleep for a specified hight-resolution number of seconds.
+ *
+ * This function causes the calling thread to sleep either until the number of
+ * specified seconds have elapsed or until a signal arrives which is not
+ * ignored.
+ *
+ * @param secs   The amount of time to sleep in seconds.  Must be nonnegative
+ *               and less than the maximum value of a `time_t` integer which is
+ *               is fairly large (at least about 68 years).  Can have a high
+ *               resolution, at least one microsecond but, depepending on the
+ *               operationg system, it may be as good as one nanosecond.
+ *
+ * @return `0` on success, `-1` on error or in case of interrupt (check the
+ *         value of `errno` to figure out the reason of the failure).
+ */
+extern int tao_sleep(double secs);
+
+/**
  * Get monotonic time.
  *
  * This function yields a monotonic time since some unspecified starting point
@@ -1594,12 +1609,13 @@ extern int tao_get_monotonic_time(tao_error_t** errs, struct timespec* dest);
 extern int tao_get_current_time(tao_error_t** errs, struct timespec* dest);
 
 /**
- * Normalize time-stamp.
+ * Normalize time.
  *
- * This function normalizes a given time-stamp so that the number of
- * nanoseconds is nonnegative and strictly less than 1,000,000,000.
+ * This function adjusts the members of a `timespec` structure so that the time
+ * stored in the structure is correct.  More specifically it ensures that the
+ * number of nanoseconds is in the range 0 to 999,999,999.
  *
- * @param ts     Address of time-stamp to normalize.
+ * @param ts   Address of a `timespec` structure to adjust.
  *
  * @return The address @a ts.
  */
@@ -2735,6 +2751,21 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms);
  */
 extern int
 tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam);
+
+/**
+ * Get the shared data of a camera structure for a frame grabber server.
+ *
+ * This function yields the shared camera which is associated with a master
+ * camera.
+ *
+ * @param cam    Pointer to a master camera (must not be `NULL`).
+ *
+ * @return The address of the shared camera, `NULL` on error.
+ *
+ * @see tao_attach_shared_camera.
+ */
+extern tao_shared_camera_t*
+tao_get_shared_camera(tao_camera_t* cam);
 
 /**
  * Get shared array to store next camera image.
