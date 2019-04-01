@@ -58,7 +58,7 @@ phx_status_description(phx_status_t status)\n\
             }                                                           \
         }                                                               \
         fprintf(output, "    case %s: return \"%s\";\n", #id, str);     \
-    } while (0)
+    } while (false)
 
     /* Standard errors. */
     fputs("    case PHX_OK: return \"No errors\";\n", output);
