@@ -21,20 +21,20 @@
 /*---------------------------------------------------------------------------*/
 
 size_t
-tao_get_element_size(int eltype)
+tao_get_element_size(tao_eltype_t eltype)
 {
     switch (eltype) {
-    case TAO_INT8:    return sizeof(int8_t);
-    case TAO_UINT8:   return sizeof(uint8_t);
-    case TAO_INT16:   return sizeof(int16_t);
-    case TAO_UINT16:  return sizeof(uint16_t);
-    case TAO_INT32:   return sizeof(int32_t);
-    case TAO_UINT32:  return sizeof(uint32_t);
-    case TAO_INT64:   return sizeof(int64_t);
-    case TAO_UINT64:  return sizeof(uint64_t);
-    case TAO_FLOAT32: return sizeof(float);
-    case TAO_FLOAT64: return sizeof(double);
-    default:          return 0;
+    case TAO_INT8:   return sizeof(int8_t);
+    case TAO_UINT8:  return sizeof(uint8_t);
+    case TAO_INT16:  return sizeof(int16_t);
+    case TAO_UINT16: return sizeof(uint16_t);
+    case TAO_INT32:  return sizeof(int32_t);
+    case TAO_UINT32: return sizeof(uint32_t);
+    case TAO_INT64:  return sizeof(int64_t);
+    case TAO_UINT64: return sizeof(uint64_t);
+    case TAO_FLOAT:  return sizeof(float);
+    case TAO_DOUBLE: return sizeof(double);
+    default:         return 0;
     }
 }
 
@@ -69,7 +69,7 @@ tao_count_elements(tao_error_t** errs, int ndims, const long dims[])
 }
 
 tao_array_t*
-tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_create_array(tao_error_t** errs, tao_eltype_t eltype,
                  int ndims, const long dims[])
 {
     long nelem = tao_count_elements(errs, ndims, dims);
@@ -104,7 +104,7 @@ tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_array_t*
-tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_wrap_array(tao_error_t** errs, tao_eltype_t eltype,
                int ndims, const long dims[], void* data,
                void (*free)(void*), void* ctx)
 {
@@ -139,7 +139,7 @@ tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_array_t*
-tao_create_1d_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_create_1d_array(tao_error_t** errs, tao_eltype_t eltype,
                     long dim1)
 {
     long dims[1];
@@ -148,7 +148,7 @@ tao_create_1d_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_array_t*
-tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_create_2d_array(tao_error_t** errs, tao_eltype_t eltype,
                     long dim1, long dim2)
 {
     long dims[2];
@@ -158,7 +158,7 @@ tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_array_t*
-tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_create_3d_array(tao_error_t** errs, tao_eltype_t eltype,
                     long dim1, long dim2, long dim3)
 {
     long dims[3];
@@ -169,7 +169,7 @@ tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_array_t*
-tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_wrap_1d_array(tao_error_t** errs, tao_eltype_t eltype,
                   long dim1, void* data, void (*free)(void*), void* ctx)
 {
     long dims[1];
@@ -178,7 +178,7 @@ tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_array_t*
-tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_wrap_2d_array(tao_error_t** errs, tao_eltype_t eltype,
                   long dim1, long dim2, void* data,
                   void (*free)(void*), void* ctx)
 {
@@ -189,7 +189,7 @@ tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_array_t*
-tao_wrap_3d_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_wrap_3d_array(tao_error_t** errs, tao_eltype_t eltype,
                   long dim1, long dim2, long dim3, void* data,
                   void (*free)(void*), void* ctx)
 {
@@ -224,7 +224,7 @@ tao_unreference_array(tao_array_t* arr)
     }
 }
 
-tao_element_type_t
+tao_eltype_t
 tao_get_array_eltype(const tao_array_t* arr)
 {
     return (TAO_LIKELY(arr != NULL) ? arr->eltype : -1);

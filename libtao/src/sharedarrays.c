@@ -21,7 +21,7 @@ tao_get_shared_array_ident(const tao_shared_array_t* arr)
     return (TAO_LIKELY(arr != NULL) ? arr->base.ident : -1);
 }
 
-tao_element_type_t
+tao_eltype_t
 tao_get_shared_array_eltype(const tao_shared_array_t* arr)
 {
     return (TAO_LIKELY(arr != NULL) ? arr->eltype : -1);
@@ -117,7 +117,7 @@ tao_set_shared_array_timestamp(tao_shared_array_t* arr,
 }
 
 tao_shared_array_t*
-tao_create_1d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_create_1d_shared_array(tao_error_t** errs, tao_eltype_t eltype,
                            long dim1, unsigned int perms)
 {
     long dims[1];
@@ -126,7 +126,7 @@ tao_create_1d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_shared_array_t*
-tao_create_2d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_create_2d_shared_array(tao_error_t** errs, tao_eltype_t eltype,
                            long dim1, long dim2, unsigned int perms)
 {
     long dims[2];
@@ -136,7 +136,7 @@ tao_create_2d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_shared_array_t*
-tao_create_3d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_create_3d_shared_array(tao_error_t** errs, tao_eltype_t eltype,
                            long dim1, long dim2, long dim3,
                            unsigned int perms)
 {
@@ -148,7 +148,7 @@ tao_create_3d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
 }
 
 tao_shared_array_t*
-tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
+tao_create_shared_array(tao_error_t** errs, tao_eltype_t eltype,
                         int ndims, const long dims[], unsigned int perms)
 {
     size_t elsize = tao_get_element_size(eltype);

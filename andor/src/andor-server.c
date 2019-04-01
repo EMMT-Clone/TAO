@@ -246,10 +246,10 @@ static void process_frame(void* unused, struct timespec* ts,
     case TAO_UINT32:
         arrenc = ANDOR_ENCODING_MONO32;
         break;
-    case TAO_FLOAT32:
+    case TAO_FLOAT:
         arrenc = ANDOR_ENCODING_FLOAT;
         break;
-    case TAO_FLOAT64:
+    case TAO_DOUBLE:
         arrenc = ANDOR_ENCODING_DOUBLE;
         break;
     default:

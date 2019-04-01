@@ -121,7 +121,7 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms)
     shared->lastframe.ident = -1;
     shared->lastframe.counter = -1;
     shared->state = 0;
-    shared->pixeltype = TAO_FLOAT32;
+    shared->pixeltype = TAO_FLOAT;
     shared->depth = 8;
     shared->sensorwidth = 384;
     shared->sensorheight = 288;

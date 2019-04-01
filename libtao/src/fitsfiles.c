@@ -9,7 +9,7 @@
  * This file if part of the TAO software (https://github.com/emmt/TAO) licensed
  * under the MIT license.
  *
- * Copyright (C) 2018, Éric Thiébaut.
+ * Copyright (C) 2018-2019, Éric Thiébaut.
  */
 
 #include "common.h"
@@ -66,13 +66,9 @@ push_fits_error(tao_error_t** errs, const char* func, int status)
  * instance LONG_IMG means 32-bit signed integers, not necessarily C long
  * integer type).
  */
-static tao_element_type_t
+static tao_eltype_t
 bitpix_to_element_type(int bitpix)
 {
-
-#define FLOAT(n) ((n) == 4 ? TAO_FLOAT32 :              \
-                  ((n) == 8 ? TAO_FLOAT64 : -1))
-
     switch (bitpix) {
     case SBYTE_IMG:    return TAO_INT8;
     case BYTE_IMG:     return TAO_UINT8;
@@ -81,48 +77,38 @@ bitpix_to_element_type(int bitpix)
     case LONG_IMG:     return TAO_INT32;
     case ULONG_IMG:    return TAO_UINT32;
     case LONGLONG_IMG: return TAO_INT64;
-    case FLOAT_IMG:    return FLOAT(sizeof(float));
-    case DOUBLE_IMG:   return FLOAT(sizeof(double));
+    case FLOAT_IMG:    return TAO_FLOAT;
+    case DOUBLE_IMG:   return TAO_DOUBLE;
     default:           return -1;
     }
-
-#undef FLOAT
-
 }
 #endif /* HAVE_FITSIO */
 
 #if HAVE_FITSIO
 /* Yields FITSIO bitpix given TAO element type, -1 in case of error. */
 static int
-element_type_to_bitpix(tao_element_type_t eltype)
+element_type_to_bitpix(tao_eltype_t eltype)
 {
-
-#define FLOAT(n) ((n) == sizeof(float) ? FLOAT_IMG :            \
-                  ((n) == sizeof(double) ? DOUBLE_IMG : -1))
-
     switch (eltype) {
-    case TAO_INT8:    return SBYTE_IMG;
-    case TAO_UINT8:   return BYTE_IMG;
-    case TAO_INT16:   return SHORT_IMG;
-    case TAO_UINT16:  return USHORT_IMG;
-    case TAO_INT32:   return LONG_IMG;
-    case TAO_UINT32:  return ULONG_IMG;
-    case TAO_INT64:   return LONGLONG_IMG;
-    case TAO_UINT64:  return LONGLONG_IMG; /* hope for the best! */
-    case TAO_FLOAT32: return FLOAT(4);
-    case TAO_FLOAT64: return FLOAT(8);
-    default:          return -1;
+    case TAO_INT8:   return SBYTE_IMG;
+    case TAO_UINT8:  return BYTE_IMG;
+    case TAO_INT16:  return SHORT_IMG;
+    case TAO_UINT16: return USHORT_IMG;
+    case TAO_INT32:  return LONG_IMG;
+    case TAO_UINT32: return ULONG_IMG;
+    case TAO_INT64:  return LONGLONG_IMG;
+    case TAO_UINT64: return LONGLONG_IMG; /* hope for the best! */
+    case TAO_FLOAT:  return FLOAT_IMG;
+    case TAO_DOUBLE: return DOUBLE_IMG;
+    default:         return -1;
     }
-
-#undef FLOAT
-
 }
 #endif /* HAVE_FITSIO */
 
 #if HAVE_FITSIO
 /* Yields FITSIO datatype given TAO element type, -1 in case of error. */
 static int
-element_type_to_datatype(tao_element_type_t eltype)
+element_type_to_datatype(tao_eltype_t eltype)
 {
 
 #define SIGNED(n)                                       \
@@ -138,25 +124,20 @@ element_type_to_datatype(tao_element_type_t eltype)
       ((n) == sizeof(int) ? TUINT :             \
        ((n) == sizeof(long) ? TULONG : -1))))
 
-#define FLOAT(n)                                \
-    ((n) == sizeof(float) ? TFLOAT :            \
-     ((n) == sizeof(double) ? TDOUBLE : -1))
-
     switch (eltype) {
-    case TAO_INT8:    return   SIGNED(1);
-    case TAO_UINT8:   return UNSIGNED(1);
-    case TAO_INT16:   return   SIGNED(2);
-    case TAO_UINT16:  return UNSIGNED(2);
-    case TAO_INT32:   return   SIGNED(4);
-    case TAO_UINT32:  return UNSIGNED(4);
-    case TAO_INT64:   return   SIGNED(8);
-    case TAO_UINT64:  return UNSIGNED(8);
-    case TAO_FLOAT32: return    FLOAT(4);
-    case TAO_FLOAT64: return    FLOAT(8);
-    default:          return -1;
+    case TAO_INT8:   return   SIGNED(1);
+    case TAO_UINT8:  return UNSIGNED(1);
+    case TAO_INT16:  return   SIGNED(2);
+    case TAO_UINT16: return UNSIGNED(2);
+    case TAO_INT32:  return   SIGNED(4);
+    case TAO_UINT32: return UNSIGNED(4);
+    case TAO_INT64:  return   SIGNED(8);
+    case TAO_UINT64: return UNSIGNED(8);
+    case TAO_FLOAT:  return TFLOAT;
+    case TAO_DOUBLE: return TDOUBLE;
+    default:         return -1;
     }
 
-#undef FLOAT
 #undef UNSIGNED
 #undef SIGNED
 
@@ -213,7 +194,7 @@ tao_load_array_from_fits_handle(tao_error_t** errs, fitsfile* fptr)
         push_fits_error(errs, "fits_get_img_equivtype", status);
         return NULL;
     }
-    tao_element_type_t eltype = bitpix_to_element_type(bitpix);
+    tao_eltype_t eltype = bitpix_to_element_type(bitpix);
     int datatype = element_type_to_datatype(eltype);
     if (eltype == -1 || datatype == -1) {
         tao_push_error(errs, __func__, TAO_BAD_TYPE);
@@ -304,7 +285,7 @@ tao_save_array_to_fits_handle(tao_error_t** errs, const tao_array_t* arr,
         tao_push_error(errs, __func__, TAO_BAD_ADDRESS);
         return -1;
     }
-    tao_element_type_t eltype = tao_get_array_eltype(arr);
+    tao_eltype_t eltype = tao_get_array_eltype(arr);
     int bitpix = element_type_to_bitpix(eltype);
     int datatype = element_type_to_datatype(tao_get_array_eltype(arr));
     if (bitpix == -1 || datatype == -1) {

@@ -73,7 +73,7 @@ main(int argc, char* argv[])
                 printf("%d: srcoff=%ld srcdim=%ld dstoff=%ld dstdim=%ld len=%ld\n", d, srcoffs[d], srcdims[d], dstoffs[d], dstdims[d], lens[d]);
             }
         }
-        tao_element_type_t eltype = tao_get_array_eltype(arr);
+        tao_eltype_t eltype = tao_get_array_eltype(arr);
         if (convert) {
             if (eltype == TAO_FLOAT32) {
                 eltype = TAO_FLOAT64;

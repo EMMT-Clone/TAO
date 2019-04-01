@@ -35,7 +35,7 @@
 /* See https://stackoverflow.com/questions/20325146 for configuring mutexes
    and condition variables shared between processes. */
 int
-tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, int shared)
+tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, bool shared)
 {
     pthread_mutexattr_t attr;
     int code;

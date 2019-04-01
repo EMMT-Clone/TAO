@@ -285,9 +285,8 @@ typedef void tao_error_getter_t(int code, const char** reason,
  * @param code   Error identifier.
  * @param proc   Callback to retrieve information (can be `NULL`).
  */
-extern void
-tao_push_other_error(tao_error_t** errs, const char* func, int code,
-                     tao_error_getter_t* proc);
+extern void tao_push_other_error(tao_error_t** errs, const char* func,
+                                 int code, tao_error_getter_t* proc);
 
 /**
  * Register an error due to a function call.
@@ -304,8 +303,7 @@ tao_push_other_error(tao_error_t** errs, const char* func, int code,
  * @param func   Name of the function where the error occured.
  * @param code   Error identifier.
  */
-extern void
-tao_push_error(tao_error_t** errs, const char* func, int code);
+extern void tao_push_error(tao_error_t** errs, const char* func, int code);
 
 /**
  * Register an error due to a system function call.
@@ -322,8 +320,7 @@ tao_push_error(tao_error_t** errs, const char* func, int code);
  *
  * @see tao_push_error.
  */
-extern void
-tao_push_system_error(tao_error_t** errs, const char* func);
+extern void tao_push_system_error(tao_error_t** errs, const char* func);
 
 /**
  * Pop last tracked error.
@@ -364,9 +361,8 @@ tao_push_system_error(tao_error_t** errs, const char* func);
  * to `NULL` (respectively providing that @b codeptr, @b funcptr and @b procptr
  * are not `NULL`).
  */
-extern int
-tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,
-              tao_error_getter_t** procptr);
+extern int tao_pop_error(tao_error_t** errs, const char** funcptr,
+                         int* codeptr, tao_error_getter_t** procptr);
 
 /**
  * Transfer errors between two error stacks.
@@ -380,8 +376,7 @@ tao_pop_error(tao_error_t** errs, const char** funcptr, int* codeptr,
  * @param src       Address of another variable tracking errors (can be
  *                  `NULL`).
  */
-extern void
-tao_transfer_errors(tao_error_t** dest, tao_error_t** src);
+extern void tao_transfer_errors(tao_error_t** dest, tao_error_t** src);
 
 /**
  * Retrieve details about a given error code.
@@ -405,9 +400,9 @@ tao_transfer_errors(tao_error_t** dest, tao_error_t** src);
  *
  * @see tao_error_getter_t.
  */
-extern void
-tao_retrieve_error_details(int code, const char** reason, const char** info,
-                           tao_error_getter_t* proc, char* buffer);
+extern void tao_retrieve_error_details(int code, const char** reason,
+                                       const char** info,
+                                       tao_error_getter_t* proc, char* buffer);
 
 /**
  * Report all tracked errors.
@@ -418,8 +413,7 @@ tao_retrieve_error_details(int code, const char** reason, const char** info,
  *
  * @param errs   Address of a variable to track errors.
  */
-extern void
-tao_report_errors(tao_error_t** errs);
+extern void tao_report_errors(tao_error_t** errs);
 
 /**
  * Clear all tracked errors.
@@ -428,8 +422,7 @@ tao_report_errors(tao_error_t** errs);
  *
  * @param errs   Address of a variable to track errors.
  */
-extern void
-tao_discard_errors(tao_error_t** errs);
+extern void tao_discard_errors(tao_error_t** errs);
 
 /**
  * Get error message.
@@ -443,8 +436,7 @@ tao_discard_errors(tao_error_t** errs);
  * @history This function is based on `Tcl_ErrnoMsg` in the
  * [Tcl/Tk](http://www.tcl.tk) library.
  */
-extern const char*
-tao_get_error_reason(int code);
+extern const char* tao_get_error_reason(int code);
 
 /**
  * Get human readable error identifier.
@@ -462,8 +454,7 @@ tao_get_error_reason(int code);
  *
  * @see tao_get_error_reason.
  */
-extern const char*
-tao_get_error_name(int code);
+extern const char* tao_get_error_name(int code);
 
 /** @} */
 
@@ -893,9 +884,9 @@ typedef enum tao_element_type {
     TAO_UINT32  =   6, /**< Unsigned 32-bit integer */
     TAO_INT64   =   7, /**< Signed 64-bit integer */
     TAO_UINT64  =   8, /**< Unsigned 64-bit integer */
-    TAO_FLOAT32 =   9, /**< 32-bit floating-point */
-    TAO_FLOAT64 =  10  /**< 64-bit floating-point */
-} tao_element_type_t;
+    TAO_FLOAT   =   9, /**< Single precision floating-point */
+    TAO_DOUBLE  =  10  /**< Double precision floating-point */
+} tao_eltype_t;
 
 /**
  * Get the size of an array element given its type.
@@ -905,10 +896,9 @@ typedef enum tao_element_type {
  * @return A strictly positive number of bytes if @b eltype is valid;
  * `0` is @b eltype is not valid.
  *
- * @see tao_element_type_t.
+ * @see tao_eltype_t.
  */
-extern size_t
-tao_get_element_size(int eltype);
+extern size_t tao_get_element_size(tao_eltype_t eltype);
 
 /**
  * Count the number of elements of a multi-dimensional array.
@@ -929,8 +919,8 @@ tao_get_element_size(int eltype);
  *      tao_get_array_length(), tao_get_array_ndims(), tao_get_array_size(),
  *      tao_get_array_data().
  */
-extern long
-tao_count_elements(tao_error_t** errs, int ndims, const long dims[]);
+extern long tao_count_elements(tao_error_t** errs, int ndims,
+                               const long dims[]);
 
 /**
  * Maximun number of dimensions of (shared) arrays.
@@ -964,9 +954,8 @@ typedef struct tao_array tao_array_t;
  *      tao_get_array_length(), tao_get_array_ndims(), tao_get_array_size(),
  *      tao_get_array_data().
  */
-extern tao_array_t*
-tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
-                 int ndims, const long dims[]);
+extern tao_array_t* tao_create_array(tao_error_t** errs, tao_eltype_t eltype,
+                                     int ndims, const long dims[]);
 
 /**
  * Create a new mono-dimensional shared array.
@@ -983,9 +972,8 @@ tao_create_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_create_array(), tao_unreference_array().
  */
-extern tao_array_t*
-tao_create_1d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    long dim);
+extern tao_array_t* tao_create_1d_array(tao_error_t** errs, tao_eltype_t eltype,
+                                        long dim);
 
 /**
  * Create a new two-dimensional array.
@@ -1003,9 +991,8 @@ tao_create_1d_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_create_array(), tao_unreference_array().
  */
-extern tao_array_t*
-tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    long dim1, long dim2);
+extern tao_array_t* tao_create_2d_array(tao_error_t** errs, tao_eltype_t eltype,
+                                        long dim1, long dim2);
 
 /**
  * Create a new three-dimensional array.
@@ -1024,9 +1011,8 @@ tao_create_2d_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_create_array(), tao_unreference_array().
  */
-extern tao_array_t*
-tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
-                    long dim1, long dim2, long dim3);
+extern tao_array_t* tao_create_3d_array(tao_error_t** errs, tao_eltype_t eltype,
+                                        long dim1, long dim2, long dim3);
 
 /**
  * Wrap existing data into a multi-dimensional array.
@@ -1051,10 +1037,9 @@ tao_create_3d_array(tao_error_t** errs, tao_element_type_t eltype,
  *      tao_get_array_length(), tao_get_array_ndims(), tao_get_array_size(),
  *      tao_get_array_data().
  */
-extern tao_array_t*
-tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
-               int ndims, const long dims[], void* data,
-               void (*free)(void*), void* ctx);
+extern tao_array_t* tao_wrap_array(tao_error_t** errs, tao_eltype_t eltype,
+                                   int ndims, const long dims[], void* data,
+                                   void (*free)(void*), void* ctx);
 
 /**
  * Wrap existing data into a mono-dimensional array.
@@ -1076,9 +1061,9 @@ tao_wrap_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_wrap_array(), tao_unreference_array().
  */
-extern tao_array_t*
-tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  long dim, void* data, void (*free)(void*), void* ctx);
+extern tao_array_t* tao_wrap_1d_array(tao_error_t** errs, tao_eltype_t eltype,
+                                      long dim, void* data,
+                                      void (*free)(void*), void* ctx);
 
 /**
  * Wrap existing data into a two-dimensional array.
@@ -1101,10 +1086,9 @@ tao_wrap_1d_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_wrap_array(), tao_unreference_array().
  */
-extern tao_array_t*
-tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  long dim1, long dim2, void* data,
-                  void (*free)(void*), void* ctx);
+extern tao_array_t* tao_wrap_2d_array(tao_error_t** errs, tao_eltype_t eltype,
+                                      long dim1, long dim2, void* data,
+                                      void (*free)(void*), void* ctx);
 
 /**
  * Wrap existing data into a three-dimensional array.
@@ -1128,10 +1112,10 @@ tao_wrap_2d_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_wrap_array(), tao_unreference_array().
  */
-extern tao_array_t*
-tao_wrap_3d_array(tao_error_t** errs, tao_element_type_t eltype,
-                  long dim1, long dim2, long dim3, void* data,
-                  void (*free)(void*), void* ctx);
+extern tao_array_t* tao_wrap_3d_array(tao_error_t** errs, tao_eltype_t eltype,
+                                      long dim1, long dim2, long dim3,
+                                      void* data, void (*free)(void*),
+                                      void* ctx);
 
 /**
  * Add a reference to an existing multi-dimensional array.
@@ -1146,8 +1130,7 @@ tao_wrap_3d_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_create_array(), tao_wrap_array(), tao_unreference_array().
  */
-extern tao_array_t*
-tao_reference_array(tao_array_t* arr);
+extern tao_array_t* tao_reference_array(tao_array_t* arr);
 
 /**
  * Drop a reference from a multi-dimensional array.
@@ -1160,18 +1143,16 @@ tao_reference_array(tao_array_t* arr);
  *
  * @see tao_create_array(), tao_wrap_array(), tao_reference_array().
  */
-extern void
-tao_unreference_array(tao_array_t* arr);
+extern void tao_unreference_array(tao_array_t* arr);
 
 /**
  * Get the type of elements of an array.
  *
  * @param arr    Pointer to an array referenced by the caller.
  *
- * @return One of the `tao_element_type_t` values.
+ * @return One of the `tao_eltype_t` values.
  */
-extern tao_element_type_t
-tao_get_array_eltype(const tao_array_t* arr);
+extern tao_eltype_t tao_get_array_eltype(const tao_array_t* arr);
 
 /**
  * Get the number of elements of an array.
@@ -1180,8 +1161,7 @@ tao_get_array_eltype(const tao_array_t* arr);
  *
  * @return The number of elements in the array.
  */
-extern long
-tao_get_array_length(const tao_array_t* arr);
+extern long tao_get_array_length(const tao_array_t* arr);
 
 /**
  * Get the number of dimensions of an array.
@@ -1190,8 +1170,7 @@ tao_get_array_length(const tao_array_t* arr);
  *
  * @return The number of dimensions of the array.
  */
-extern int
-tao_get_array_ndims(const tao_array_t* arr);
+extern int tao_get_array_ndims(const tao_array_t* arr);
 
 /**
  * Get the length of a dimension of an array.
@@ -1207,8 +1186,7 @@ tao_get_array_ndims(const tao_array_t* arr);
  *         `0` if @b d is less than `1` and `1` if @b d is greater than the
  *         number of dimensions of @b arr.
  */
-extern long
-tao_get_array_size(const tao_array_t* arr, int d);
+extern long tao_get_array_size(const tao_array_t* arr, int d);
 
 /**
  * Get the address of the first element of an array.
@@ -1222,8 +1200,7 @@ tao_get_array_size(const tao_array_t* arr, int d);
  *
  * @return The address of the first element of the array.
  */
-extern void*
-tao_get_array_data(const tao_array_t* arr);
+extern void* tao_get_array_data(const tao_array_t* arr);
 
 /** @} */
 
@@ -1248,8 +1225,7 @@ tao_get_array_data(const tao_array_t* arr);
  *
  * @see strlen.
  */
-extern size_t
-tao_strlen(const char* str);
+extern size_t tao_strlen(const char* str);
 
 /**
  * @addtogroup Commands
@@ -1362,9 +1338,8 @@ tao_strlen(const char* str);
  *
  * @return The number of words in the list; `-1` in case of errors.
  */
-extern int
-tao_split_command(tao_error_t** errs, const char*** list,
-                  const char* cmd, long len);
+extern int tao_split_command(tao_error_t** errs, const char*** list,
+                             const char* cmd, long len);
 
 /**
  * Pack words into a command-line.
@@ -1393,9 +1368,8 @@ tao_split_command(tao_error_t** errs, const char*** list,
  *
  * @see tao_unpack_words.
  */
-extern int
-tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
-               const char* argv[], int argc);
+extern int tao_pack_words(tao_error_t** errs, tao_buffer_t* dest,
+                          const char* argv[], int argc);
 
 /**
  * Read an `int` value in a word.
@@ -1804,8 +1778,8 @@ extern double tao_get_maximum_absolute_time();
  *
  * @return `0` if successful; `-1` in case of error.
  */
-extern int
-tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, int shared);
+extern int tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex,
+                                bool shared);
 
 /**
  * Lock a mutex.
@@ -1815,8 +1789,7 @@ tao_initialize_mutex(tao_error_t** errs, pthread_mutex_t* mutex, int shared);
  *
  * @return `0` if successful; `-1` in case of error.
  */
-extern int
-tao_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
+extern int tao_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
 
 /**
  * Try to lock a mutex.
@@ -1827,8 +1800,7 @@ tao_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
  * @return `1` if mutex has been locked by the caller; `0` if the mutex is
  * already locked by some other thread/process; `-1` in case of error.
  */
-extern int
-tao_try_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
+extern int tao_try_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
 
 /**
  * Unlock a mutex.
@@ -1838,8 +1810,7 @@ tao_try_lock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
  *
  * @return `0` if successful; `-1` in case of error.
  */
-extern int
-tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
+extern int tao_unlock_mutex(tao_error_t** errs, pthread_mutex_t* mutex);
 
 /**
  * Destroy a mutex.
@@ -2128,9 +2099,10 @@ typedef struct tao_shared_object {
  * @return The address of the new object in the address space of the caller;
  * `NULL` on failure.
  */
-extern tao_shared_object_t*
-tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
-                         size_t size, unsigned int perms);
+extern tao_shared_object_t* tao_create_shared_object(tao_error_t** errs,
+                                                     tao_object_type_t type,
+                                                     size_t size,
+                                                     unsigned int perms);
 
 /**
  * Attach an existing shared object to the address space of the caller.
@@ -2158,8 +2130,8 @@ tao_create_shared_object(tao_error_t** errs, tao_object_type_t type,
  * `NULL` on failure.  Even tough the arguments are correct, an error may arise
  * if the object has been destroyed before attachment completes.
  */
-extern tao_shared_object_t*
-tao_attach_shared_object(tao_error_t** errs, int ident, int type);
+extern tao_shared_object_t* tao_attach_shared_object(tao_error_t** errs,
+                                                     int ident, int type);
 
 /**
  * Detach a shared object.
@@ -2173,8 +2145,8 @@ tao_attach_shared_object(tao_error_t** errs, int ident, int type);
  *
  * @return `0` on success; `-1` on error.
  */
-extern int
-tao_detach_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
+extern int tao_detach_shared_object(tao_error_t** errs,
+                                    tao_shared_object_t* obj);
 
 /**
  * Get the size of a shared object.
@@ -2185,8 +2157,7 @@ tao_detach_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
  * @return The number of bytes of the shared memory segment backing the storage
  * of the shared object.
  */
-extern size_t
-tao_get_shared_object_size(const tao_shared_object_t* obj);
+extern size_t tao_get_shared_object_size(const tao_shared_object_t* obj);
 
 /**
  * Get the type identifier of a shared object.
@@ -2196,8 +2167,7 @@ tao_get_shared_object_size(const tao_shared_object_t* obj);
  *
  * @return The type identifier of the shared object.
  */
-extern int
-tao_get_shared_object_type(const tao_shared_object_t* obj);
+extern int tao_get_shared_object_type(const tao_shared_object_t* obj);
 
 /**
  * Get the unique identifier of a shared object.
@@ -2207,8 +2177,7 @@ tao_get_shared_object_type(const tao_shared_object_t* obj);
  *
  * @return The unique identifier of the shared object.
  */
-extern int
-tao_get_shared_object_ident(const tao_shared_object_t* obj);
+extern int tao_get_shared_object_ident(const tao_shared_object_t* obj);
 
 /**
  * Lock a shared object.
@@ -2226,8 +2195,7 @@ tao_get_shared_object_ident(const tao_shared_object_t* obj);
  *
  * @return `0` on success; `-1` on error.
  */
-extern int
-tao_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
+extern int tao_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
 
 /**
  * Attempt to lock a shared object.
@@ -2249,8 +2217,8 @@ tao_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
  * @return `1` if the object has been locked by the caller; `0` if the object is
  * already locked; `-1` on error.
  */
-extern int
-tao_try_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
+extern int tao_try_lock_shared_object(tao_error_t** errs,
+                                      tao_shared_object_t* obj);
 
 /**
  * Unlock a shared object.
@@ -2263,8 +2231,8 @@ tao_try_lock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
  *
  * @return `0` on success; `-1` on error.
  */
-extern int
-tao_unlock_shared_object(tao_error_t** errs, tao_shared_object_t* obj);
+extern int tao_unlock_shared_object(tao_error_t** errs,
+                                    tao_shared_object_t* obj);
 
 /** @} */
 
@@ -2313,9 +2281,10 @@ typedef struct tao_shared_array tao_shared_array_t;
  *
  * @see tao_create_shared_object.
  */
-extern tao_shared_array_t*
-tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
-                        int ndims, const long dims[], unsigned int perms);
+extern tao_shared_array_t* tao_create_shared_array(tao_error_t** errs,
+                                                   tao_eltype_t eltype,
+                                                   int ndims, const long dims[],
+                                                   unsigned int perms);
 
 /**
  * Create a new mono-dimensional shared array.
@@ -2334,9 +2303,10 @@ tao_create_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_create_shared_object, tao_create_shared_array.
  */
-extern tao_shared_array_t*
-tao_create_1d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
-                           long dim, unsigned int perms);
+extern tao_shared_array_t* tao_create_1d_shared_array(tao_error_t** errs,
+                                                      tao_eltype_t eltype,
+                                                      long dim,
+                                                      unsigned int perms);
 
 /**
  * Create a new two-dimensional shared array.
@@ -2356,9 +2326,10 @@ tao_create_1d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_create_shared_object, tao_create_shared_array.
  */
-extern tao_shared_array_t*
-tao_create_2d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
-                           long dim1, long dim2, unsigned int perms);
+extern tao_shared_array_t* tao_create_2d_shared_array(tao_error_t** errs,
+                                                      tao_eltype_t eltype,
+                                                      long dim1, long dim2,
+                                                      unsigned int perms);
 
 /**
  * Create a new three-dimensional shared array.
@@ -2379,10 +2350,11 @@ tao_create_2d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  *
  * @see tao_create_shared_object, tao_create_shared_array.
  */
-extern tao_shared_array_t*
-tao_create_3d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
-                           long dim1, long dim2, long dim3,
-                           unsigned int perms);
+extern tao_shared_array_t* tao_create_3d_shared_array(tao_error_t** errs,
+                                                      tao_eltype_t eltype,
+                                                      long dim1, long dim2,
+                                                      long dim3,
+                                                      unsigned int perms);
 
 /**
  * Attach an existing shared array to the address space of the caller.
@@ -2400,8 +2372,8 @@ tao_create_3d_shared_array(tao_error_t** errs, tao_element_type_t eltype,
  * @return The address of the shared array in the address space of the caller;
  * `NULL` on failure.
  */
-extern tao_shared_array_t*
-tao_attach_shared_array(tao_error_t** errs, int ident);
+extern tao_shared_array_t* tao_attach_shared_array(tao_error_t** errs,
+                                                   int ident);
 
 /**
  * Detach a shared array.
@@ -2415,8 +2387,8 @@ tao_attach_shared_array(tao_error_t** errs, int ident);
  *
  * @return `0` on success; `-1` on error.
  */
-extern int
-tao_detach_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
+extern int tao_detach_shared_array(tao_error_t** errs,
+                                   tao_shared_array_t* arr);
 
 /**
  * Get the unique identifier of a shared array.
@@ -2428,8 +2400,7 @@ tao_detach_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
  *
  * @see tao_get_shared_object_ident.
  */
-extern int
-tao_get_shared_array_ident(const tao_shared_array_t* arr);
+extern int tao_get_shared_array_ident(const tao_shared_array_t* arr);
 
 /**
  * Get the type of elements of a shared array.
@@ -2437,10 +2408,9 @@ tao_get_shared_array_ident(const tao_shared_array_t* arr);
  * @param arr    Pointer to a shared array attached to the address space of
  *               the caller.
  *
- * @return One of the `tao_element_type_t` values.
+ * @return One of the `tao_eltype_t` values.
  */
-extern tao_element_type_t
-tao_get_shared_array_eltype(const tao_shared_array_t* arr);
+extern tao_eltype_t tao_get_shared_array_eltype(const tao_shared_array_t* arr);
 
 /**
  * Get the number of elements of a shared array.
@@ -2450,8 +2420,7 @@ tao_get_shared_array_eltype(const tao_shared_array_t* arr);
  *
  * @return The number of elements in the array.
  */
-extern long
-tao_get_shared_array_length(const tao_shared_array_t* arr);
+extern long tao_get_shared_array_length(const tao_shared_array_t* arr);
 
 /**
  * Get the number of dimensions of a shared array.
@@ -2461,8 +2430,7 @@ tao_get_shared_array_length(const tao_shared_array_t* arr);
  *
  * @return The number of dimensions of the array.
  */
-extern int
-tao_get_shared_array_ndims(const tao_shared_array_t* arr);
+extern int tao_get_shared_array_ndims(const tao_shared_array_t* arr);
 
 /**
  * Get the length of a dimension of a shared array.
@@ -2473,8 +2441,7 @@ tao_get_shared_array_ndims(const tao_shared_array_t* arr);
  *
  * @return The number of elements along the given dimension.
  */
-extern long
-tao_get_shared_array_size(const tao_shared_array_t* arr, int d);
+extern long tao_get_shared_array_size(const tao_shared_array_t* arr, int d);
 
 /**
  * Get the address of the first element of a shared array.
@@ -2484,8 +2451,7 @@ tao_get_shared_array_size(const tao_shared_array_t* arr, int d);
  *
  * @return The address of the first element of the array.
  */
-extern void*
-tao_get_shared_array_data(const tao_shared_array_t* arr);
+extern void* tao_get_shared_array_data(const tao_shared_array_t* arr);
 
 /**
  * Get number of readers for a shared array.
@@ -2501,8 +2467,7 @@ tao_get_shared_array_data(const tao_shared_array_t* arr);
  *
  * @see tao_lock_shared_array.
  */
-extern int
-tao_get_shared_array_nreaders(const tao_shared_array_t* arr);
+extern int tao_get_shared_array_nreaders(const tao_shared_array_t* arr);
 
 /**
  * Adjust number of readers for a shared array.
@@ -2520,8 +2485,7 @@ tao_get_shared_array_nreaders(const tao_shared_array_t* arr);
  *
  * @see tao_lock_shared_array.
  */
-extern int
-tao_adjust_shared_array_nreaders(tao_shared_array_t* arr, int adj);
+extern int tao_adjust_shared_array_nreaders(tao_shared_array_t* arr, int adj);
 
 /**
  * Get number of writers for a shared array.
@@ -2537,8 +2501,7 @@ tao_adjust_shared_array_nreaders(tao_shared_array_t* arr, int adj);
  *
  * @see tao_lock_shared_array.
  */
-extern int
-tao_get_shared_array_nwriters(const tao_shared_array_t* arr);
+extern int tao_get_shared_array_nwriters(const tao_shared_array_t* arr);
 
 /**
  * Adjust number of writers for a shared array.
@@ -2556,8 +2519,7 @@ tao_get_shared_array_nwriters(const tao_shared_array_t* arr);
  *
  * @see tao_lock_shared_array.
  */
-extern int
-tao_adjust_shared_array_nwriters(tao_shared_array_t* arr, int adj);
+extern int tao_adjust_shared_array_nwriters(tao_shared_array_t* arr, int adj);
 
 /**
  * Get the value of a shared array counter.
@@ -2573,8 +2535,7 @@ tao_adjust_shared_array_nwriters(tao_shared_array_t* arr, int adj);
  *
  * @see tao_lock_shared_array.
  */
-extern int64_t
-tao_get_shared_array_counter(const tao_shared_array_t* arr);
+extern int64_t tao_get_shared_array_counter(const tao_shared_array_t* arr);
 
 /**
  * Set the value of a shared array counter.
@@ -2589,8 +2550,7 @@ tao_get_shared_array_counter(const tao_shared_array_t* arr);
  *
  * @see tao_lock_shared_array.
  */
-extern void
-tao_set_shared_array_counter(tao_shared_array_t* arr, int64_t cnt);
+extern void tao_set_shared_array_counter(tao_shared_array_t* arr, int64_t cnt);
 
 /**
  * Get the time-stamp of a shared array counter.
@@ -2613,9 +2573,8 @@ tao_set_shared_array_counter(tao_shared_array_t* arr, int64_t cnt);
  *
  * @see tao_lock_shared_array.
  */
-extern void
-tao_get_shared_array_timestamp(const tao_shared_array_t* arr,
-                               int64_t* ts_sec, int64_t* ts_nsec);
+extern void tao_get_shared_array_timestamp(const tao_shared_array_t* arr,
+                                           int64_t* ts_sec, int64_t* ts_nsec);
 
 /**
  * Set the time-stamp of a shared array counter.
@@ -2631,9 +2590,8 @@ tao_get_shared_array_timestamp(const tao_shared_array_t* arr,
  *
  * @see tao_lock_shared_array.
  */
-extern void
-tao_set_shared_array_timestamp(tao_shared_array_t* arr,
-                               int64_t ts_sec, int64_t ts_nsec);
+extern void tao_set_shared_array_timestamp(tao_shared_array_t* arr,
+                                           int64_t ts_sec, int64_t ts_nsec);
 
 /**
  * Lock a shared array.
@@ -2646,8 +2604,8 @@ tao_set_shared_array_timestamp(tao_shared_array_t* arr,
  *
  * @see tao_lock_shared_object.
  */
-extern int
-tao_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
+extern int tao_lock_shared_array(tao_error_t** errs,
+                                 tao_shared_array_t* arr);
 
 /**
  * Attempt to lock a shared array.
@@ -2660,8 +2618,8 @@ tao_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
  *
  * @see tao_try_lock_shared_object.
  */
-extern int
-tao_try_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
+extern int tao_try_lock_shared_array(tao_error_t** errs,
+                                     tao_shared_array_t* arr);
 
 /**
  * Unlock a shared array.
@@ -2674,8 +2632,8 @@ tao_try_lock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
  *
  * @see tao_unlock_shared_object.
  */
-extern int
-tao_unlock_shared_array(tao_error_t** errs, tao_shared_array_t* arr);
+extern int tao_unlock_shared_array(tao_error_t** errs,
+                                   tao_shared_array_t* arr);
 
 /** @} */
 
@@ -2744,8 +2702,8 @@ typedef struct tao_image_roi {
  *
  * @return The address of a camera structure; `NULL` in case of errors.
  */
-extern tao_camera_t*
-tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms);
+extern tao_camera_t* tao_create_camera(tao_error_t** errs,
+                                       int nframes, unsigned int perms);
 
 /**
  * Finalize a camera structure owned by a frame grabber server.
@@ -2755,8 +2713,7 @@ tao_create_camera(tao_error_t** errs, int nframes, unsigned int perms);
  *
  * @return `0` on success; `1` in case of errors.
  */
-extern int
-tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam);
+extern int tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam);
 
 /**
  * Get the shared data of a camera structure for a frame grabber server.
@@ -2770,8 +2727,7 @@ tao_finalize_camera(tao_error_t** errs, tao_camera_t* cam);
  *
  * @see tao_attach_shared_camera.
  */
-extern tao_shared_camera_t*
-tao_get_shared_camera(tao_camera_t* cam);
+extern tao_shared_camera_t* tao_get_shared_camera(tao_camera_t* cam);
 
 /**
  * Get shared array to store next camera image.
@@ -2791,8 +2747,7 @@ tao_get_shared_camera(tao_camera_t* cam);
  * @return The address of a shared array to store the processed image;
  * `NULL` in case of errors.
  */
-tao_shared_array_t*
-tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam);
+tao_shared_array_t* tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam);
 
 /**
  * Make a new image available to the clients of a frame grabber server.
@@ -2807,9 +2762,8 @@ tao_fetch_next_frame(tao_error_t** errs, tao_camera_t* cam);
  *
  * @return `0` on success; `1` in case of errors.
  */
-int
-tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
-                       tao_shared_array_t* arr);
+int tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
+                           tao_shared_array_t* arr);
 
 /**
  * Attach an existing shared camera to the address space of the caller.
@@ -2831,8 +2785,8 @@ tao_publish_next_frame(tao_error_t** errs, tao_camera_t* cam,
  *
  * @see tao_detach_shared_camera, tao_get_shared_camera_ident.
  */
-extern tao_shared_camera_t*
-tao_attach_shared_camera(tao_error_t** errs, int ident);
+extern tao_shared_camera_t* tao_attach_shared_camera(tao_error_t** errs,
+                                                     int ident);
 
 /**
  * Detach a shared camera.
@@ -2852,8 +2806,8 @@ tao_attach_shared_camera(tao_error_t** errs, int ident);
  *
  * @see tao_attach_shared_camera.
  */
-extern int
-tao_detach_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+extern int tao_detach_shared_camera(tao_error_t** errs,
+                                    tao_shared_camera_t* cam);
 
 /**
  * Get the identifier of shared camera data.
@@ -2880,8 +2834,8 @@ extern int tao_get_shared_camera_ident(const tao_shared_camera_t* cam);
  *
  * @see tao_lock_shared_object.
  */
-extern int
-tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+extern int tao_lock_shared_camera(tao_error_t** errs,
+                                  tao_shared_camera_t* cam);
 
 /**
  * Attempt to lock a shared camera.
@@ -2894,8 +2848,8 @@ tao_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
  *
  * @see tao_try_lock_shared_object.
  */
-extern int
-tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+extern int tao_try_lock_shared_camera(tao_error_t** errs,
+                                      tao_shared_camera_t* cam);
 
 /**
  * Unlock a shared camera.
@@ -2908,8 +2862,8 @@ tao_try_lock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
  *
  * @see tao_unlock_shared_object.
  */
-extern int
-tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
+extern int tao_unlock_shared_camera(tao_error_t** errs,
+                                    tao_shared_camera_t* cam);
 
 /**
  * Attach the last acquired image to the address space of the caller.
@@ -2975,8 +2929,8 @@ tao_unlock_shared_camera(tao_error_t** errs, tao_shared_camera_t* cam);
  * @return The address of the shared camera in the address space of the caller;
  * `NULL` on failure or if there is no valid last image.
  */
-extern tao_shared_array_t*
-tao_attach_last_image(tao_error_t** errs, tao_shared_camera_t* cam);
+extern tao_shared_array_t* tao_attach_last_image(tao_error_t** errs,
+                                                 tao_shared_camera_t* cam);
 
 /**
  * Get the current state of the camera.
@@ -3143,12 +3097,12 @@ extern double tao_get_shared_camera_gamma(const tao_shared_camera_t* cam);
  * @param errs   Address of a variable to track errors.
  * @param cam    Pointer to a shared camera attached to the address space of
  *               the caller.
- * @param idx    Index (starting at 1) of semaphore to use.
+ * @param sem    Index (starting at 1) of semaphore to use.
  *
  * @return `0` on success; `-1` on error.
  */
-extern int
-tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
+extern int tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam,
+                          int sem);
 
 /**
  * Attempt to wait for next acquired image.
@@ -3157,7 +3111,7 @@ tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
  * given camera.  Compared to tao_wait_image(), this function never blocks and
  * return immediately.  After this function returns `1`, this function can only
  * return `1` again after the next new image (on the same camera and index @a
- * idx).
+ * sem).
  *
  * @warning Each process waiting for a new image should use a different
  * semaphore index.
@@ -3165,13 +3119,13 @@ tao_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
  * @param errs   Address of a variable to track errors.
  * @param cam    Pointer to a shared camera attached to the address space of
  *               the caller.
- * @param idx    Index (starting at 1) of semaphore to use.
+ * @param sem    Index (starting at 1) of semaphore to use.
  *
  * @return `1` if a new image is available; `0` if no image is currently
  * available; `-1` in case of error.
  */
-extern int
-tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
+extern int tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam,
+                              int sem);
 
 /**
  * Attempt to wait for next acquired image.
@@ -3179,7 +3133,7 @@ tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
  * This function behaves like tao_wait_image() but blocks no longer than some
  * given duration.  After this function returns `1`, this function can only
  * return `1` again after the next new image (on the same camera and index
- * @a idx).
+ * @a sem).
  *
  * @warning Each process waiting for a new image should use a different
  * semaphore index.
@@ -3187,7 +3141,7 @@ tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
  * @param errs   Address of a variable to track errors.
  * @param cam    Pointer to a shared camera attached to the address space of
  *               the caller.
- * @param idx    Index (starting at 1) of semaphore to use.
+ * @param sem    Index (starting at 1) of semaphore to use.
  * @param secs   Maximum time to wait (in seconds).  If this amount of time is
  *               too small (less than a nanosecond), the effect is the same as
  *               calling tao_try_wait_image().  If the amount of time is too
@@ -3200,9 +3154,8 @@ tao_try_wait_image(tao_error_t** errs, tao_shared_camera_t* cam, int idx);
  *
  * @see tao_get_absolute_timeout.
  */
-extern int
-tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam,
-                     int idx, double secs);
+extern int tao_timed_wait_image(tao_error_t** errs, tao_shared_camera_t* cam,
+                                int sem, double secs);
 
 /**
  * Get the counter value of the last acquired image.
@@ -3272,40 +3225,40 @@ extern int tao_get_last_image_ident(const tao_shared_camera_t* cam);
  * If @a w is non `NULL` but @a u or @ v is `NULL`, all weights are set to `1`.
  * If @a w is `NULL`, no weights are computed.
  */
-extern void
-tao_preprocess_image_u8_to_f32(float* d, float* w, const uint8_t* r, int n,
-                               const float* a, const float* b,
-                               const float* u, const float* v);
+extern void tao_preprocess_image_u8_to_f32(float* d, float* w,
+                                           const uint8_t* r, int n,
+                                           const float* a, const float* b,
+                                           const float* u, const float* v);
 
 /**
  * Apply image pre-processing.
  *
  * @see tao_preprocess_image_u8_to_f32.
  */
-extern void
-tao_preprocess_image_u8_to_f64(double* d, double* w, const uint8_t* r, int n,
-                               const double* a, const double* b,
-                               const double* u, const double* v);
+extern void tao_preprocess_image_u8_to_f64(double* d, double* w,
+                                           const uint8_t* r, int n,
+                                           const double* a, const double* b,
+                                           const double* u, const double* v);
 
 /**
  * Apply image pre-processing.
  *
  * @see tao_preprocess_image_u8_to_f32.
  */
-extern void
-tao_preprocess_image_u16_to_f32(float* d, float* w, const uint16_t* r, int n,
-                                const float* a, const float* b,
-                                const float* u, const float* v);
+extern void tao_preprocess_image_u16_to_f32(float* d, float* w,
+                                            const uint16_t* r, int n,
+                                            const float* a, const float* b,
+                                            const float* u, const float* v);
 
 /**
  * Apply image pre-processing.
  *
  * @see tao_preprocess_image_u8_to_f32.
  */
-extern void
-tao_preprocess_image_u16_to_f64(double* d, double* w, const uint16_t* r, int n,
-                                const double* a, const double* b,
-                                const double* u, const double* v);
+extern void tao_preprocess_image_u16_to_f64(double* d, double* w,
+                                            const uint16_t* r, int n,
+                                            const double* a, const double* b,
+                                            const double* u, const double* v);
 /** @} */
 
 /**
@@ -3343,13 +3296,12 @@ tao_preprocess_image_u16_to_f64(double* d, double* w, const uint16_t* r, int n,
  *
  * @see tao_copy_checked_args().
  */
-extern int
-tao_copy(tao_error_t** errs,
-         void* dstdata, tao_element_type_t dsttype,
-         const long dstdims[], const long dstoffs[],
-         const void* srcdata, tao_element_type_t srctype,
-         const long srcdims[], const long srcoffs[],
-         const long lens[], int ndims);
+extern int tao_copy(tao_error_t** errs,
+                    void* dstdata, tao_eltype_t dsttype,
+                    const long dstdims[], const long dstoffs[],
+                    const void* srcdata, tao_eltype_t srctype,
+                    const long srcdims[], const long srcoffs[],
+                    const long lens[], int ndims);
 
 /**
  * Copy/convert regions of multi-dimensional arrays.
@@ -3373,90 +3325,88 @@ tao_copy(tao_error_t** errs,
  *
  * @see tao_copy().
  */
-extern void
-tao_copy_checked_args(void* dstdata, tao_element_type_t dsttype,
-                      const long dstdims[], const long dstoffs[],
-                      const void* srcdata, tao_element_type_t srctype,
-                      const long srcdims[], const long srcoffs[],
-                      const long lens[], int ndims);
+extern void tao_copy_checked_args(void* dstdata, tao_eltype_t dsttype,
+                                  const long dstdims[], const long dstoffs[],
+                                  const void* srcdata, tao_eltype_t srctype,
+                                  const long srcdims[], const long srcoffs[],
+                                  const long lens[], int ndims);
 
 /**
  * Set a region into an array.
  */
-extern int
-tao_copy_to_array(tao_error_t** errs,
-                  tao_array_t* dst, const long dstoffs[],
-                  const void* srcdata, tao_element_type_t srctype,
-                  const long srcdims[], const long srcoffs[],
-                  const long lens[], int ndims);
+extern int tao_copy_to_array(tao_error_t** errs,
+                             tao_array_t* dst, const long dstoffs[],
+                             const void* srcdata, tao_eltype_t srctype,
+                             const long srcdims[], const long srcoffs[],
+                             const long lens[], int ndims);
 
 /**
  * Set a region into a shared array.
  */
-extern int
-tao_copy_to_shared_array(tao_error_t** errs,
-                         tao_shared_array_t* dst, const long dstoffs[],
-                         const void* srcdata, tao_element_type_t srctype,
-                         const long srcdims[], const long srcoffs[],
-                         const long lens[], int ndims);
+extern int tao_copy_to_shared_array(tao_error_t** errs,
+                                    tao_shared_array_t* dst,
+                                    const long dstoffs[],
+                                    const void* srcdata, tao_eltype_t srctype,
+                                    const long srcdims[], const long srcoffs[],
+                                    const long lens[], int ndims);
 
 /**
  * Extract a region from an array.
  */
-extern int
-tao_copy_from_array(tao_error_t** errs,
-                    void* dstdata, tao_element_type_t dsttype,
-                    const long dstdims[], const long dstoffs[],
-                    tao_array_t* src, const long srcoffs[],
-                    const long lens[], int ndims);
-
-/**
- * Extract a region from a shaded array.
- */
-extern int
-tao_copy_from_shared_array(tao_error_t** errs,
-                           void* dstdata, tao_element_type_t dsttype,
-                           const long dstdims[], const long dstoffs[],
-                           tao_shared_array_t* src, const long srcoffs[],
-                           const long lens[], int ndims);
-
-/**
- * Copy a region of an array into another array.
- */
-extern int
-tao_copy_array_to_array(tao_error_t** errs,
-                        tao_array_t* dst, const long dstoffs[],
-                        tao_array_t* src, const long srcoffs[],
-                        const long lens[], int ndims);
-
-/**
- * Copy a region of an array into a shared array.
- */
-extern int
-tao_copy_array_to_shared_array(tao_error_t** errs,
-                               tao_shared_array_t* dst, const long dstoffs[],
+extern int tao_copy_from_array(tao_error_t** errs,
+                               void* dstdata, tao_eltype_t dsttype,
+                               const long dstdims[], const long dstoffs[],
                                tao_array_t* src, const long srcoffs[],
                                const long lens[], int ndims);
 
 /**
- * Copy a region of a shared array into an array.
+ * Extract a region from a shaded array.
  */
-extern int
-tao_copy_shared_array_to_array(tao_error_t** errs,
-                               tao_array_t* dst, const long dstoffs[],
-                               tao_shared_array_t* src, const long srcoffs[],
-                               const long lens[], int ndims);
-
-/**
- * Copy a region of a shared array into another shared array.
- */
-extern int
-tao_copy_shared_array_to_shared_array(tao_error_t** errs,
-                                      tao_shared_array_t* dst,
+extern int tao_copy_from_shared_array(tao_error_t** errs,
+                                      void* dstdata, tao_eltype_t dsttype,
+                                      const long dstdims[],
                                       const long dstoffs[],
                                       tao_shared_array_t* src,
                                       const long srcoffs[],
                                       const long lens[], int ndims);
+
+/**
+ * Copy a region of an array into another array.
+ */
+extern int tao_copy_array_to_array(tao_error_t** errs,
+                                   tao_array_t* dst, const long dstoffs[],
+                                   tao_array_t* src, const long srcoffs[],
+                                   const long lens[], int ndims);
+
+/**
+ * Copy a region of an array into a shared array.
+ */
+extern int tao_copy_array_to_shared_array(tao_error_t** errs,
+                                          tao_shared_array_t* dst,
+                                          const long dstoffs[],
+                                          tao_array_t* src,
+                                          const long srcoffs[],
+                                          const long lens[], int ndims);
+
+/**
+ * Copy a region of a shared array into an array.
+ */
+extern int tao_copy_shared_array_to_array(tao_error_t** errs,
+                                          tao_array_t* dst,
+                                          const long dstoffs[],
+                                          tao_shared_array_t* src,
+                                          const long srcoffs[],
+                                          const long lens[], int ndims);
+
+/**
+ * Copy a region of a shared array into another shared array.
+ */
+extern int tao_copy_shared_array_to_shared_array(tao_error_t** errs,
+                                                 tao_shared_array_t* dst,
+                                                 const long dstoffs[],
+                                                 tao_shared_array_t* src,
+                                                 const long srcoffs[],
+                                                 const long lens[], int ndims);
 
 /**
  *     @}

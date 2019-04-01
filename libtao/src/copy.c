@@ -208,13 +208,13 @@ static copy_proc* copy_proc_table[] = {
 };
 
 /* Number of different types. */
-#define NTYPES (TAO_FLOAT64 - TAO_INT8 + 1)
+#define NTYPES (TAO_DOUBLE - TAO_INT8 + 1)
 
 int
 tao_copy(tao_error_t** errs,
-         void* dstdata, tao_element_type_t dsttype,
+         void* dstdata, tao_eltype_t dsttype,
          const long dstdims[], const long dstoffs[],
-         const void* srcdata, tao_element_type_t srctype,
+         const void* srcdata, tao_eltype_t srctype,
          const long srcdims[], const long srcoffs[],
          const long lens[], int ndims)
 {
@@ -228,8 +228,8 @@ tao_copy(tao_error_t** errs,
         tao_push_error(errs, __func__, TAO_BAD_RANK);
         return -1;
     }
-    if (dsttype < TAO_INT8 || dsttype > TAO_FLOAT64 ||
-        srctype < TAO_INT8 || srctype > TAO_FLOAT64) {
+    if (dsttype < TAO_INT8 || dsttype > TAO_DOUBLE ||
+        srctype < TAO_INT8 || srctype > TAO_DOUBLE) {
         tao_push_error(errs, __func__, TAO_BAD_TYPE);
         return -1;
     }
@@ -262,9 +262,9 @@ tao_copy(tao_error_t** errs,
 }
 
 void
-tao_copy_checked_args(void* dstdata, tao_element_type_t dsttype,
+tao_copy_checked_args(void* dstdata, tao_eltype_t dsttype,
                       const long dstdims[], const long dstoffs[],
-                      const void* srcdata, tao_element_type_t srctype,
+                      const void* srcdata, tao_eltype_t srctype,
                       const long srcdims[], const long srcoffs[],
                       const long lens[], int ndims)
 {
@@ -331,7 +331,7 @@ tao_copy_checked_args(void* dstdata, tao_element_type_t dsttype,
 int
 tao_copy_to_array(tao_error_t** errs,
                   tao_array_t* dst, const long dstoffs[],
-                  const void* srcdata, tao_element_type_t srctype,
+                  const void* srcdata, tao_eltype_t srctype,
                   const long srcdims[], const long srcoffs[],
                   const long lens[], int ndims)
 {
@@ -351,7 +351,7 @@ tao_copy_to_array(tao_error_t** errs,
 int
 tao_copy_to_shared_array(tao_error_t** errs,
                          tao_shared_array_t* dst, const long dstoffs[],
-                         const void* srcdata, tao_element_type_t srctype,
+                         const void* srcdata, tao_eltype_t srctype,
                          const long srcdims[], const long srcoffs[],
                          const long lens[], int ndims)
 {
@@ -370,7 +370,7 @@ tao_copy_to_shared_array(tao_error_t** errs,
 
 int
 tao_copy_from_array(tao_error_t** errs,
-                    void* dstdata, tao_element_type_t dsttype,
+                    void* dstdata, tao_eltype_t dsttype,
                     const long dstdims[], const long dstoffs[],
                     tao_array_t* src, const long srcoffs[],
                     const long lens[], int ndims)
@@ -391,7 +391,7 @@ tao_copy_from_array(tao_error_t** errs,
 
 int
 tao_copy_from_shared_array(tao_error_t** errs,
-                           void* dstdata, tao_element_type_t dsttype,
+                           void* dstdata, tao_eltype_t dsttype,
                            const long dstdims[], const long dstoffs[],
                            tao_shared_array_t* src, const long srcoffs[],
                            const long lens[], int ndims)

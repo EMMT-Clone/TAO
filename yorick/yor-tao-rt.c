@@ -32,8 +32,12 @@
 
 PLUG_API void y_error(const char *) __attribute__ ((noreturn));
 
-static int tao_to_yorick_types[TAO_FLOAT64 - TAO_INT8 + 1];
+static int tao_to_yorick_types[TAO_DOUBLE - TAO_INT8 + 1];
+#define GET_YORICK_TYPE(eltype) tao_to_yorick_types[(eltype) - TAO_INT8]
+
 static int yorick_to_tao_types[Y_DOUBLE - Y_CHAR + 1];
+#define GET_TAO_TYPE(eltype) yorick_to_tao_types[(eltype) - Y_CHAR]
+
 static char* buffer = NULL;
 static size_t bufsiz = 0;
 
@@ -97,8 +101,8 @@ static void push_array_data(tao_shared_array_t* arr)
     long nelem, elsize;
 
     type = tao_get_shared_array_eltype(arr);
-    if (type >= TAO_INT8 && type <= TAO_FLOAT64) {
-        type = tao_to_yorick_types[type - TAO_INT8];
+    if (type >= TAO_INT8 && type <= TAO_DOUBLE) {
+        type = GET_YORICK_TYPE(type);
     } else {
         type = -1;
     }
@@ -876,7 +880,7 @@ Y_tao_set_data(int argc)
     }
     arr = get_shared_array(argc - 1);
     eltype = tao_get_shared_array_eltype(arr);
-    if (eltype < TAO_INT8 || eltype > TAO_FLOAT64) {
+    if (eltype < TAO_INT8 || eltype > TAO_DOUBLE) {
         y_error("unsupported shared array element type");
     }
     src = ygeta_any(argc - 2, &ntot, dims, &typeid);
@@ -930,30 +934,30 @@ Y_tao_get_timestamp(int argc)
 static void initialize_type(size_t size, int ytype, bool floatingpoint)
 {
     if (floatingpoint) {
-        if (size == 4) {
-            tao_to_yorick_types[TAO_FLOAT32 - TAO_INT8] = ytype;
-            yorick_to_tao_types[ytype - Y_CHAR] = TAO_FLOAT32;
-        } else if (size == 8) {
-            tao_to_yorick_types[TAO_FLOAT64 - TAO_INT8] = ytype;
-            yorick_to_tao_types[ytype - Y_CHAR] = TAO_FLOAT64;
+        if (size == sizeof(float)) {
+            GET_YORICK_TYPE(TAO_FLOAT) = ytype;
+            GET_TAO_TYPE(ytype) = TAO_FLOAT;
+        } else if (size == sizeof(double)) {
+            GET_YORICK_TYPE(TAO_DOUBLE) = ytype;
+            GET_TAO_TYPE(ytype) = TAO_DOUBLE;
         }
     } else {
         if (size == 1) {
-            tao_to_yorick_types[TAO_INT8 - TAO_INT8] = ytype;
-            tao_to_yorick_types[TAO_UINT8 - TAO_INT8] = ytype;
-            yorick_to_tao_types[ytype - Y_CHAR] = TAO_UINT8;
+            GET_YORICK_TYPE(TAO_INT8) = ytype;
+            GET_YORICK_TYPE(TAO_UINT8) = ytype;
+            GET_TAO_TYPE(ytype) = TAO_UINT8;
         } else if (size == 2) {
-            tao_to_yorick_types[TAO_INT16 - TAO_INT8] = ytype;
-            tao_to_yorick_types[TAO_UINT16 - TAO_INT8] = ytype;
-            yorick_to_tao_types[ytype - Y_CHAR] = TAO_INT16;
+            GET_YORICK_TYPE(TAO_INT16) = ytype;
+            GET_YORICK_TYPE(TAO_UINT16) = ytype;
+            GET_TAO_TYPE(ytype) = TAO_INT16;
         } else if (size == 4) {
-            tao_to_yorick_types[TAO_INT32 - TAO_INT8] = ytype;
-            tao_to_yorick_types[TAO_UINT32 - TAO_INT8] = ytype;
-            yorick_to_tao_types[ytype - Y_CHAR] = TAO_UINT32;
+            GET_YORICK_TYPE(TAO_INT32) = ytype;
+            GET_YORICK_TYPE(TAO_UINT32) = ytype;
+            GET_TAO_TYPE(ytype) = TAO_UINT32;
         } else if (size == 8) {
-            tao_to_yorick_types[TAO_INT64 - TAO_INT8] = ytype;
-            tao_to_yorick_types[TAO_UINT64 - TAO_INT8] = ytype;
-            yorick_to_tao_types[ytype - Y_CHAR] = TAO_UINT64;
+            GET_YORICK_TYPE(TAO_INT64) = ytype;
+            GET_YORICK_TYPE(TAO_UINT64) = ytype;
+            GET_TAO_TYPE(ytype) = TAO_UINT64;
         }
     }
 }
@@ -964,11 +968,11 @@ Y__tao_init(int argc)
     int i;
 
     /* Initialize tables for type equivalences. */
-    for (i = TAO_INT8; i <= TAO_FLOAT64; ++i) {
-        tao_to_yorick_types[i - TAO_INT8] = -1;
+    for (i = TAO_INT8; i <= TAO_DOUBLE; ++i) {
+        GET_YORICK_TYPE(i) = -1;
     }
     for (i = Y_CHAR; i <= Y_DOUBLE; ++i) {
-        yorick_to_tao_types[i - Y_CHAR] = -1;
+        GET_TAO_TYPE(i) = -1;
     }
     initialize_type(sizeof(char),   Y_CHAR,   false);
     initialize_type(sizeof(short),  Y_SHORT,  false);
@@ -997,8 +1001,8 @@ Y__tao_init(int argc)
     DEF_LONG_CONST(TAO_UINT32);
     DEF_LONG_CONST(TAO_INT64);
     DEF_LONG_CONST(TAO_UINT64);
-    DEF_LONG_CONST(TAO_FLOAT32);
-    DEF_LONG_CONST(TAO_FLOAT64);
+    DEF_LONG_CONST(TAO_FLOAT);
+    DEF_LONG_CONST(TAO_DOUBLE);
 #undef DEF_LONG_CONST
 
     /* Check some assertions. */
