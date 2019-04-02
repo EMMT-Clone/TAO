@@ -17,8 +17,9 @@ func tao_measure_latency(cam, number=, timeout=, semaphore=)
 /* DOCUMENT dt = tao_measure_latency(cam);
 
      Yield an array of time latencies (in seconds) when receiving images from
-     a TAO camera server.  CAM is a TAO shared camera or the shared memory
-     identifier of a TAO shared camera.
+     a TAO camera server.  CAM is a TAO shared camera, the shared memory
+     identifier of a TAO shared camera or the XPA access point name of an XPA
+     camera server.
 
      Keyword NUMBER can be used to specify the number of images to acquire.
 
@@ -29,7 +30,7 @@ func tao_measure_latency(cam, number=, timeout=, semaphore=)
  */
 
 {
-    if (is_integer(cam)) cam = tao_attach_shared_camera(cam);
+    cam = tao_connect_camera(cam);
     if (is_void(semaphore)) semaphore = 1; // use 1st semaphore by default
     if (is_void(number)) number = 100;
     if (is_void(timeout)) timeout = 1.0;
@@ -47,8 +48,9 @@ func tao_measure_latency(cam, number=, timeout=, semaphore=)
 func tao_live(cam, number=, timeout=, semaphore=, cmin=, cmax=, win=, wait=)
 /* DOCUMENT tao_live, cam;
 
-     Display images from a TAO camera server.  CAM is a TAO shared camera or
-     the shared memory identifier of a TAO shared camera.
+     Display images from a TAO camera server.  CAM is a TAO shared camera, the
+     shared memory identifier of a TAO shared camera or the XPA access point
+     name of an XPA camera server.
 
      Keyword NUMBER can be used to specify the number of images to display.
 
@@ -62,7 +64,7 @@ func tao_live(cam, number=, timeout=, semaphore=, cmin=, cmax=, win=, wait=)
  */
 {
     if (! is_void(win)) window, win;
-    if (is_integer(cam)) cam = tao_attach_shared_camera(cam);
+    cam = tao_connect_camera(cam);
     if (is_void(wait)) wait = 0.1; // wait 0.1 seconds
     if (is_void(semaphore)) semaphore = 1; // use 1st semaphore by default
     if (is_void(number)) number = 100000;

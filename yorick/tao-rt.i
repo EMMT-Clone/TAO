@@ -14,12 +14,29 @@
 
 if (is_func(plug_in)) plug_in, "tao_rt";
 
+func tao_connect_camera(cam)
+/* DOCUMENT tao_connect_camera(cam);
+
+     Connects to a TAO shared camera the result is an attached shared camera
+     (see tao_attach_shared_camera).  Argument CAM can be a TAO shared camera,
+     the shared memory identifier of a TAO shared camera or the XPA access
+     point name of an XPA camera server.
+
+   SEE ALSO: tao_attach_shared_camera, tao_query_shmid.
+ */
+{
+    if (is_string(cam)) cam = tao_query_shmid(cam);
+    if (is_integer(cam)) cam = tao_attach_shared_camera(cam);
+    if (cam.type != TAO_SHARED_CAMERA) error, "not a shared TAO camera";
+    return cam;
+}
+
 extern tao_get_current_time;
 extern tao_get_monotonic_time;
 /* DOCUMENT t = tao_get_current_time();
          or t = tao_get_monotonic_time();
 
-     These function yields the ime with nanossecond resolution.  The returned
+     These function yields the time with nanossecond resolution.  The returned
      value is a pair of integers: `t(1)` is a number of seconds, `t(2)` is a
      number of nanoseconds.  The function `tao_get_current_time` yields the
      time since a specified starting point.  The function
