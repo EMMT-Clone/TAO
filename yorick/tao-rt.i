@@ -239,7 +239,7 @@ extern tao_unlock;
    SEE ALSO: tao_attach_shared_object.
  */
 
-func tao_query_shmid(apt) { return _tao_get(long, apt, "shmid"); }
+func tao_query_shmid(apt) { return _tao_query(long, apt, "shmid"); }
 /* DOCUMENT shmid = tao_query_shmid(apt);
 
       Yields the shared memory identifier of data shared by TAO server whose
@@ -354,7 +354,7 @@ func _tao_query(type, apt, key)
     str = ans(1,4);
     return (type == string ? tao_chomp(str) : tao_parse(type, str));
 }
-errs2caller, tao_parse;
+errs2caller, _tao_query;
 
 func tao_chomp(str)
 /* DOCUMENT tao_chomp(str);
