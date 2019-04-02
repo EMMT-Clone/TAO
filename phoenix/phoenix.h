@@ -144,7 +144,7 @@ struct phx_camera {
     phx_imgbuf_t* bufs;    /**< Image buffers for acquisition */
     int nbufs;             /**< Number of acquisition buffers */
     int last;              /**< Index of last captured image buffer */
-    long pending;          e /**< Number of pending image buffers */
+    long pending;          /**< Number of pending image buffers */
     bool quitting;         /**< Acquisition is about to finish */
     size_t bufsize;        /**< Size of acquisition buffers */
     uint32_t events;       /**< Mask of events to be signaled */
