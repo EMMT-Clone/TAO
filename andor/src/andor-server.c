@@ -1024,7 +1024,7 @@ int main(int argc, char* argv[])
 {
     XPA srv;
     char* serverclass = "TAO";
-    char* servername = "andorcam1"; /* FIXME: use device number */
+    char servername[64];
     char* send_mode = "acl=true,freebuf=false";
     char* recv_mode = "";
     void* send_data = NULL;
@@ -1083,30 +1083,26 @@ int main(int argc, char* argv[])
     /* Open the camera device.  Since we use NULL for error reporting, any
        errors will be fatal, hence there is no needs to check the result. */
     cam = andor_open_camera(NULL, dev);
-    andor_reflect_configuration(srvcam->shared, cam);
 
     /* Apply initial configuration.  Make sure to synchronize the actual
        configuration after any changes in case some parameters are not exactly
        the requested ones.  */
-    andor_update_configuration(cam, true);
+    if (andor_update_configuration(cam, true) != 0) {
+        andor_report_errors(cam);
+        return EXIT_FAILURE;
+    }
     andor_get_configuration(cam, &cfg);
-    //cfg.xbin = 1;
-    //cfg.ybin = 1;
-    //cfg.xoff = 300;
-    //cfg.yoff = 200;
-    //cfg.width = 640;
-    //cfg.height = 480;
-    //cfg.framerate = 40.0;
-    //cfg.exposuretime = 0.005;
-    //cfg.pixelencoding = ANDOR_ENCODING_MONO12PACKED;
+#if 0
     if (andor_set_configuration(cam, &cfg) != 0) {
         andor_report_errors(cam);
         return EXIT_FAILURE;
     }
     andor_get_configuration(cam, &cfg);
+#endif
     if (debug) {
         andor_print_camera_configuration(stdout, cam);
     }
+    andor_reflect_configuration(srvcam->shared, cam);
 
     /* Allocate other private resources.  Any error is fatal. */
     priv = create_private_data(cam);
@@ -1123,7 +1119,7 @@ int main(int argc, char* argv[])
         tao_push_error(NULL, "pthread_create", status);
         return EXIT_FAILURE;
     }
-
+    sprintf(servername, "andor%d", (int)dev);
     srv = XPANew(serverclass, servername, "some help",
                  send_callback, send_data, send_mode,
                  recv_callback, recv_data, recv_mode);
