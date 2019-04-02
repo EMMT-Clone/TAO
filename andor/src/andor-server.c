@@ -761,7 +761,7 @@ static state_t expected_state()
 
 static int _set_config(XPA xpa, int argc, const char* argv[])
 {
-    int status;
+    int status = 0;
     state_t state;
     const char* key;
     const char* val;
@@ -893,31 +893,30 @@ static int _set_config(XPA xpa, int argc, const char* argv[])
             fprintf(stderr, "state: %s\n", state_name(state));
         }
         if (state == STATE_SLEEPING) {
-            /* Get current configuration (FIXME: for now we are very
-               conservative and make sure the configuration is up-to-date)
-               and apply the changes. */
-            status = andor_update_configuration(priv->cam, true);
-            if (status == 0) {
-                andor_get_configuration(priv->cam, &cfg);
+            /* Get current configuration, apply the changes, make sure the
+	       configuration is up-to-date and whatever could have been done,
+	       reflect the actual configuration into the shared camera
+	       data. */
+	    andor_get_configuration(priv->cam, &cfg);
 #define SETOPT(opt) if (set_##opt) cfg.opt = rec.opt
-                SETOPT(xbin);
-                SETOPT(ybin);
-                SETOPT(xoff);
-                SETOPT(yoff);
-                SETOPT(width);
-                SETOPT(height);
-                SETOPT(exposuretime);
-                SETOPT(framerate);
+	    SETOPT(xbin);
+	    SETOPT(ybin);
+	    SETOPT(xoff);
+	    SETOPT(yoff);
+	    SETOPT(width);
+	    SETOPT(height);
+	    SETOPT(exposuretime);
+	    SETOPT(framerate);
 #undef SETOPT
-                status = andor_set_configuration(priv->cam, &cfg);
-            }
-            if (status == 0) {
-                /* Reflect the actual configuration into the shared camera
-                   data. */
-                tao_lock_shared_camera(NULL, srvcam->shared);
-                andor_reflect_configuration(srvcam->shared, priv->cam);
-                tao_unlock_shared_camera(NULL, srvcam->shared);
-            }
+	    if (andor_set_configuration(priv->cam, &cfg) != 0) {
+		status = -1;
+	    }
+	    if (andor_update_configuration(priv->cam, true) != 0) {
+		status = -1;
+	    }
+	    tao_lock_shared_camera(NULL, srvcam->shared);
+	    andor_reflect_configuration(srvcam->shared, priv->cam);
+	    tao_unlock_shared_camera(NULL, srvcam->shared);
             break;
         } else if (state == STATE_STOPPING || state == STATE_ABORTING) {
             /* Acquisition is about to stop.  Manage to wait a bit (one
