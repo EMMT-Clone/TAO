@@ -1119,6 +1119,12 @@ int main(int argc, char* argv[])
         tao_push_error(NULL, "pthread_create", status);
         return EXIT_FAILURE;
     }
+    status = pthread_detach(priv->worker);
+    if (status != 0) {
+        tao_push_error(NULL, "pthread_detach", status);
+        return EXIT_FAILURE;
+    }
+
     sprintf(servername, "andor%d", (int)dev);
     srv = XPANew(serverclass, servername, "some help",
                  send_callback, send_data, send_mode,
