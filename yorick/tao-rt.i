@@ -222,8 +222,8 @@ extern tao_unlock;
    SEE ALSO: tao_attach_shared_object.
  */
 
-func tao_get_shmid(apt) { return _tao_get(long, apt, "shmid"); }
-/* DOCUMENT shmid = tao_get_shmid(apt);
+func tao_query_shmid(apt) { return _tao_get(long, apt, "shmid"); }
+/* DOCUMENT shmid = tao_query_shmid(apt);
 
       Yields the shared memory identifier of data shared by TAO server whose
       XPA access point is APT.  Example:
@@ -231,7 +231,7 @@ func tao_get_shmid(apt) { return _tao_get(long, apt, "shmid"); }
           apt = "andorcam1";
           sem = 1;
           timeout = 5.0;
-          cam = tao_attach_shared_camera(tao_get_shmid(apt));
+          cam = tao_attach_shared_camera(tao_query_shmid(apt));
           tao_config, apt, framerate=40, exposuretime=0.01;
           tao_start, apt;
           arr = tao_wait_image(cam, sem, timeout);
@@ -244,10 +244,10 @@ func tao_get_shmid(apt) { return _tao_get(long, apt, "shmid"); }
    SEE ALSO: tao_attach_shared_object.
  */
 
-func tao_get_xbin(apt) { return _tao_get(long, apt, "xbin"); }
-func tao_get_ybin(apt) { return _tao_get(long, apt, "ybin"); }
-/* DOCUMENT tao_get_xbin(apt)
-         or tao_get_ybin(apt)
+func tao_query_xbin(apt) { return _tao_query(long, apt, "xbin"); }
+func tao_query_ybin(apt) { return _tao_query(long, apt, "ybin"); }
+/* DOCUMENT tao_query_xbin(apt)
+         or tao_query_ybin(apt)
 
      Yield the horizontal and vertical binning (in physical pixels) of the
      images acquired by the camera server at XPA access point APT.
@@ -255,10 +255,10 @@ func tao_get_ybin(apt) { return _tao_get(long, apt, "ybin"); }
    SEE ALSO: tao_config.
  */
 
-func tao_get_xoff(apt) { return _tao_get(long, apt, "xoff"); }
-func tao_get_yoff(apt) { return _tao_get(long, apt, "yoff"); }
-/* DOCUMENT tao_get_xoff(apt)
-         or tao_get_yoff(apt)
+func tao_query_xoff(apt) { return _tao_query(long, apt, "xoff"); }
+func tao_query_yoff(apt) { return _tao_query(long, apt, "yoff"); }
+/* DOCUMENT tao_query_xoff(apt)
+         or tao_query_yoff(apt)
 
      Yield the offsets (in physical pixels) of the region of interest relative
      to the sensor edges for the camera server at XPA access point APT.
@@ -266,10 +266,10 @@ func tao_get_yoff(apt) { return _tao_get(long, apt, "yoff"); }
    SEE ALSO: tao_config.
  */
 
-func tao_get_width(apt) { return _tao_get(long, apt, "width"); }
-func tao_get_height(apt) { return _tao_get(long, apt, "height"); }
-/* DOCUMENT tao_get_width(apt)
-         or tao_get_height(apt)
+func tao_query_width(apt) { return _tao_query(long, apt, "width"); }
+func tao_query_height(apt) { return _tao_query(long, apt, "height"); }
+/* DOCUMENT tao_query_width(apt)
+         or tao_query_height(apt)
 
      Yield the horizontal and vertical dimensions (in macro-pixels) of the
      images acquired by the camera server at XPA access point APT.
@@ -277,20 +277,20 @@ func tao_get_height(apt) { return _tao_get(long, apt, "height"); }
    SEE ALSO: tao_config.
  */
 
-func tao_get_sensorwidth(apt) { return _tao_get(long, apt, "sensorwidth"); }
-func tao_get_sensorheight(apt) { return _tao_get(long, apt, "sensorheight"); }
-/* DOCUMENT tao_get_sensorwidth(apt)
-         or tao_get_sensorheight(apt)
+func tao_query_sensorwidth(apt) { return _tao_query(long, apt, "sensorwidth"); }
+func tao_query_sensorheight(apt) { return _tao_query(long, apt, "sensorheight"); }
+/* DOCUMENT tao_query_sensorwidth(apt)
+         or tao_query_sensorheight(apt)
 
      Yield the horizontal and vertical dimensions (in physical pixels) of the
      detector managed by the camera server at XPA access point APT.
 
    SEE ALSO: tao_config.
  */
-func tao_get_exposuretime(apt) { return _tao_get(double, apt, "exposuretime"); }
-func tao_get_framerate(apt) { return _tao_get(double, apt, "framerate"); }
-/* DOCUMENT tao_get_exposuretime(apt)
-         or tao_get_framerate(apt)
+func tao_query_exposuretime(apt) { return _tao_query(double, apt, "exposuretime"); }
+func tao_query_framerate(apt) { return _tao_query(double, apt, "framerate"); }
+/* DOCUMENT tao_query_exposuretime(apt)
+         or tao_query_framerate(apt)
 
      Yield the exposure time (in seconds) and frame rate (in frame per
      seconds) settings for the acquisition by the camera server at XPA access
@@ -298,8 +298,8 @@ func tao_get_framerate(apt) { return _tao_get(double, apt, "framerate"); }
 
    SEE ALSO: tao_config.
  */
-func tao_get_state(apt) { return _tao_get(string, apt, "state"); }
-/* DOCUMENT tao_get_state(apt)
+func tao_query_state(apt) { return _tao_query(string, apt, "state"); }
+/* DOCUMENT tao_query_state(apt)
 
      Yield the current state of the acquisition by the camera server at XPA
      access point APT.
@@ -320,14 +320,14 @@ func tao_start(apt, nbufs)
       Send an acquisition command to the XPA server identiifed by APT.
       Optional argument NBUFS is the number of acquisition buffers to use.
 
-   SEE ALSO: tao_config, tao_get_state.
+   SEE ALSO: tao_config, tao_query_state.
  */
 {
     cmd = (is_void(nbufs) ? "start" : swrite(format="start %d", nbufs));
     xpa_set, apt, cmd;
 }
 
-func _tao_get(type, apt, key)
+func _tao_query(type, apt, key)
 {
     ans = xpa_get(apt, key);
     replies = ans();
@@ -354,12 +354,12 @@ local _tao_esc;
 func tao_config(args)
 /* DOCUMENT tao_config, apt, key1=val1, key2=val2, ...;
 
-     Send an XPA set "config" command to the XPA server APT with settings
-     given by the KEYn=VALn pairs.
+     When used as a subroutine, sends an XPA set "config" command to the XPA
+     server APT with settings given by the KEYn=VALn pairs.
 
-   SEE ALSO: tao_get_shmid, tao_start, tao_get_xbin, tao_get_ybin,
-             tao_get_xoff, tao_get_yoff, tao_get_width, tao_get_height,
-             tao_get_sensorwidth, tao_get_sensorheight, tao_get_state.
+   SEE ALSO: tao_query_shmid, tao_start, tao_query_xbin, tao_query_ybin,
+             tao_query_xoff, tao_query_yoff, tao_query_width, tao_query_height,
+             tao_query_sensorwidth, tao_query_sensorheight, tao_query_state.
  */
 {
     nargs = args(*); // number of positional arguments
