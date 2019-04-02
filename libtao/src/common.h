@@ -30,21 +30,20 @@
 #  ifdef HAVE_STDBOOL_H
 #     include <stdbool.h>
 #  else
-/*
- * Provide definitions normally in <stdbool.h> (see
- * http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stdbool.h.html)
- */
-#     define bool    _Bool
-#     define true    1
-#     define false   0
-#     define __bool_true_false_are_defined 1
-/*
- * _Bool is a keyword of the C language as of C99.  The standard says that it
- * is an unsigned integer type.
- */
-#    if ! defined(__STDC_VERSION__) || __STDC_VERSION__ <= 199901L
-typedef insigned int _Bool;
+     /* Provide definitions normally in <stdbool.h> (see
+        http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stdbool.h.html) */
+#    if defined(__STDC_VERSION__) && __STDC_VERSION__ > 199901L
+       /* _Bool is a keyword of the C language as of C99.  The standard says
+          that it is an unsigned integer type. */
+#      define true  ((_Bool)1)
+#      define false ((_Bool)0)
+#    else
+typedef enum {_False = 0, _True = 1} _Bool;
+#      define true  _True
+#      define false _False
 #    endif
+#    define bool _Bool
+#    define __bool_true_false_are_defined 1
 #  endif
 #endif
 
