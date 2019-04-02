@@ -82,4 +82,4 @@ ${LIBRARY}: ${OBJECTS}
 andor-convert.o: ${srcdir}/andor-convert.c ${DEPS}
 	${CC} -c ${CPPFLAGS} ${CFLAGS} ${SIMDFLAGS} $< -o $@
 
-.PHOONY: all default clean distclean tests test1 test2 test3
+.PHOONY: all default clean distclean tests test1 test2 test3 test4 test5
