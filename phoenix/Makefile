@@ -41,8 +41,8 @@ TAO_DEFS = -I$(TAO_INCDIR)
 TAO_LIBS = -L$(TAO_LIBDIR) -ltao
 
 # Macros for the Phoenix Frame Grabber Library (FGL):
-PHOENIX_STATIC_LIBRARY = libtaophx.a
-PHOENIX_SHARED_LIBRARY = libtaophx.so
+PHOENIX_STATIC_LIBRARY = libphoenix.a
+PHOENIX_SHARED_LIBRARY = libphoenix.so
 PHOENIX_OBJECTS = errors.o phoenix.o mikrotron-mc408x.o
 PHOENIX_HEADERS = ${srcdir}/phoenix-types.h \
                   ${srcdir}/phoenix.h \
